@@ -1,4 +1,4 @@
-name: 测试
+name: test
 on:
   workflow_dispatch:        # 允许手动触发
 
@@ -87,6 +87,7 @@ jobs:
         with:
           tag_name: test
           name: NovaBox test
+          prerelease: true
           files: release-apks/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
