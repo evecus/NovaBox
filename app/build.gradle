@@ -130,8 +130,17 @@ android {
     applicationVariants.configureEach { variant ->
         variant.outputs.configureEach { output ->
             def flavorNames = variant.productFlavors.collect { it.name }.join('-')
+            def nameMap = [
+                'java'    : 'general',
+                'java32'  : 'arm32',
+                'java64'  : 'arm64',
+                'python'  : 'python',
+                'python32': 'python32',
+                'python64': 'python64'
+            ]
+            def mappedName = nameMap[flavorNames] ?: flavorNames
             // 构建自定义文件名
-            def fileName = "NovaBox-${flavorNames}.apk"
+            def fileName = "NovaBox-${mappedName}.apk"
             outputFileName = fileName
         }
     }
