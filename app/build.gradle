@@ -56,7 +56,7 @@ android {
 
     applicationVariants.configureEach { variant ->
         variant.outputs.configureEach { output ->
-            outputFileName = "TVBox-Pad-Debug.apk"
+            outputFileName = "NovaBox-Debug.apk"
         }
     }
 
