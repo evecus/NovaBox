@@ -62,7 +62,7 @@ jobs:
       - name: Upload arm64-v8a Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: TVBox-arm64-v8a-Release-${{ github.run_number }}
+          name: NovaBox-arm64-v8a-Release-${{ github.run_number }}
           path: app/build/outputs/apk/java64/release/*.apk
           retention-days: 30
 
@@ -123,7 +123,7 @@ jobs:
       - name: Upload armeabi-v7a Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: TVBox-armeabi-v7a-Release-${{ github.run_number }}
+          name: NovaBox-armeabi-v7a-Release-${{ github.run_number }}
           path: app/build/outputs/apk/java32/release/*.apk
           retention-days: 30
 
