@@ -697,6 +697,15 @@ public class ModelSettingFragment extends BaseLazyFragment {
             tv.setPadding(24, 28, 24, 28);
             tv.setTextSize(13);
             tv.setTextColor(0xFF333333);
+            tv.setLayoutParams(new androidx.recyclerview.widget.RecyclerView.LayoutParams(
+                    androidx.recyclerview.widget.RecyclerView.LayoutParams.MATCH_PARENT,
+                    androidx.recyclerview.widget.RecyclerView.LayoutParams.WRAP_CONTENT));
+            return new VH(tv);
+        }
+
+        @Override
+        public void onBindViewHolder(VH holder, int position) {
+            String[] route = data.get(position);
             holder.tv.setText(route[0]);
             boolean sel = route[1].equals(selectedUrl[0]);
             holder.tv.setBackgroundColor(sel ? 0x22F5C518 : 0x00000000);
