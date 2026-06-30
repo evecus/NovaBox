@@ -896,7 +896,7 @@ public class DetailActivity extends BaseActivity {
         if (content == null) {
             content = "";
         }
-        return label + "<font color=\"#FFFFFF\">" + content + "</font>";
+        return label + "<font color=\"#000000\">" + content + "</font>";
     }
 
     private String  vod_picture="";
