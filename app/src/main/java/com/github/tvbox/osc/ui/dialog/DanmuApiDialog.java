@@ -26,12 +26,19 @@ public class DanmuApiDialog extends BaseDialog {
         input = findViewById(R.id.input);
         input.setText(Hawk.get(HawkConfig.DANMU_API, ""));
         input.setHint(getDefaultApi());
+
+        // 取消：关闭弹窗，不做任何修改
+        findViewById(R.id.inputCancel).setOnClickListener(v -> dismiss());
+        // 默认：重置为默认地址
         findViewById(R.id.inputDefault).setOnClickListener(v -> saveDefault());
+        // 确认：保存输入内容
         findViewById(R.id.inputSubmit).setOnClickListener(v -> save(input.getText().toString().trim()));
+
         input.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_DONE || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                if (actionId == EditorInfo.IME_ACTION_DONE
+                        || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
                     save(input.getText().toString().trim());
                     return true;
                 }

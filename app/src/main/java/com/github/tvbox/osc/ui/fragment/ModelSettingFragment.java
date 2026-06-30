@@ -266,6 +266,16 @@ public class ModelSettingFragment extends BaseLazyFragment {
             }
         });
 
+        // 网盘账号
+        findViewById(R.id.llPanAccount).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FastClickCheckUtil.check(v);
+                Intent intent = new Intent(mContext, com.mobile.novabox.ui.activity.PanAccountActivity.class);
+                startActivity(intent);
+            }
+        });
+
         // 线路选择 - 两栏弹窗
         llApiLine.setVisibility(View.VISIBLE);
         if (llApiLine != null) llApiLine.setVisibility(View.VISIBLE);
@@ -565,15 +575,19 @@ public class ModelSettingFragment extends BaseLazyFragment {
             return;
         }
 
-        android.app.Dialog dialog = new android.app.Dialog(mActivity);
+        // 使用与 BaseDialog 相同的透明样式，避免白边
+        android.app.Dialog dialog = new android.app.Dialog(mActivity, R.style.CustomDialogStyle);
         dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_route_select);
         dialog.setCanceledOnTouchOutside(true);
 
         android.view.Window window = dialog.getWindow();
         if (window != null) {
-            window.setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT, android.view.WindowManager.LayoutParams.WRAP_CONTENT);
+            // MATCH_PARENT 让 FrameLayout 铺满，内层 LinearLayout 自行居中 / 固定宽
+            window.setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,
+                    android.view.WindowManager.LayoutParams.MATCH_PARENT);
             window.setGravity(android.view.Gravity.CENTER);
+            window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         }
 
         androidx.recyclerview.widget.RecyclerView rvConfigs = dialog.findViewById(R.id.rvConfigs);
