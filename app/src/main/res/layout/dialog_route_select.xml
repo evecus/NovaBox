@@ -1,73 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="@drawable/shape_danmu_setting_bg">
+    android:layout_height="match_parent">
 
-    <!-- Two-panel content -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="360dp"
-        android:orientation="horizontal">
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginLeft="24dp"
+        android:layout_marginRight="24dp"
+        android:background="@drawable/shape_danmu_setting_bg"
+        android:orientation="vertical">
 
-        <!-- Left: config names -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvConfigs"
-            android:layout_width="130dp"
-            android:layout_height="match_parent"
-            android:background="#1a2038" />
+        <!-- 两栏内容区 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="360dp"
+            android:orientation="horizontal">
 
-        <!-- Divider -->
+            <!-- 左：配置名列表 -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvConfigs"
+                android:layout_width="130dp"
+                android:layout_height="match_parent"
+                android:background="#1a2038" />
+
+            <!-- 分隔线 -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="@color/dialog_panel_stroke" />
+
+            <!-- 右：线路列表 -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvRoutes"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <!-- 分隔线 -->
         <View
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:background="#33FFFFFF" />
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/dialog_panel_stroke" />
 
-        <!-- Right: routes in selected config -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvRoutes"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1" />
+        <!-- 取消 / 确认按钮行 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btnCancel"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="取消"
+                android:textColor="#AAFFFFFF"
+                android:textSize="15sp" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="@color/dialog_panel_stroke" />
+
+            <TextView
+                android:id="@+id/btnConfirm"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="确认"
+                android:textColor="@color/dialog_text_primary"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
-
-    <!-- Divider -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#33FFFFFF" />
-
-    <!-- Confirm / Cancel buttons -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/btnCancel"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="取消"
-            android:textColor="#AAFFFFFF"
-            android:textSize="15sp" />
-
-        <View
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:background="#33FFFFFF" />
-
-        <TextView
-            android:id="@+id/btnConfirm"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="确认"
-            android:textColor="#FFFFFF"
-            android:textSize="15sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-</LinearLayout>
+</FrameLayout>
