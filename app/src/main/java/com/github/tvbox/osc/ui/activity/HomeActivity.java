@@ -642,7 +642,7 @@ public class HomeActivity extends BaseActivity {
                 tvName.setText(bean.getName());
                 boolean isSelected = (position == selectedIdx[0]);
                 ivCheck.setImageResource(isSelected ? R.drawable.icon_radio_selected : R.drawable.icon_radio_unselect);
-                tvName.setTextColor(isSelected ? 0xff02f8e1 : 0xFFFFFFFF);
+                tvName.setTextColor(isSelected ? 0xff02f8e1 : 0xFF000000);
                 holder.itemView.setOnClickListener(v -> {
                     if (position == selectedIdx[0]) { dialog.dismiss(); return; }
                     selectedIdx[0] = position;

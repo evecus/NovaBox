@@ -19,6 +19,7 @@
             android:layout_alignParentStart="true"
             android:padding="8dp"
             android:src="@drawable/icon_back"
+            android:tint="@android:color/black"
             android:scaleType="fitCenter"/>
 
         <TextView
@@ -26,7 +27,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:text="历史记录"
-            android:textColor="@android:color/white"
+            android:textColor="@android:color/black"
             android:textSize="18sp"
             android:textStyle="bold"/>
 
@@ -38,6 +39,7 @@
             android:layout_alignParentEnd="true"
             android:padding="8dp"
             android:src="@drawable/icon_clear"
+            android:tint="@android:color/black"
             android:scaleType="fitCenter"/>
 
         <!-- 隐藏旧delete按钮，保留id供代码引用 -->
@@ -55,7 +57,7 @@
         android:layout_height="32dp"
         android:gravity="center"
         android:text="长按记录逐条删除"
-        android:textColor="#99FFFFFF"
+        android:textColor="#99000000"
         android:textSize="13sp"
         android:visibility="visible"/>
 

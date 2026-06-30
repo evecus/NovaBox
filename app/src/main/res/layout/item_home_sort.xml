@@ -14,7 +14,7 @@
         android:layout_gravity="center"
         android:focusable="false"
         android:gravity="center"
-        android:textColor="@color/color_BBFFFFFF"
+        android:textColor="#CC000000"
         android:textSize="14sp" />
 
     <ImageView
