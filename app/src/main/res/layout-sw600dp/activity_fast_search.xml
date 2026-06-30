@@ -62,7 +62,8 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingLeft="14dp"
-        android:paddingRight="14dp">
+        android:paddingRight="14dp"
+        android:visibility="gone">
 
         <TextView
             android:id="@+id/mSearchTitle"
