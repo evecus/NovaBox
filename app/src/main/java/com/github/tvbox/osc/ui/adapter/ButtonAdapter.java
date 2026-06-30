@@ -71,7 +71,7 @@ public class ButtonAdapter<T> extends ListAdapter<T, ButtonAdapter.SelectViewHol
             item.setTextColor(0xff02f8e1);
             item.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
         } else {
-            item.setTextColor(Color.WHITE);
+            item.setTextColor(0xff333333);
             item.setTypeface(Typeface.defaultFromStyle(Typeface.NORMAL));
         }
         holder.itemView.setOnClickListener(v -> {

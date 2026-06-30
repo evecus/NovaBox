@@ -115,7 +115,7 @@ public class SelectDialogAdapter<T> extends RecyclerView.Adapter<SelectDialogAda
             view.setTextColor(0xff02f8e1);
             view.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
         } else {
-            view.setTextColor(Color.WHITE);
+            view.setTextColor(0xff333333);
             view.setTypeface(Typeface.defaultFromStyle(Typeface.NORMAL));
         }
         view.setText(name);
