@@ -19,6 +19,7 @@
             android:layout_height="40dp"
             android:padding="8dp"
             android:src="@drawable/icon_back"
+            android:tint="@android:color/black"
             android:scaleType="fitCenter"/>
 
         <EditText
@@ -33,8 +34,8 @@
             android:maxLines="1"
             android:paddingLeft="12dp"
             android:paddingRight="12dp"
-            android:textColor="@android:color/white"
-            android:textColorHint="#99FFFFFF"
+            android:textColor="@android:color/black"
+            android:textColorHint="#99000000"
             android:textSize="15sp"/>
 
         <ImageView
@@ -43,6 +44,7 @@
             android:layout_height="40dp"
             android:padding="8dp"
             android:src="@drawable/icon_search"
+            android:tint="@android:color/black"
             android:scaleType="fitCenter"/>
 
         <!-- 隐藏旧清空按钮，保留 id 供代码引用 -->
@@ -114,7 +116,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="历史搜索"
-                android:textColor="@android:color/white"
+                android:textColor="@android:color/black"
                 android:textSize="14sp"
                 android:textStyle="bold"/>
 
@@ -129,6 +131,7 @@
                 android:layout_height="32dp"
                 android:padding="6dp"
                 android:src="@drawable/icon_clear"
+                android:tint="@android:color/black"
                 android:scaleType="fitCenter"/>
         </LinearLayout>
 
@@ -159,7 +162,7 @@
             android:layout_height="40dp"
             android:gravity="center_vertical"
             android:text="热门搜索"
-            android:textColor="@android:color/white"
+            android:textColor="@android:color/black"
             android:textSize="14sp"
             android:textStyle="bold"/>
 

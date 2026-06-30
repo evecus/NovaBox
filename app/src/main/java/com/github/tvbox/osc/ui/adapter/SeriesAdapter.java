@@ -31,7 +31,7 @@ public class SeriesAdapter extends BaseQuickAdapter<VodInfo.VodSeries, BaseViewH
         if (item.selected) {
             tvSeries.setTextColor(mContext.getResources().getColor(R.color.color_02F8E1));
         } else {
-            tvSeries.setTextColor(Color.WHITE);
+            tvSeries.setTextColor(Color.BLACK);
         }
         helper.setText(R.id.tvSeries, item.name);
 

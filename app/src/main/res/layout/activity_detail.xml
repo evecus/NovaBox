@@ -212,7 +212,7 @@
                         android:focusable="false"
                         android:ellipsize="end"
                         android:maxLines="2"
-                        android:textColor="@android:color/white"
+                        android:textColor="@android:color/black"
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
@@ -230,7 +230,7 @@
                             android:focusable="false"
                             android:ellipsize="end"
                             android:maxLines="1"
-                            android:textColor="@color/color_CCFFFFFF"
+                            android:textColor="#CC000000"
                             android:textSize="12sp" />
 
                         <TextView
@@ -241,7 +241,7 @@
                             android:focusable="false"
                             android:ellipsize="end"
                             android:maxLines="1"
-                            android:textColor="@color/color_CCFFFFFF"
+                            android:textColor="#CC000000"
                             android:textSize="12sp" />
 
                         <TextView
@@ -252,7 +252,7 @@
                             android:focusable="false"
                             android:ellipsize="end"
                             android:maxLines="1"
-                            android:textColor="@color/color_CCFFFFFF"
+                            android:textColor="#CC000000"
                             android:textSize="12sp" />
 
                         <TextView
@@ -263,7 +263,7 @@
                             android:focusable="false"
                             android:ellipsize="end"
                             android:maxLines="1"
-                            android:textColor="@color/color_CCFFFFFF"
+                            android:textColor="#CC000000"
                             android:textSize="12sp" />
 
                         <TextView
@@ -273,7 +273,7 @@
                             android:focusable="false"
                             android:ellipsize="end"
                             android:maxLines="1"
-                            android:textColor="@color/color_CCFFFFFF"
+                            android:textColor="#CC000000"
                             android:textSize="12sp" />
                     </LinearLayout>
 
@@ -283,7 +283,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:focusable="false"
-                        android:textColor="@color/color_CCFFFFFF"
+                        android:textColor="#CC000000"
                         android:textSize="12sp" />
 
                     <TextView
@@ -292,18 +292,19 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="2dp"
                         android:focusable="false"
-                        android:textColor="@color/color_CCFFFFFF"
+                        android:textColor="#CC000000"
                         android:textSize="12sp" />
 
                     <TextView
                         android:id="@+id/tvPlayUrl"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
                         android:focusable="false"
                         android:maxLines="2"
                         android:ellipsize="end"
-                        android:textColor="@color/color_CCFFFFFF"
-                        android:textSize="12sp" />
+                        android:textColor="#CC000000"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
 
                     <!-- Action buttons row -->
                     <LinearLayout
@@ -376,7 +377,7 @@
                     android:layout_marginStart="8dp"
                     android:gravity="center"
                     android:text="暂无播放数据"
-                    android:textColor="@android:color/white"
+                    android:textColor="@android:color/black"
                     android:textSize="14sp" />
             </LinearLayout>
 

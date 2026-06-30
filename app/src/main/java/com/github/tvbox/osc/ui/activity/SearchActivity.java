@@ -432,11 +432,11 @@ public class SearchActivity extends BaseActivity {
             setAggregateHotTitle();
             wordsSwitch.setFocusable(false);
             wordsSwitch.setBackground(null);
-            // Pad 左栏热门搜索：3列网格；手机竖向单列
+            // Pad 左栏热门搜索：3列网格；手机改为2列网格
             if (llPadSearchHome != null) {
                 mGridViewWord.setLayoutManager(new GridLayoutManager(this.mContext, 3));
             } else {
-                mGridViewWord.setLayoutManager(new LinearLayoutManager(this.mContext, 1, false));
+                mGridViewWord.setLayoutManager(new GridLayoutManager(this.mContext, 2));
             }
             mGridViewWord.setAdapter(hotWordAdapter);
             refreshSearchHistoryWords();
@@ -478,7 +478,7 @@ public class SearchActivity extends BaseActivity {
         int paddingH = getResources().getDimensionPixelSize(R.dimen.vs_10);
         int maxWidth = getResources().getDimensionPixelSize(R.dimen.vs_220);
         float textSize = getResources().getDimension(R.dimen.ts_22);
-        int textColor = getResources().getColor(R.color.color_FFFFFF);
+        int textColor = getResources().getColor(R.color.color_000000);
         for (int i = 0; i < history.size(); i++) {
             final String word = history.get(i);
             TextView item = new TextView(this);
@@ -493,7 +493,7 @@ public class SearchActivity extends BaseActivity {
             item.setMaxWidth(maxWidth);
             item.setMinWidth(getResources().getDimensionPixelSize(R.dimen.vs_80));
             item.setPadding(paddingH, 0, paddingH, 0);
-            item.setBackgroundResource(R.drawable.shape_user_focus);
+            item.setBackgroundResource(R.drawable.shape_search_word_bg);
             item.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
