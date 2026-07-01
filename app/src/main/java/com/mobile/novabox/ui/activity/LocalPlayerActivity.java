@@ -446,34 +446,41 @@ public class LocalPlayerActivity extends BaseActivity {
         // 恢复 BaseActivity 设置的状态栏 padding
         restoreStatusBarPadding();
 
-        // 恢复右侧列表/标题等视图
-        hideNonPlayerViews(false);
-
         savedPlayerLp = null;
 
-        // 等待方向切换 + 布局稳定后，重新计算播放器区域高度
-        if (!PadUiHelper.isPad(this)) {
-            // 延迟执行，确保竖屏方向切换完成后再测量
-            handler.postDelayed(() -> {
-                if (flPlayerContainer == null) return;
-                int w = flPlayerContainer.getWidth();
-                if (w <= 0) {
+        if (ivFullscreen != null) ivFullscreen.setImageResource(R.drawable.icon_fullscreen);
+
+        // 延迟恢复非播放器视图 + 调整播放器高度，等待方向切换和布局稳定后再执行，
+        // 避免 RecyclerView 在横屏尺寸下 measure 导致列表项错乱、双行显示。
+        handler.postDelayed(() -> {
+            if (isFinishing()) return;
+            // 先恢复所有兄弟视图
+            hideNonPlayerViews(false);
+            // 强制 RecyclerView 重新绑定数据，避免 item 缓存混乱
+            if (rvPlaylist != null && playlistAdapter != null) {
+                rvPlaylist.setAdapter(null);
+                rvPlaylist.setAdapter(playlistAdapter);
+                if (currentIndex >= 0) {
+                    rvPlaylist.scrollToPosition(currentIndex);
+                }
+            }
+            // 手机端：重新计算 16:9 播放器高度
+            if (!PadUiHelper.isPad(this) && flPlayerContainer != null) {
+                flPlayerContainer.post(() -> {
                     android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
                     getWindowManager().getDefaultDisplay().getMetrics(dm);
-                    w = Math.min(dm.widthPixels, dm.heightPixels);
-                }
-                int h = w * 9 / 16;
-                ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
-                lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                lp.height = h;
-                if (lp instanceof LinearLayout.LayoutParams) {
-                    ((LinearLayout.LayoutParams) lp).weight = 0;
-                }
-                flPlayerContainer.setLayoutParams(lp);
-            }, 300);
-        }
-
-        if (ivFullscreen != null) ivFullscreen.setImageResource(R.drawable.icon_fullscreen);
+                    int w = Math.min(dm.widthPixels, dm.heightPixels);
+                    int h = w * 9 / 16;
+                    ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
+                    lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                    lp.height = h;
+                    if (lp instanceof LinearLayout.LayoutParams) {
+                        ((LinearLayout.LayoutParams) lp).weight = 0;
+                    }
+                    flPlayerContainer.setLayoutParams(lp);
+                });
+            }
+        }, 400);
     }
 
     /** 全屏时隐藏播放器区域以外的所有视图 */
