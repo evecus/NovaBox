@@ -4,14 +4,13 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!-- 播放器区域 (16:9 比例，高度在 Activity 中动态设置) -->
+    <!-- 播放器区域 (16:9 比例，高度在 Activity 中动态设置；全屏时撑满) -->
     <FrameLayout
         android:id="@+id/flOpenListPlayerContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#FF000000">
 
-        <!-- 使用 aspectRatio 保持 16:9，高度=宽*9/16；在 Activity.init() 中设置 -->
         <com.mobile.novabox.player.MyVideoView
             android:id="@+id/mOpenListVideoView"
             android:layout_width="match_parent"
@@ -61,7 +60,7 @@
                 android:indeterminate="true"
                 android:visibility="gone" />
 
-            <!-- 底部进度条 -->
+            <!-- 底部进度条行 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -96,6 +95,19 @@
                     android:text="00:00"
                     android:textColor="@android:color/white"
                     android:textSize="12sp" />
+
+                <!-- 全屏按钮（手机端显示，平板始终全屏不需要） -->
+                <ImageView
+                    android:id="@+id/ivOpenListFullscreen"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginLeft="8dp"
+                    android:padding="6dp"
+                    android:src="@drawable/icon_fullscreen"
+                    android:tint="@android:color/white"
+                    android:scaleType="fitCenter"
+                    android:clickable="true"
+                    android:focusable="true" />
             </LinearLayout>
         </FrameLayout>
     </FrameLayout>
