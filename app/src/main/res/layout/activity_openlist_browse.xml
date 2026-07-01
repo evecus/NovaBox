@@ -12,7 +12,7 @@
         android:gravity="center_vertical"
         android:paddingLeft="12dp"
         android:paddingRight="12dp"
-        android:background="#20000000">
+        android:background="@android:color/transparent">
 
         <!-- 返回按钮 -->
         <ImageView
@@ -63,6 +63,12 @@
             android:textSize="12sp" />
     </LinearLayout>
 
+    <!-- 路径行上方黑色细线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#FF000000" />
+
     <!-- 当前路径 -->
     <TextView
         android:id="@+id/tvOpenListPath"
@@ -77,7 +83,13 @@
         android:textSize="12sp"
         android:singleLine="true"
         android:ellipsize="middle"
-        android:background="#10000000" />
+        android:background="@android:color/transparent" />
+
+    <!-- 路径行下方黑色细线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#FF000000" />
 
     <!-- 加载中 -->
     <ProgressBar
