@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 手机端：上方播放器 中间标题 下方目录播放列表 -->
+<!-- 平板端：左侧播放器 右侧标题+播放列表 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="horizontal">
 
-    <!-- 播放器区域 (16:9，高度在 Activity 动态设置) -->
+    <!-- 左侧播放器区域 (约65%) -->
     <FrameLayout
         android:id="@+id/flOpenListPlayerContainer"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="65"
         android:background="#FF000000">
 
         <com.mobile.novabox.player.MyVideoView
@@ -26,7 +26,7 @@
             android:background="#44000000"
             android:visibility="gone">
 
-            <!-- 返回按钮 -->
+            <!-- 返回按钮（全屏时返回到小屏，小屏时在右侧标题栏控制） -->
             <ImageView
                 android:id="@+id/ivOpenListVideoBack"
                 android:layout_width="44dp"
@@ -38,13 +38,14 @@
                 android:tint="@android:color/white"
                 android:scaleType="fitCenter"
                 android:clickable="true"
-                android:focusable="true" />
+                android:focusable="true"
+                android:visibility="gone" />
 
             <!-- 中央播放/暂停 -->
             <ImageView
                 android:id="@+id/ivOpenListPlayPause"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
                 android:layout_gravity="center"
                 android:padding="8dp"
                 android:src="@drawable/icon_pause"
@@ -56,8 +57,8 @@
             <!-- 缓冲转圈 -->
             <ProgressBar
                 android:id="@+id/pbOpenListVideoLoading"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_gravity="center"
                 android:indeterminate="true"
                 android:visibility="gone" />
@@ -69,7 +70,7 @@
                 android:layout_gravity="bottom"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:padding="8dp">
+                android:padding="12dp">
 
                 <TextView
                     android:id="@+id/tvOpenListCurrentPos"
@@ -77,15 +78,15 @@
                     android:layout_height="wrap_content"
                     android:text="00:00"
                     android:textColor="@android:color/white"
-                    android:textSize="12sp" />
+                    android:textSize="13sp" />
 
                 <SeekBar
                     android:id="@+id/seekBarOpenListVideo"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginLeft="8dp"
-                    android:layout_marginRight="8dp"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
                     android:max="1000"
                     android:progressTint="@android:color/white"
                     android:thumbTint="@android:color/white" />
@@ -96,14 +97,14 @@
                     android:layout_height="wrap_content"
                     android:text="00:00"
                     android:textColor="@android:color/white"
-                    android:textSize="12sp" />
+                    android:textSize="13sp" />
 
                 <ImageView
                     android:id="@+id/ivOpenListFullscreen"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_marginLeft="8dp"
-                    android:padding="6dp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginLeft="10dp"
+                    android:padding="7dp"
                     android:src="@drawable/icon_fullscreen"
                     android:tint="@android:color/white"
                     android:scaleType="fitCenter"
@@ -113,36 +114,65 @@
         </FrameLayout>
     </FrameLayout>
 
-    <!-- 视频名称 -->
-    <TextView
-        android:id="@+id/tvOpenListVideoTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="12dp"
-        android:textColor="@android:color/black"
-        android:textSize="15sp"
-        android:textStyle="bold"
-        android:singleLine="true"
-        android:ellipsize="end" />
+    <!-- 右侧：返回+标题 + 播放列表 (约35%) -->
+    <LinearLayout
+        android:id="@+id/llOpenListSidePanel"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="35"
+        android:orientation="vertical"
+        android:background="#EEFAFAFA">
 
-    <!-- 分隔线 -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#20000000"
-        android:layout_marginLeft="12dp"
-        android:layout_marginRight="12dp" />
+        <!-- 标题栏 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp">
 
-    <!-- 当前目录视频播放列表 -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvOpenListPlaylist"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"
-        android:paddingLeft="12dp"
-        android:paddingRight="12dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="8dp" />
+            <ImageView
+                android:id="@+id/ivOpenListSideBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="8dp"
+                android:src="@drawable/icon_back"
+                android:tint="@android:color/black"
+                android:scaleType="fitCenter"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/tvOpenListVideoTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="4dp"
+                android:textColor="@android:color/black"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- 分隔线 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#20000000" />
+
+        <!-- 播放列表 -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvOpenListPlaylist"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="8dp" />
+    </LinearLayout>
 
 </LinearLayout>

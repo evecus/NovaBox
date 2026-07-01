@@ -156,9 +156,21 @@ public class OpenListBrowseActivity extends BaseActivity {
         }
         String path = item.fullPath();
         if (item.isVideo()) {
+            // 收集当前目录下所有视频，计算当前文件序号
+            List<OpenListFile> allItems = adapter.getData();
+            int videoIndex = 0;
+            List<OpenListFile> videoItems = new ArrayList<>();
+            for (OpenListFile f : allItems) {
+                if (!f.isDir && f.isVideo()) videoItems.add(f);
+            }
+            for (int i = 0; i < videoItems.size(); i++) {
+                if (videoItems.get(i).name.equals(item.name)) { videoIndex = i; break; }
+            }
             Bundle bundle = new Bundle();
             bundle.putString("path", path);
             bundle.putString("name", item.name);
+            bundle.putString("dirPath", currentPath);
+            bundle.putInt("index", videoIndex);
             jumpActivity(OpenListVideoPlayerActivity.class, bundle);
         } else if (item.isAudio()) {
             Bundle bundle = new Bundle();

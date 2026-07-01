@@ -7,51 +7,78 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.mobile.novabox.R;
 import com.mobile.novabox.base.BaseActivity;
+import com.mobile.novabox.bean.OpenListFile;
 import com.mobile.novabox.bean.OpenListFsGetData;
+import com.mobile.novabox.bean.OpenListFsListData;
 import com.mobile.novabox.player.MyVideoView;
+import com.mobile.novabox.ui.adapter.OpenListPlaylistAdapter;
 import com.mobile.novabox.util.OpenListApi;
 import com.mobile.novabox.util.PadUiHelper;
 import com.mobile.novabox.util.PlayerHelper;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import xyz.doikki.videoplayer.player.VideoView;
-import xyz.doikki.videoplayer.util.PlayerUtils;
 
 /**
- * OpenList 视频播放页（手机/平板适配）。
+ * OpenList 视频播放页（手机/平板通用）。
  *
- * 手机端：竖屏进入，进度条右侧有全屏按钮；点击旋转为横屏真正全屏；再次点击退回竖屏。
- * 平板端：横屏进入即真正全屏（状态栏/导航栏全隐藏），不显示全屏切换按钮。
+ * 手机端：上方16:9播放区域，中间文件名，下方同目录视频播放列表。
+ *         控制栏内有全屏按钮，点击旋转横屏并真正全屏。
+ *
+ * 平板端：左65%播放区域 + 右35%标题和播放列表的小屏布局。
+ *         点击全屏按钮切换为完全全屏沉浸式横屏播放。
  */
 public class OpenListVideoPlayerActivity extends BaseActivity {
+
+    // ── 播放器区域 ──────────────────────────────────────────────────────────────
     private MyVideoView mVideoView;
-    private TextView tvVideoTitle;
-    private ImageView ivBack;
+    private FrameLayout flPlayerContainer;
+    private FrameLayout flControlOverlay;
+    private ImageView ivBack;           // 控制层上的返回（全屏时用）
     private ImageView ivPlayPause;
     private SeekBar seekBar;
     private TextView tvCurrentPos;
     private TextView tvDuration;
     private ProgressBar pbLoading;
-    private View flControlOverlay;
     private ImageView ivFullscreen;
 
-    private String path;
-    private String name;
+    // ── 标题和播放列表 ─────────────────────────────────────────────────────────
+    private TextView tvVideoTitle;
+    private RecyclerView rvPlaylist;
+    /** 平板端：右侧面板（含返回键+标题+列表） */
+    private View llSidePanel;
+    /** 平板端：右侧返回键 */
+    private ImageView ivSideBack;
+
+    // ── 状态 ──────────────────────────────────────────────────────────────────
+    private String dirPath;             // 当前播放文件所在目录
+    private List<OpenListFile> playlist = new ArrayList<>();
+    private int currentIndex = 0;
+    private OpenListPlaylistAdapter playlistAdapter;
+
     private boolean controlsVisible = false;
-    private boolean userSeeking = false;
-    /** 手机端当前是否处于横屏全屏状态 */
-    private boolean isFullscreen = false;
+    private boolean isFullScreen = false;
+    private boolean isPad = false;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable hideControlsRunnable = this::hideControls;
@@ -63,21 +90,12 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
         }
     };
 
-    // ── 平板：覆盖 applyStatusBarPadding，不加 paddingTop，改为真正全屏 ──────
+    // ── 平板：不加 statusBar padding，保持正常显示 ─────────────────────────────
     @Override
     protected void applyStatusBarPadding() {
-        if (PadUiHelper.isPad(this)) {
-            // 平板：全屏，状态栏/导航栏都隐藏，内容不需要额外 padding
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-                getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
-            }
-            // 不设置 paddingTop，内容从屏幕顶部开始
-        } else {
-            // 手机：保持父类逻辑（竖屏时有状态栏 padding）
-            super.applyStatusBarPadding();
-        }
+        // 平板在全屏时会主动隐藏状态栏，小屏时需要正常 padding
+        // 此处保持父类默认行为，全屏时再覆盖
+        super.applyStatusBarPadding();
     }
 
     @Override
@@ -88,99 +106,53 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
     @Override
     protected void init() {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        isPad = PadUiHelper.isPad(this);
 
         Bundle bundle = getIntent() != null ? getIntent().getExtras() : null;
-        path = bundle != null ? bundle.getString("path", "") : "";
-        name = bundle != null ? bundle.getString("name", "") : "";
+        if (bundle == null) { finish(); return; }
 
-        if (TextUtils.isEmpty(path)) {
+        String filePath = bundle.getString("path", "");
+        String fileName = bundle.getString("name", "");
+        dirPath        = bundle.getString("dirPath", "");
+        currentIndex   = bundle.getInt("index", 0);
+
+        if (TextUtils.isEmpty(filePath)) {
             Toast.makeText(mContext, "文件路径无效", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        mVideoView       = findViewById(R.id.mOpenListVideoView);
-        tvVideoTitle     = findViewById(R.id.tvOpenListVideoTitle);
-        ivBack           = findViewById(R.id.ivOpenListVideoBack);
-        ivPlayPause      = findViewById(R.id.ivOpenListPlayPause);
-        seekBar          = findViewById(R.id.seekBarOpenListVideo);
-        tvCurrentPos     = findViewById(R.id.tvOpenListCurrentPos);
-        tvDuration       = findViewById(R.id.tvOpenListDuration);
-        pbLoading        = findViewById(R.id.pbOpenListVideoLoading);
-        flControlOverlay = findViewById(R.id.flOpenListControlOverlay);
-        ivFullscreen     = findViewById(R.id.ivOpenListFullscreen);
+        // ── 绑定视图 ──────────────────────────────────────────────────────────
+        flPlayerContainer = findViewById(R.id.flOpenListPlayerContainer);
+        mVideoView        = findViewById(R.id.mOpenListVideoView);
+        flControlOverlay  = findViewById(R.id.flOpenListControlOverlay);
+        ivBack            = findViewById(R.id.ivOpenListVideoBack);
+        ivPlayPause       = findViewById(R.id.ivOpenListPlayPause);
+        seekBar           = findViewById(R.id.seekBarOpenListVideo);
+        tvCurrentPos      = findViewById(R.id.tvOpenListCurrentPos);
+        tvDuration        = findViewById(R.id.tvOpenListDuration);
+        pbLoading         = findViewById(R.id.pbOpenListVideoLoading);
+        ivFullscreen      = findViewById(R.id.ivOpenListFullscreen);
+        tvVideoTitle      = findViewById(R.id.tvOpenListVideoTitle);
+        rvPlaylist        = findViewById(R.id.rvOpenListPlaylist);
+        llSidePanel       = findViewById(R.id.llOpenListSidePanel);   // 平板才有，手机为null
+        ivSideBack        = findViewById(R.id.ivOpenListSideBack);     // 平板才有
 
-        boolean isPad = PadUiHelper.isPad(this);
+        tvVideoTitle.setText(fileName);
 
-        if (isPad) {
-            // 平板：隐藏全屏按钮（本就横屏全屏），撑满全屏
-            ivFullscreen.setVisibility(View.GONE);
-            enterTabletFullscreen();
-        } else {
-            // 手机：显示全屏按钮，动态设置播放器区域高度为屏幕宽度的 9/16
-            ivFullscreen.setVisibility(View.VISIBLE);
-            View playerContainer = findViewById(R.id.flOpenListPlayerContainer);
-            playerContainer.post(() -> {
-                int width = playerContainer.getWidth();
-                if (width <= 0) width = getResources().getDisplayMetrics().widthPixels;
-                android.view.ViewGroup.LayoutParams lp = playerContainer.getLayoutParams();
-                lp.height = width * 9 / 16;
-                playerContainer.setLayoutParams(lp);
-            });
-
-            ivFullscreen.setOnClickListener(v -> {
-                if (isFullscreen) {
-                    exitFullscreen();
-                } else {
-                    enterFullscreen();
-                }
+        // ── 手机：动态设置播放器高度 16:9 ──────────────────────────────────────
+        if (!isPad) {
+            flPlayerContainer.post(() -> {
+                int w = flPlayerContainer.getWidth();
+                if (w <= 0) w = getResources().getDisplayMetrics().widthPixels;
+                ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
+                lp.height = w * 9 / 16;
+                flPlayerContainer.setLayoutParams(lp);
             });
         }
 
-        tvVideoTitle.setText(name);
+        // ── 播放器 ────────────────────────────────────────────────────────────
         PlayerHelper.updateCfg(mVideoView);
-
-        mVideoView.setOnClickListener(v -> toggleControls());
-        flControlOverlay.setOnClickListener(v -> toggleControls());
-
-        ivBack.setOnClickListener(v -> {
-            if (isFullscreen) {
-                exitFullscreen();
-            } else {
-                finish();
-            }
-        });
-
-        ivPlayPause.setOnClickListener(v -> {
-            if (mVideoView.isPlaying()) {
-                mVideoView.pause();
-                ivPlayPause.setImageResource(R.drawable.icon_play_mini);
-            } else {
-                mVideoView.start();
-                ivPlayPause.setImageResource(R.drawable.icon_pause);
-            }
-            scheduleHideControls();
-        });
-
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    long duration = mVideoView.getDuration();
-                    tvCurrentPos.setText(PlayerUtils.stringForTime((int)(duration * progress / 1000)));
-                }
-            }
-            @Override
-            public void onStartTrackingTouch(SeekBar bar) { userSeeking = true; }
-            @Override
-            public void onStopTrackingTouch(SeekBar bar) {
-                long duration = mVideoView.getDuration();
-                mVideoView.seekTo(duration * bar.getProgress() / 1000);
-                userSeeking = false;
-                scheduleHideControls();
-            }
-        });
-
         mVideoView.addOnStateChangeListener(new VideoView.SimpleOnStateChangeListener() {
             @Override
             public void onPlayStateChanged(int state) {
@@ -194,6 +166,7 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
                     case VideoView.STATE_PREPARED:
                         pbLoading.setVisibility(View.GONE);
                         ivPlayPause.setImageResource(R.drawable.icon_pause);
+                        handler.post(progressRunnable);
                         break;
                     case VideoView.STATE_PAUSED:
                         pbLoading.setVisibility(View.GONE);
@@ -205,108 +178,143 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
                         break;
                     case VideoView.STATE_PLAYBACK_COMPLETED:
                         pbLoading.setVisibility(View.GONE);
-                        showControls();
+                        handler.removeCallbacks(progressRunnable);
+                        playNext();
                         break;
                 }
             }
         });
 
-        handler.post(progressRunnable);
-        loadAndPlay();
-    }
+        // ── 控制层交互 ────────────────────────────────────────────────────────
+        flPlayerContainer.setOnClickListener(v -> toggleControls());
+        flControlOverlay.setOnClickListener(v -> toggleControls());
 
-    // ── 手机端全屏切换 ────────────────────────────────────────────────────────
+        // 控制层上的返回：全屏→退出全屏，小屏→返回上页（平板小屏时此按钮隐藏）
+        if (ivBack != null) {
+            ivBack.setOnClickListener(v -> {
+                if (isFullScreen) exitFullScreen();
+                else finish();
+            });
+        }
 
-    /** 手机：切换为横屏全屏，撑满屏幕 */
-    private void enterFullscreen() {
-        isFullscreen = true;
-        // 1. 旋转为横屏
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-        // 2. 隐藏状态栏和导航栏
-        hideStatusBarToo();
-        // 3. 播放器容器撑满全屏
-        View playerContainer = findViewById(R.id.flOpenListPlayerContainer);
-        android.view.ViewGroup.LayoutParams lp = playerContainer.getLayoutParams();
-        lp.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-        playerContainer.setLayoutParams(lp);
-        // 4. 隐藏标题、提示等非播放器 View（让外层 LinearLayout 只展示播放器）
-        setNonPlayerViewsVisibility(View.GONE);
-        // 5. 更新全屏按钮图标
-        ivFullscreen.setImageResource(R.drawable.icon_exit_fullscreen);
-    }
+        // 平板右侧返回键：始终返回上页
+        if (ivSideBack != null) {
+            ivSideBack.setOnClickListener(v -> finish());
+        }
 
-    /** 手机：退出横屏全屏，恢复竖屏布局 */
-    private void exitFullscreen() {
-        isFullscreen = false;
-        // 1. 恢复竖屏
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        // 2. 恢复系统 UI（只保留 LAYOUT_STABLE）
-        hideSysBar();
-        // 3. 恢复播放器高度为 9/16
-        View playerContainer = findViewById(R.id.flOpenListPlayerContainer);
-        playerContainer.post(() -> {
-            int width = playerContainer.getWidth();
-            if (width <= 0) width = getResources().getDisplayMetrics().widthPixels;
-            android.view.ViewGroup.LayoutParams lp = playerContainer.getLayoutParams();
-            lp.height = width * 9 / 16;
-            playerContainer.setLayoutParams(lp);
+        ivPlayPause.setOnClickListener(v -> {
+            if (mVideoView.isPlaying()) {
+                mVideoView.pause();
+            } else {
+                mVideoView.start();
+            }
+            scheduleHideControls();
         });
-        // 4. 恢复标题、提示等 View
-        setNonPlayerViewsVisibility(View.VISIBLE);
-        // 5. 更新全屏按钮图标
-        ivFullscreen.setImageResource(R.drawable.icon_fullscreen);
-    }
 
-    /** 平板：进入时就真正全屏（隐藏状态栏/导航栏，撑满） */
-    private void enterTabletFullscreen() {
-        hideStatusBarToo();
-        View playerContainer = findViewById(R.id.flOpenListPlayerContainer);
-        android.view.ViewGroup.LayoutParams lp = playerContainer.getLayoutParams();
-        lp.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-        playerContainer.setLayoutParams(lp);
-        setNonPlayerViewsVisibility(View.GONE);
-    }
+        ivFullscreen.setOnClickListener(v -> {
+            if (isFullScreen) exitFullScreen();
+            else enterFullScreen();
+        });
 
-    /** 控制标题栏、分隔线、提示文字的可见性 */
-    private void setNonPlayerViewsVisibility(int visibility) {
-        View root = (View) findViewById(R.id.flOpenListPlayerContainer).getParent();
-        if (root instanceof android.view.ViewGroup) {
-            android.view.ViewGroup vg = (android.view.ViewGroup) root;
-            for (int i = 0; i < vg.getChildCount(); i++) {
-                View child = vg.getChildAt(i);
-                if (child.getId() != R.id.flOpenListPlayerContainer) {
-                    child.setVisibility(visibility);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    long dur = mVideoView.getDuration();
+                    tvCurrentPos.setText(formatTime(dur * progress / 1000));
                 }
             }
+            @Override
+            public void onStartTrackingTouch(SeekBar bar) {
+                handler.removeCallbacks(hideControlsRunnable);
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar bar) {
+                long dur = mVideoView.getDuration();
+                mVideoView.seekTo(dur * bar.getProgress() / 1000);
+                scheduleHideControls();
+            }
+        });
+
+        // ── 播放列表 ──────────────────────────────────────────────────────────
+        playlistAdapter = new OpenListPlaylistAdapter();
+        if (rvPlaylist != null) {
+            rvPlaylist.setLayoutManager(new LinearLayoutManager(this));
+            rvPlaylist.setAdapter(playlistAdapter);
+            playlistAdapter.setOnItemClickListener((adapter, view, position) -> {
+                currentIndex = position;
+                playAtIndex(currentIndex);
+            });
+        }
+
+        // ── 加载目录列表后开始播放 ────────────────────────────────────────────
+        loadDirAndPlay(filePath, dirPath);
+    }
+
+    // ── 目录加载 + 播放 ──────────────────────────────────────────────────────
+
+    private void loadDirAndPlay(String filePath, String dir) {
+        // 先直接开始播当前文件，不等目录列表
+        pbLoading.setVisibility(View.VISIBLE);
+        fetchAndPlay(filePath);
+
+        // 同时异步加载目录列表
+        if (!TextUtils.isEmpty(dir)) {
+            OpenListApi.listFiles(dir, new OpenListApi.Callback<OpenListFsListData>() {
+                @Override
+                public void onSuccess(OpenListFsListData data) {
+                    runOnUiThread(() -> {
+                        if (isActivityUnavailable()) return;
+                        List<OpenListFile> videos = new ArrayList<>();
+                        if (data.content != null) {
+                            for (OpenListFile f : data.content) {
+                                if (!f.isDir && f.isVideo()) {
+                                    f.parentPath = dir;
+                                    videos.add(f);
+                                }
+                            }
+                            Collections.sort(videos, (a, b) -> a.name.compareToIgnoreCase(b.name));
+                        }
+                        playlist.clear();
+                        playlist.addAll(videos);
+                        // 找到当前文件在列表中的位置
+                        String fname = filePath.contains("/")
+                                ? filePath.substring(filePath.lastIndexOf('/') + 1)
+                                : filePath;
+                        for (int i = 0; i < playlist.size(); i++) {
+                            if (playlist.get(i).name.equals(fname)) {
+                                currentIndex = i;
+                                break;
+                            }
+                        }
+                        playlistAdapter.setNewData(new ArrayList<>(playlist));
+                        playlistAdapter.setCurrentIndex(currentIndex);
+                        if (rvPlaylist != null) rvPlaylist.scrollToPosition(currentIndex);
+                    });
+                }
+                @Override
+                public void onError(String msg) { /* 列表加载失败不影响播放 */ }
+            });
         }
     }
 
-    // ── onResume：平板需要持续全屏（防止系统 UI 被父类 hideSysBar 恢复） ──────
-
-    @Override
-    protected void onResume() {
-        super.onResume(); // 会调用 hideSysBar()
-        if (mVideoView != null) mVideoView.resume();
-        // 平板和手机全屏状态下，都要重新隐藏系统 UI
-        if (PadUiHelper.isPad(this) || isFullscreen) {
-            hideStatusBarToo();
-        }
+    private void playAtIndex(int index) {
+        if (index < 0 || index >= playlist.size()) return;
+        currentIndex = index;
+        OpenListFile file = playlist.get(index);
+        tvVideoTitle.setText(file.name);
+        playlistAdapter.setCurrentIndex(index);
+        if (rvPlaylist != null) rvPlaylist.scrollToPosition(index);
+        fetchAndPlay(file.fullPath());
     }
 
-    // ── 返回键处理 ─────────────────────────────────────────────────────────────
-
-    @Override
-    public void onBackPressed() {
-        if (isFullscreen) {
-            exitFullscreen();
-        } else {
-            super.onBackPressed();
-        }
+    private void playNext() {
+        if (playlist.isEmpty()) return;
+        int next = currentIndex + 1;
+        if (next < playlist.size()) playAtIndex(next);
     }
 
-    // ── 其余原有方法不变 ──────────────────────────────────────────────────────
-
-    private void loadAndPlay() {
+    private void fetchAndPlay(String path) {
         pbLoading.setVisibility(View.VISIBLE);
         OpenListApi.getFile(path, new OpenListApi.Callback<OpenListFsGetData>() {
             @Override
@@ -315,36 +323,115 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
                     if (isActivityUnavailable()) return;
                     if (data.rawUrl == null || data.rawUrl.isEmpty()) {
                         Toast.makeText(mContext, "未获取到播放地址", Toast.LENGTH_SHORT).show();
-                        finish();
                         return;
                     }
                     Map<String, String> headers = new HashMap<>();
                     String token = OpenListApi.getToken();
                     if (!TextUtils.isEmpty(token)) headers.put("Authorization", token);
+                    mVideoView.release();
                     mVideoView.setUrl(data.rawUrl, headers);
                     mVideoView.start();
                 });
             }
-
             @Override
             public void onError(String msg) {
                 runOnUiThread(() -> {
                     if (isActivityUnavailable()) return;
+                    pbLoading.setVisibility(View.GONE);
                     Toast.makeText(mContext, TextUtils.isEmpty(msg) ? "获取播放地址失败" : msg, Toast.LENGTH_SHORT).show();
-                    finish();
                 });
             }
         });
     }
 
-    private void updateProgress() {
-        if (mVideoView == null || userSeeking) return;
-        int position = PlayerUtils.safeTimeMs(mVideoView.getCurrentPosition());
-        int duration = PlayerUtils.safeTimeMs(mVideoView.getDuration());
-        if (duration > 0) seekBar.setProgress(position * 1000 / duration);
-        tvCurrentPos.setText(PlayerUtils.stringForTime(position));
-        tvDuration.setText(PlayerUtils.stringForTime(duration));
+    // ── 全屏切换 ──────────────────────────────────────────────────────────────
+
+    private void enterFullScreen() {
+        isFullScreen = true;
+        // 横屏
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        // 隐藏状态栏和导航栏（沉浸式）
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        );
+        // 播放器容器撑满屏幕
+        ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
+        lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+        if (lp instanceof LinearLayout.LayoutParams) {
+            ((LinearLayout.LayoutParams) lp).weight = 100;
+        }
+        flPlayerContainer.setLayoutParams(lp);
+        // 隐藏非播放器视图（标题栏、列表、右侧面板）
+        setNonPlayerViewsVisible(false);
+        // 全屏时控制层上的返回按钮可见（用于退出全屏）
+        if (ivBack != null) ivBack.setVisibility(View.VISIBLE);
+        // 更新图标
+        ivFullscreen.setImageResource(R.drawable.icon_exit_fullscreen);
     }
+
+    private void exitFullScreen() {
+        isFullScreen = false;
+        // 恢复方向
+        setRequestedOrientation(isPad
+                ? ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        // 恢复系统 UI
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+        // 恢复播放器尺寸
+        ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
+        if (isPad) {
+            lp.width = 0;
+            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            if (lp instanceof LinearLayout.LayoutParams) {
+                ((LinearLayout.LayoutParams) lp).weight = 65;
+            }
+        } else {
+            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            lp.height = 0;
+            if (lp instanceof LinearLayout.LayoutParams) {
+                ((LinearLayout.LayoutParams) lp).weight = 0;
+            }
+        }
+        flPlayerContainer.setLayoutParams(lp);
+        if (!isPad) {
+            // 手机：恢复 16:9 高度
+            flPlayerContainer.post(() -> {
+                int w = flPlayerContainer.getWidth();
+                if (w <= 0) w = getResources().getDisplayMetrics().widthPixels;
+                ViewGroup.LayoutParams lp2 = flPlayerContainer.getLayoutParams();
+                lp2.height = w * 9 / 16;
+                flPlayerContainer.setLayoutParams(lp2);
+            });
+        }
+        // 恢复非播放器视图
+        setNonPlayerViewsVisible(true);
+        // 恢复控制层上返回按钮：平板小屏时隐藏（用右侧返回），手机竖屏时隐藏
+        if (ivBack != null) {
+            ivBack.setVisibility(View.GONE);
+        }
+        ivFullscreen.setImageResource(R.drawable.icon_fullscreen);
+    }
+
+    /** 全屏时隐藏播放器容器以外的所有兄弟视图 */
+    private void setNonPlayerViewsVisible(boolean visible) {
+        int v = visible ? View.VISIBLE : View.GONE;
+        ViewGroup parent = (ViewGroup) flPlayerContainer.getParent();
+        if (parent == null) return;
+        for (int i = 0; i < parent.getChildCount(); i++) {
+            View child = parent.getChildAt(i);
+            if (child != flPlayerContainer) child.setVisibility(v);
+        }
+    }
+
+    // ── 控制层显示/隐藏 ──────────────────────────────────────────────────────
 
     private void toggleControls() {
         if (controlsVisible) hideControls();
@@ -360,23 +447,73 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
     private void hideControls() {
         controlsVisible = false;
         flControlOverlay.setVisibility(View.GONE);
+        handler.removeCallbacks(hideControlsRunnable);
     }
 
     private void scheduleHideControls() {
         handler.removeCallbacks(hideControlsRunnable);
-        handler.postDelayed(hideControlsRunnable, 3000);
+        handler.postDelayed(hideControlsRunnable, 3500);
+    }
+
+    // ── 进度 ──────────────────────────────────────────────────────────────────
+
+    private void updateProgress() {
+        if (mVideoView == null) return;
+        long current  = mVideoView.getCurrentPosition();
+        long duration = mVideoView.getDuration();
+        if (duration > 0) {
+            seekBar.setProgress((int) (current * 1000 / duration));
+            tvCurrentPos.setText(formatTime(current));
+            tvDuration.setText(formatTime(duration));
+        }
+    }
+
+    private String formatTime(long ms) {
+        long s = ms / 1000, m = s / 60;
+        s = s % 60;
+        long h = m / 60; m = m % 60;
+        return h > 0
+                ? String.format("%d:%02d:%02d", h, m, s)
+                : String.format("%02d:%02d", m, s);
+    }
+
+    // ── 生命周期 ──────────────────────────────────────────────────────────────
+
+    @Override
+    public void onBackPressed() {
+        if (isFullScreen) { exitFullScreen(); return; }
+        super.onBackPressed();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mVideoView != null && !mVideoView.isPlaying()) mVideoView.resume();
+        handler.post(progressRunnable);
+        if (isFullScreen) {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            );
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         if (mVideoView != null) mVideoView.pause();
+        handler.removeCallbacks(progressRunnable);
     }
 
     @Override
     protected void onDestroy() {
         handler.removeCallbacksAndMessages(null);
         if (mVideoView != null) { mVideoView.release(); mVideoView = null; }
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         super.onDestroy();
     }
 
