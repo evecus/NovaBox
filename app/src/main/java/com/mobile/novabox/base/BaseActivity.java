@@ -78,24 +78,27 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
     }
 
     /**
-     * 将根布局的 paddingTop 设为系统状态栏高度，
-     * 使内容在透明状态栏下方正常显示。
+     * 设置透明状态栏 + 状态栏图标深色（黑色），内容紧贴状态栏下方，无空隙。
      * 全屏播放界面（LivePlayActivity）可覆盖此方法为空实现跳过。
      */
     protected void applyStatusBarPadding() {
-        // 代码层强制透明状态栏（兼容 Android 5.0+）
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // 1. 透明状态栏
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
-        }
-        // 状态栏图标深色（适配浅色背景）
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            int flags = getWindow().getDecorView().getSystemUiVisibility();
-            flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+
+            // 2. 内容延伸到状态栏下方（edge-to-edge）+ 状态栏图标黑色
+            int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                // LIGHT_STATUS_BAR = 状态栏图标/文字变为深色（黑色），类似微信效果
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            }
             getWindow().getDecorView().setSystemUiVisibility(flags);
         }
-        // 让内容延伸到状态栏下，手动加 paddingTop 防止遮挡
+
+        // 3. 给 content 根布局加 paddingTop = 状态栏高度，使内容紧贴状态栏下方，无重叠无空隙
         View rootView = getWindow().getDecorView().findViewById(android.R.id.content);
         if (rootView != null) {
             int statusBarHeight = getStatusBarHeight();
@@ -126,11 +129,16 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
     }
 
     public void hideSysBar() {
-        // 普通界面：保留系统导航栏，避免手势返回需要两次才能生效
-        // 注意：不再隐藏导航栏（HIDE_NAVIGATION + IMMERSIVE_STICKY 会导致第一次
-        // 滑动只是显示导航栏，第二次才真正触发返回，即"再次滑动返回"问题）
+        // 普通界面：保留系统导航栏，避免手势返回需要两次才能生效。
+        // 同时保留 LAYOUT_FULLSCREEN（edge-to-edge）和 LIGHT_STATUS_BAR（黑色图标），
+        // 防止 onResume 时将 applyStatusBarPadding 设置的 flags 覆盖掉。
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            int uiOptions = View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
+            int uiOptions = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                // 状态栏图标/文字保持深色（黑色），与微信效果一致
+                uiOptions |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            }
             getWindow().getDecorView().setSystemUiVisibility(uiOptions);
         }
     }
