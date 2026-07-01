@@ -111,6 +111,30 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
         }
     }
 
+    /**
+     * 清除由 applyStatusBarPadding() 设置的根布局 paddingTop，
+     * 全屏播放时调用，消除顶部黑边。
+     */
+    protected void clearStatusBarPadding() {
+        View rootView = getWindow().getDecorView().findViewById(android.R.id.content);
+        if (rootView != null) {
+            rootView.setPadding(rootView.getPaddingLeft(), 0,
+                    rootView.getPaddingRight(), rootView.getPaddingBottom());
+        }
+    }
+
+    /**
+     * 恢复由 applyStatusBarPadding() 设置的根布局 paddingTop，
+     * 从全屏退回小屏时调用。
+     */
+    protected void restoreStatusBarPadding() {
+        View rootView = getWindow().getDecorView().findViewById(android.R.id.content);
+        if (rootView != null) {
+            rootView.setPadding(rootView.getPaddingLeft(), getStatusBarHeight(),
+                    rootView.getPaddingRight(), rootView.getPaddingBottom());
+        }
+    }
+
     /** 获取系统状态栏高度（px） */
     protected int getStatusBarHeight() {
         int height = 0;
