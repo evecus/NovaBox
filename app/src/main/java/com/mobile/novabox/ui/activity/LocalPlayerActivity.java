@@ -71,6 +71,9 @@ public class LocalPlayerActivity extends BaseActivity {
     private boolean controlsVisible = false;
     private boolean isFullScreen = false;
 
+    // 保存进入全屏前播放器容器的原始 LayoutParams，退出时精确还原
+    private ViewGroup.LayoutParams savedPlayerLp = null;
+
     private final Handler handler = new Handler(Looper.getMainLooper());
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -383,8 +386,7 @@ public class LocalPlayerActivity extends BaseActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         // 给窗口设置纯黑背景，彻底遮住 app 全局壁纸
         getWindow().setBackgroundDrawable(new ColorDrawable(Color.BLACK));
-        // 隐藏状态栏和导航栏（沉浸式全屏）
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        // 清除 DecorView 的系统 padding（状态栏/导航栏占位），让内容真正铺满整个屏幕
         View decorView = getWindow().getDecorView();
         decorView.setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_FULLSCREEN
@@ -394,13 +396,28 @@ public class LocalPlayerActivity extends BaseActivity {
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         );
-        // 让播放器容器撑满整个屏幕
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+        // 清除内容区 padding（状态栏高度补偿）
+        View contentView = ((ViewGroup) decorView).getChildAt(0);
+        if (contentView != null) contentView.setPadding(0, 0, 0, 0);
+
+        // 保存播放器容器原始 LayoutParams
         if (flPlayerContainer != null) {
+            ViewGroup.LayoutParams origLp = flPlayerContainer.getLayoutParams();
+            if (origLp instanceof LinearLayout.LayoutParams) {
+                LinearLayout.LayoutParams copy = new LinearLayout.LayoutParams(origLp.width, origLp.height);
+                copy.weight = ((LinearLayout.LayoutParams) origLp).weight;
+                savedPlayerLp = copy;
+            } else {
+                savedPlayerLp = new ViewGroup.LayoutParams(origLp.width, origLp.height);
+            }
+            // 撑满整个屏幕
             ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
             lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
             lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
             if (lp instanceof LinearLayout.LayoutParams) {
-                ((LinearLayout.LayoutParams) lp).weight = 100;
+                ((LinearLayout.LayoutParams) lp).weight = 1;
             }
             flPlayerContainer.setLayoutParams(lp);
         }
@@ -414,32 +431,38 @@ public class LocalPlayerActivity extends BaseActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         // 恢复透明背景
         getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        // 恢复状态栏和导航栏
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        // 恢复系统 UI
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
-        // 恢复播放器容器原始大小（手机16:9，平板65%）
-        if (flPlayerContainer != null) {
-            ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
-            if (PadUiHelper.isPad(this)) {
-                lp.width = 0;
-                lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-                if (lp instanceof LinearLayout.LayoutParams) {
-                    ((LinearLayout.LayoutParams) lp).weight = 65;
-                }
-                flPlayerContainer.setLayoutParams(lp);
-            } else {
-                // 手机端：先恢复为 WRAP_CONTENT，再由 adjustPlayerHeight 计算 16:9 高度
+
+        // 恢复播放器容器原始 LayoutParams
+        if (flPlayerContainer != null && savedPlayerLp != null) {
+            flPlayerContainer.setLayoutParams(savedPlayerLp);
+            savedPlayerLp = null;
+        }
+
+        // 恢复右侧列表/标题等视图（需在方向切回竖屏、布局稳定后执行）
+        hideNonPlayerViews(false);
+
+        // 手机端：等待布局稳定后，重新按屏幕宽度计算 16:9 播放器高度
+        if (!PadUiHelper.isPad(this)) {
+            flPlayerContainer.post(() -> {
+                android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+                getWindowManager().getDefaultDisplay().getMetrics(dm);
+                // 竖屏下宽度是较小值
+                int w = Math.min(dm.widthPixels, dm.heightPixels);
+                int h = w * 9 / 16;
+                ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
                 lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                lp.height = h;
                 if (lp instanceof LinearLayout.LayoutParams) {
                     ((LinearLayout.LayoutParams) lp).weight = 0;
                 }
                 flPlayerContainer.setLayoutParams(lp);
-                adjustPlayerHeight();
-            }
+            });
         }
-        // 恢复右侧列表/标题等视图
-        hideNonPlayerViews(false);
+
         if (ivFullscreen != null) ivFullscreen.setImageResource(R.drawable.icon_fullscreen);
     }
 
