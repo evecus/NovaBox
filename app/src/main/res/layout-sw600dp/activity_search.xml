@@ -32,21 +32,31 @@
             android:tint="@android:color/black"
             android:scaleType="fitCenter"/>
 
-        <EditText
-            android:id="@+id/etSearch"
+        <!-- 圆角搜索框容器 -->
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
-            android:background="@drawable/input_search"
-            android:hint="请输入要搜索的内容"
-            android:inputType="text"
-            android:imeOptions="actionSearch"
-            android:maxLines="1"
-            android:paddingLeft="14dp"
-            android:paddingRight="14dp"
-            android:textColor="@android:color/black"
-            android:textColorHint="#99000000"
-            android:textSize="16sp"/>
+            android:background="@drawable/shape_search_bar_bg"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp">
+            <EditText
+                android:id="@+id/etSearch"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:hint="请输入要搜索的内容"
+                android:inputType="text"
+                android:imeOptions="actionSearch"
+                android:maxLines="1"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:textColor="@android:color/black"
+                android:textColorHint="#99000000"
+                android:textSize="16sp"/>
+        </LinearLayout>
 
         <ImageView
             android:id="@+id/tvSearch"
