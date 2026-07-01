@@ -21,6 +21,14 @@ public class FastListAdapter extends BaseQuickAdapter<String, BaseViewHolder> {
 
     @Override
     protected void convert(BaseViewHolder helper, String item) {
+        // 隐藏"全部"条目：将 itemView 高度设为 0 且不可见，使源列表从第一个真实源开始显示
+        if ("\u5168\u90e8".equals(item)) {
+            helper.itemView.setVisibility(android.view.View.GONE);
+            helper.itemView.getLayoutParams().height = 0;
+            return;
+        }
+        helper.itemView.setVisibility(android.view.View.VISIBLE);
+        helper.itemView.getLayoutParams().height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
         TextView textView = helper.getView(R.id.tvSearchWord);
         textView.setText(item);
         textView.setBackgroundResource(R.drawable.bg_fast_site_word);
