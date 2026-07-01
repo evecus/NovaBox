@@ -1,12 +1,11 @@
 package com.mobile.novabox.ui.activity;
 
 import android.content.ContentResolver;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -70,16 +69,14 @@ public class LocalPlayerActivity extends BaseActivity {
     private boolean isLocked = false;
     private boolean controlsVisible = false;
     private boolean isFullScreen = false;
-    // 防止 onResume 重复加载播放列表（退出全屏方向切换时会触发 onResume）
-    private boolean isLoaded = false;
 
-    // 保存进入全屏前播放器容器的原始 LayoutParams，退出时精确还原
-    private ViewGroup.LayoutParams savedPlayerLp = null;
+    // 记录小屏时播放器容器的高度，退出全屏时精确还原
+    private int normalPlayerHeight = 0;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    private final Runnable hideControlsRunnable = () -> hideControls();
+    private final Runnable hideControlsRunnable = this::hideControls;
     private final Runnable progressRunnable = new Runnable() {
         @Override
         public void run() {
@@ -93,9 +90,35 @@ public class LocalPlayerActivity extends BaseActivity {
         return R.layout.activity_local_player;
     }
 
+    /**
+     * 覆盖 BaseActivity.hideSysBar()，根据当前全屏状态决定如何处理系统栏。
+     * 防止 onResume 时 BaseActivity 破坏全屏状态 或 恢复小屏时的布局。
+     */
+    @Override
+    public void hideSysBar() {
+        if (isFullScreen) {
+            // 全屏模式：隐藏状态栏 + 导航栏
+            applyFullScreenFlags();
+        } else {
+            // 小屏模式：保持与 BaseActivity 默认相同的行为（edge-to-edge + 深色状态栏图标）
+            super.hideSysBar();
+        }
+    }
+
+    /** 应用全屏系统 UI flags */
+    private void applyFullScreenFlags() {
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        );
+    }
+
     @Override
     protected void init() {
-        // Keep screen on
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         isUrl = getIntent().getBooleanExtra("isUrl", false);
@@ -114,57 +137,54 @@ public class LocalPlayerActivity extends BaseActivity {
         setupPlaylist();
 
         if (isUrl) {
-            // 直接播 URL，无播放列表
             if (rvPlaylist != null) rvPlaylist.setVisibility(View.GONE);
             if (tvVideoTitle != null) tvVideoTitle.setText(videoTitle != null ? videoTitle : "正在播放");
-            isLoaded = true;
             startPlay(videoUrl);
         } else {
-            // 加载文件夹列表
-            isLoaded = true;
             loadFolderAndPlay();
         }
 
-        // 设置播放器高度 (手机竖屏时16:9)
+        // 手机端：初始化播放器容器高度为 16:9
         if (!PadUiHelper.isPad(this)) {
-            adjustPlayerHeight();
+            flPlayerContainer.post(this::applyNormalPlayerHeight);
         }
     }
 
     private void findViews() {
         flPlayerContainer = findViewById(R.id.flPlayerContainer);
-        mVideoView = findViewById(R.id.mVideoView);
-        flControlOverlay = findViewById(R.id.flControlOverlay);
-        ivBack = findViewById(R.id.ivBack);
-        ivLock = findViewById(R.id.ivLock);
-        ivPlayPause = findViewById(R.id.ivPlayPause);
-        ivFullscreen = findViewById(R.id.ivFullscreen);
-        seekBar = findViewById(R.id.seekBar);
-        tvCurrentPos = findViewById(R.id.tvCurrentPos);
-        tvDuration = findViewById(R.id.tvDuration);
-        pbLoading = findViewById(R.id.pbLoading);
-        tvVideoTitle = findViewById(R.id.tvVideoTitle);
-        rvPlaylist = findViewById(R.id.rvPlaylist);
+        mVideoView        = findViewById(R.id.mVideoView);
+        flControlOverlay  = findViewById(R.id.flControlOverlay);
+        ivBack            = findViewById(R.id.ivBack);
+        ivLock            = findViewById(R.id.ivLock);
+        ivPlayPause       = findViewById(R.id.ivPlayPause);
+        ivFullscreen      = findViewById(R.id.ivFullscreen);
+        seekBar           = findViewById(R.id.seekBar);
+        tvCurrentPos      = findViewById(R.id.tvCurrentPos);
+        tvDuration        = findViewById(R.id.tvDuration);
+        pbLoading         = findViewById(R.id.pbLoading);
+        tvVideoTitle      = findViewById(R.id.tvVideoTitle);
+        rvPlaylist        = findViewById(R.id.rvPlaylist);
     }
 
-    private void adjustPlayerHeight() {
-        // 让播放器容器保持 16:9 宽高比
-        flPlayerContainer.post(() -> {
-            int w = flPlayerContainer.getWidth();
-            if (w <= 0) {
-                android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
-                getWindowManager().getDefaultDisplay().getMetrics(dm);
-                w = dm.widthPixels;
-            }
-            int h = w * 9 / 16;
-            ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
-            lp.height = h;
-            flPlayerContainer.setLayoutParams(lp);
-        });
+    /** 计算并应用 16:9 播放器高度（竖屏小屏状态） */
+    private void applyNormalPlayerHeight() {
+        if (flPlayerContainer == null) return;
+        android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        // 竖屏时宽度是较小的那个值
+        int w = Math.min(dm.widthPixels, dm.heightPixels);
+        int h = w * 9 / 16;
+        normalPlayerHeight = h;
+        ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
+        lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        lp.height = h;
+        if (lp instanceof LinearLayout.LayoutParams) {
+            ((LinearLayout.LayoutParams) lp).weight = 0;
+        }
+        flPlayerContainer.setLayoutParams(lp);
     }
 
     private void setupPlayer() {
-        // 应用全局播放器设置（ijk/exo/系统）
         PlayerHelper.updateCfg(mVideoView);
 
         mVideoView.setOnStateChangeListener(new VideoView.SimpleOnStateChangeListener() {
@@ -189,7 +209,6 @@ public class LocalPlayerActivity extends BaseActivity {
                         break;
                     case VideoView.STATE_PLAYBACK_COMPLETED:
                         handler.removeCallbacks(progressRunnable);
-                        // 自动播放下一个
                         playNext();
                         break;
                     case VideoView.STATE_ERROR:
@@ -202,22 +221,15 @@ public class LocalPlayerActivity extends BaseActivity {
     }
 
     private void setupControls() {
-        // 点击播放区域切换控制栏显示
         flPlayerContainer.setOnClickListener(v -> {
-            if (controlsVisible) {
-                hideControls();
-            } else {
-                showControls();
-            }
+            if (controlsVisible) hideControls();
+            else showControls();
         });
 
         if (ivBack != null) {
             ivBack.setOnClickListener(v -> {
-                if (isFullScreen) {
-                    exitFullScreen();
-                } else {
-                    onBackPressed();
-                }
+                if (isFullScreen) exitFullScreen();
+                else onBackPressed();
             });
         }
 
@@ -225,13 +237,12 @@ public class LocalPlayerActivity extends BaseActivity {
             ivLock.setOnClickListener(v -> {
                 isLocked = !isLocked;
                 ivLock.setImageResource(isLocked ? R.drawable.icon_lock : R.drawable.icon_unlock);
-                // 显示/隐藏其他控制元素
                 int vis = isLocked ? View.INVISIBLE : View.VISIBLE;
-                if (ivBack != null) ivBack.setVisibility(vis);
+                if (ivBack != null)      ivBack.setVisibility(vis);
                 if (ivPlayPause != null) ivPlayPause.setVisibility(vis);
-                if (seekBar != null) seekBar.setVisibility(vis);
+                if (seekBar != null)     seekBar.setVisibility(vis);
                 if (tvCurrentPos != null) tvCurrentPos.setVisibility(vis);
-                if (tvDuration != null) tvDuration.setVisibility(vis);
+                if (tvDuration != null)  tvDuration.setVisibility(vis);
                 if (ivFullscreen != null) ivFullscreen.setVisibility(vis);
                 scheduleHideControls();
             });
@@ -239,22 +250,16 @@ public class LocalPlayerActivity extends BaseActivity {
 
         if (ivPlayPause != null) {
             ivPlayPause.setOnClickListener(v -> {
-                if (mVideoView.isPlaying()) {
-                    mVideoView.pause();
-                } else {
-                    mVideoView.resume();
-                }
+                if (mVideoView.isPlaying()) mVideoView.pause();
+                else mVideoView.resume();
                 scheduleHideControls();
             });
         }
 
         if (ivFullscreen != null) {
             ivFullscreen.setOnClickListener(v -> {
-                if (isFullScreen) {
-                    exitFullScreen();
-                } else {
-                    enterFullScreen();
-                }
+                if (isFullScreen) exitFullScreen();
+                else enterFullScreen();
                 scheduleHideControls();
             });
         }
@@ -262,24 +267,20 @@ public class LocalPlayerActivity extends BaseActivity {
         if (seekBar != null) {
             seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
-                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {
                     if (fromUser) {
-                        long duration = mVideoView.getDuration();
-                        long newPos = duration * progress / 1000;
-                        if (tvCurrentPos != null) tvCurrentPos.setText(formatTime(newPos));
+                        long dur = mVideoView.getDuration();
+                        if (tvCurrentPos != null) tvCurrentPos.setText(formatTime(dur * progress / 1000));
                     }
                 }
-
                 @Override
-                public void onStartTrackingTouch(SeekBar seekBar) {
+                public void onStartTrackingTouch(SeekBar sb) {
                     handler.removeCallbacks(hideControlsRunnable);
                 }
-
                 @Override
-                public void onStopTrackingTouch(SeekBar seekBar) {
-                    long duration = mVideoView.getDuration();
-                    long newPos = duration * seekBar.getProgress() / 1000;
-                    mVideoView.seekTo(newPos);
+                public void onStopTrackingTouch(SeekBar sb) {
+                    long dur = mVideoView.getDuration();
+                    mVideoView.seekTo(dur * sb.getProgress() / 1000);
                     scheduleHideControls();
                 }
             });
@@ -343,10 +344,105 @@ public class LocalPlayerActivity extends BaseActivity {
     private void playNext() {
         if (playlist.isEmpty()) return;
         int next = currentIndex + 1;
-        if (next < playlist.size()) {
-            playAtIndex(next);
+        if (next < playlist.size()) playAtIndex(next);
+    }
+
+    // ─── 全屏 / 小屏切换 ────────────────────────────────────────────────────
+
+    private void enterFullScreen() {
+        isFullScreen = true;
+
+        // 黑色窗口背景
+        getWindow().setBackgroundDrawable(new ColorDrawable(Color.BLACK));
+        // 添加全屏 window flags
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+        // 隐藏状态栏 + 导航栏（IMMERSIVE_STICKY）
+        applyFullScreenFlags();
+        // 清除状态栏 padding，消除顶部黑边
+        clearStatusBarPadding();
+
+        // 隐藏非播放区域
+        hideNonPlayerViews(true);
+
+        // 撑满父布局
+        if (flPlayerContainer != null) {
+            ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
+            lp.width  = ViewGroup.LayoutParams.MATCH_PARENT;
+            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            if (lp instanceof LinearLayout.LayoutParams) {
+                ((LinearLayout.LayoutParams) lp).weight = 1;
+            }
+            flPlayerContainer.setLayoutParams(lp);
+        }
+
+        if (ivFullscreen != null) ivFullscreen.setImageResource(R.drawable.icon_exit_fullscreen);
+    }
+
+    private void exitFullScreen() {
+        isFullScreen = false;
+
+        // 恢复窗口背景
+        getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        // 清除全屏 window flags
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+        // 恢复普通系统 UI（edge-to-edge + 深色状态栏图标）
+        int uiFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            uiFlags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        }
+        getWindow().getDecorView().setSystemUiVisibility(uiFlags);
+        // 恢复状态栏 padding
+        restoreStatusBarPadding();
+
+        if (ivFullscreen != null) ivFullscreen.setImageResource(R.drawable.icon_fullscreen);
+
+        // 先恢复播放器容器高度（16:9），再显示其他视图，避免布局跳变
+        if (!PadUiHelper.isPad(this) && flPlayerContainer != null) {
+            // 如果还没记录过正常高度，现在重新计算
+            if (normalPlayerHeight <= 0) {
+                android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+                getWindowManager().getDefaultDisplay().getMetrics(dm);
+                int w = Math.min(dm.widthPixels, dm.heightPixels);
+                normalPlayerHeight = w * 9 / 16;
+            }
+            ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
+            lp.width  = ViewGroup.LayoutParams.MATCH_PARENT;
+            lp.height = normalPlayerHeight;
+            if (lp instanceof LinearLayout.LayoutParams) {
+                ((LinearLayout.LayoutParams) lp).weight = 0;
+            }
+            flPlayerContainer.setLayoutParams(lp);
+        }
+
+        // 等待一帧后再恢复其他视图 + 刷新 RecyclerView
+        // 避免在全屏宽高下 measure 出错导致列表项错乱
+        flPlayerContainer.post(() -> {
+            if (isFinishing()) return;
+            hideNonPlayerViews(false);
+            // 重新 attach adapter，强制清除 RecyclerView item 缓存
+            if (rvPlaylist != null && playlistAdapter != null) {
+                rvPlaylist.setAdapter(null);
+                rvPlaylist.setAdapter(playlistAdapter);
+                if (currentIndex >= 0) rvPlaylist.scrollToPosition(currentIndex);
+            }
+        });
+    }
+
+    /** 全屏时隐藏播放器以外的所有兄弟视图 */
+    private void hideNonPlayerViews(boolean hide) {
+        if (flPlayerContainer == null) return;
+        ViewGroup parent = (ViewGroup) flPlayerContainer.getParent();
+        if (parent == null) return;
+        int vis = hide ? View.GONE : View.VISIBLE;
+        for (int i = 0; i < parent.getChildCount(); i++) {
+            View child = parent.getChildAt(i);
+            if (child != flPlayerContainer) child.setVisibility(vis);
         }
     }
+
+    // ─── 控制栏显示 ─────────────────────────────────────────────────────────
 
     private void showControls() {
         if (flControlOverlay == null) return;
@@ -367,6 +463,8 @@ public class LocalPlayerActivity extends BaseActivity {
         handler.postDelayed(hideControlsRunnable, 3500);
     }
 
+    // ─── 播放状态 / 进度 ─────────────────────────────────────────────────────
+
     private void updatePlayPauseIcon(boolean playing) {
         if (ivPlayPause != null) {
             ivPlayPause.setImageResource(playing ? R.drawable.icon_pause : R.drawable.icon_play_mini);
@@ -375,140 +473,24 @@ public class LocalPlayerActivity extends BaseActivity {
 
     private void updateProgress() {
         if (mVideoView == null) return;
-        long current = mVideoView.getCurrentPosition();
+        long current  = mVideoView.getCurrentPosition();
         long duration = mVideoView.getDuration();
         if (duration > 0) {
-            if (seekBar != null) seekBar.setProgress((int) (current * 1000 / duration));
+            if (seekBar != null)     seekBar.setProgress((int)(current * 1000 / duration));
             if (tvCurrentPos != null) tvCurrentPos.setText(formatTime(current));
-            if (tvDuration != null) tvDuration.setText(formatTime(duration));
-        }
-    }
-
-    private void enterFullScreen() {
-        isFullScreen = true;
-        // 横屏
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-        // 给窗口设置纯黑背景，彻底遮住 app 全局壁纸
-        getWindow().setBackgroundDrawable(new ColorDrawable(Color.BLACK));
-        // 隐藏状态栏和导航栏
-        View decorView = getWindow().getDecorView();
-        decorView.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-        );
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
-                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-        // 清除 BaseActivity 设置的状态栏 padding，消除顶部黑边
-        clearStatusBarPadding();
-
-        // 保存播放器容器原始 LayoutParams
-        if (flPlayerContainer != null) {
-            ViewGroup.LayoutParams origLp = flPlayerContainer.getLayoutParams();
-            if (origLp instanceof LinearLayout.LayoutParams) {
-                LinearLayout.LayoutParams copy = new LinearLayout.LayoutParams(origLp.width, origLp.height);
-                copy.weight = ((LinearLayout.LayoutParams) origLp).weight;
-                savedPlayerLp = copy;
-            } else {
-                savedPlayerLp = new ViewGroup.LayoutParams(origLp.width, origLp.height);
-            }
-            // 撑满整个屏幕
-            ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
-            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-            if (lp instanceof LinearLayout.LayoutParams) {
-                ((LinearLayout.LayoutParams) lp).weight = 1;
-            }
-            flPlayerContainer.setLayoutParams(lp);
-        }
-        // 隐藏右侧列表/标题等非播放区域
-        hideNonPlayerViews(true);
-        if (ivFullscreen != null) ivFullscreen.setImageResource(R.drawable.icon_exit_fullscreen);
-    }
-
-    private void exitFullScreen() {
-        isFullScreen = false;
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        // 恢复透明背景
-        getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        // 恢复系统 UI（保持 edge-to-edge + 深色状态栏图标，与 BaseActivity 一致）
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
-                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-        int uiFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            uiFlags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-        }
-        getWindow().getDecorView().setSystemUiVisibility(uiFlags);
-
-        // 恢复 BaseActivity 设置的状态栏 padding
-        restoreStatusBarPadding();
-
-        savedPlayerLp = null;
-
-        if (ivFullscreen != null) ivFullscreen.setImageResource(R.drawable.icon_fullscreen);
-
-        // 延迟恢复非播放器视图 + 调整播放器高度，等待方向切换和布局稳定后再执行，
-        // 避免 RecyclerView 在横屏尺寸下 measure 导致列表项错乱、双行显示。
-        handler.postDelayed(() -> {
-            if (isFinishing()) return;
-            // 先恢复所有兄弟视图
-            hideNonPlayerViews(false);
-            // 强制 RecyclerView 重新绑定数据，避免 item 缓存混乱
-            if (rvPlaylist != null && playlistAdapter != null) {
-                rvPlaylist.setAdapter(null);
-                rvPlaylist.setAdapter(playlistAdapter);
-                if (currentIndex >= 0) {
-                    rvPlaylist.scrollToPosition(currentIndex);
-                }
-            }
-            // 手机端：重新计算 16:9 播放器高度
-            if (!PadUiHelper.isPad(this) && flPlayerContainer != null) {
-                flPlayerContainer.post(() -> {
-                    android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
-                    getWindowManager().getDefaultDisplay().getMetrics(dm);
-                    int w = Math.min(dm.widthPixels, dm.heightPixels);
-                    int h = w * 9 / 16;
-                    ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
-                    lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                    lp.height = h;
-                    if (lp instanceof LinearLayout.LayoutParams) {
-                        ((LinearLayout.LayoutParams) lp).weight = 0;
-                    }
-                    flPlayerContainer.setLayoutParams(lp);
-                });
-            }
-        }, 400);
-    }
-
-    /** 全屏时隐藏播放器区域以外的所有视图 */
-    private void hideNonPlayerViews(boolean hide) {
-        int visibility = hide ? View.GONE : View.VISIBLE;
-        // 遍历播放器容器的父布局，隐藏其兄弟节点（列表区、标题区等）
-        if (flPlayerContainer == null) return;
-        ViewGroup parent = (ViewGroup) flPlayerContainer.getParent();
-        if (parent == null) return;
-        for (int i = 0; i < parent.getChildCount(); i++) {
-            View child = parent.getChildAt(i);
-            if (child != flPlayerContainer) {
-                child.setVisibility(visibility);
-            }
+            if (tvDuration != null)  tvDuration.setText(formatTime(duration));
         }
     }
 
     private String formatTime(long ms) {
-        long s = ms / 1000;
-        long m = s / 60;
+        long s = ms / 1000, m = s / 60;
         s = s % 60;
-        long h = m / 60;
-        m = m % 60;
-        if (h > 0) {
-            return String.format("%d:%02d:%02d", h, m, s);
-        }
-        return String.format("%02d:%02d", m, s);
+        long h = m / 60; m = m % 60;
+        return h > 0 ? String.format("%d:%02d:%02d", h, m, s)
+                     : String.format("%02d:%02d", m, s);
     }
+
+    // ─── 文件系统 ────────────────────────────────────────────────────────────
 
     private List<File> getVideosInFolder(String folder) {
         List<File> result = new ArrayList<>();
@@ -538,7 +520,6 @@ public class LocalPlayerActivity extends BaseActivity {
         }
 
         if (result.isEmpty()) {
-            // fallback
             File dir = new File(folder);
             File[] files = dir.listFiles();
             if (files != null) {
@@ -556,16 +537,15 @@ public class LocalPlayerActivity extends BaseActivity {
         String lower = name.toLowerCase();
         return lower.endsWith(".mp4") || lower.endsWith(".mkv") || lower.endsWith(".avi")
                 || lower.endsWith(".mov") || lower.endsWith(".wmv") || lower.endsWith(".flv")
-                || lower.endsWith(".ts") || lower.endsWith(".m3u8") || lower.endsWith(".rmvb")
-                || lower.endsWith(".m4v") || lower.endsWith(".3gp") || lower.endsWith(".webm");
+                || lower.endsWith(".ts")  || lower.endsWith(".m3u8") || lower.endsWith(".rmvb")
+                || lower.endsWith(".m4v") || lower.endsWith(".3gp")  || lower.endsWith(".webm");
     }
+
+    // ─── 生命周期 ────────────────────────────────────────────────────────────
 
     @Override
     public void onBackPressed() {
-        if (isFullScreen) {
-            exitFullScreen();
-            return;
-        }
+        if (isFullScreen) { exitFullScreen(); return; }
         super.onBackPressed();
     }
 
@@ -579,7 +559,6 @@ public class LocalPlayerActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // 全屏退出时方向切换会触发 onResume，此时不重新加载列表，只恢复播放
         if (mVideoView != null && !mVideoView.isPlaying()) mVideoView.resume();
         handler.post(progressRunnable);
     }
