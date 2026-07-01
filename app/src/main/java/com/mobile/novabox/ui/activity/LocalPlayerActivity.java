@@ -386,21 +386,38 @@ public class LocalPlayerActivity extends BaseActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         // 给窗口设置纯黑背景，彻底遮住 app 全局壁纸
         getWindow().setBackgroundDrawable(new ColorDrawable(Color.BLACK));
-        // 清除 DecorView 的系统 padding（状态栏/导航栏占位），让内容真正铺满整个屏幕
-        View decorView = getWindow().getDecorView();
-        decorView.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-        );
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
-                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-        // 清除内容区 padding（状态栏高度补偿）
-        View contentView = ((ViewGroup) decorView).getChildAt(0);
-        if (contentView != null) contentView.setPadding(0, 0, 0, 0);
+        // 使用 BaseActivity 提供的真正沉浸式全屏（与 PlayActivity 一致）
+        hideStatusBarToo();
+        // 关键：清除 BaseActivity.applyStatusBarPadding() 给 content 根布局加的 paddingTop
+        // 那个 paddingTop = 状态栏高度，不清零则内容区始终空出那段距离，无法真正铺满全屏
+        View rootView = getWindow().getDecorView().findViewById(android.R.id.content);
+        if (rootView != null) {
+            rootView.setPadding(rootView.getPaddingLeft(), 0, rootView.getPaddingRight(), rootView.getPaddingBottom());
+        }
+
+        // 保存播放器容器原始 LayoutParams，退出时精确还原
+        if (flPlayerContainer != null) {
+            ViewGroup.LayoutParams origLp = flPlayerContainer.getLayoutParams();
+            if (origLp instanceof LinearLayout.LayoutParams) {
+                LinearLayout.LayoutParams copy = new LinearLayout.LayoutParams(origLp.width, origLp.height);
+                copy.weight = ((LinearLayout.LayoutParams) origLp).weight;
+                savedPlayerLp = copy;
+            } else {
+                savedPlayerLp = new ViewGroup.LayoutParams(origLp.width, origLp.height);
+            }
+            // 撑满整个屏幕
+            ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
+            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            if (lp instanceof LinearLayout.LayoutParams) {
+                ((LinearLayout.LayoutParams) lp).weight = 1;
+            }
+            flPlayerContainer.setLayoutParams(lp);
+        }
+        // 隐藏右侧列表/标题等非播放区域
+        hideNonPlayerViews(true);
+        if (ivFullscreen != null) ivFullscreen.setImageResource(R.drawable.icon_exit_fullscreen);
+    }
 
         // 保存播放器容器原始 LayoutParams
         if (flPlayerContainer != null) {
@@ -431,36 +448,44 @@ public class LocalPlayerActivity extends BaseActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         // 恢复透明背景
         getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        // 恢复系统 UI
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
-                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
-
-        // 恢复播放器容器原始 LayoutParams
-        if (flPlayerContainer != null && savedPlayerLp != null) {
-            flPlayerContainer.setLayoutParams(savedPlayerLp);
-            savedPlayerLp = null;
+        // 恢复普通界面的系统 UI（与 BaseActivity.hideSysBar 一致）
+        hideSysBar();
+        // 关键：恢复 BaseActivity.applyStatusBarPadding() 设置的 paddingTop（= 状态栏高度）
+        // 不恢复则内容会贴到屏幕最顶部，被状态栏遮住
+        View rootView = getWindow().getDecorView().findViewById(android.R.id.content);
+        if (rootView != null) {
+            int statusBarHeight = getStatusBarHeight();
+            rootView.setPadding(rootView.getPaddingLeft(), statusBarHeight, rootView.getPaddingRight(), rootView.getPaddingBottom());
         }
 
-        // 恢复右侧列表/标题等视图（需在方向切回竖屏、布局稳定后执行）
-        hideNonPlayerViews(false);
-
-        // 手机端：等待布局稳定后，重新按屏幕宽度计算 16:9 播放器高度
-        if (!PadUiHelper.isPad(this)) {
+        // 恢复播放器容器原始 LayoutParams（在方向切回竖屏后通过 post 执行，等布局稳定）
+        if (flPlayerContainer != null && savedPlayerLp != null) {
+            final ViewGroup.LayoutParams lpToRestore = savedPlayerLp;
+            savedPlayerLp = null;
             flPlayerContainer.post(() -> {
-                android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
-                getWindowManager().getDefaultDisplay().getMetrics(dm);
-                // 竖屏下宽度是较小值
-                int w = Math.min(dm.widthPixels, dm.heightPixels);
-                int h = w * 9 / 16;
-                ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
-                lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                lp.height = h;
-                if (lp instanceof LinearLayout.LayoutParams) {
-                    ((LinearLayout.LayoutParams) lp).weight = 0;
+                flPlayerContainer.setLayoutParams(lpToRestore);
+                // 手机端：还原后重新按竖屏宽度计算 16:9 高度
+                if (!PadUiHelper.isPad(this)) {
+                    flPlayerContainer.post(() -> {
+                        android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+                        getWindowManager().getDefaultDisplay().getMetrics(dm);
+                        int w = Math.min(dm.widthPixels, dm.heightPixels);
+                        int h = w * 9 / 16;
+                        ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
+                        lp.height = h;
+                        if (lp instanceof LinearLayout.LayoutParams) {
+                            ((LinearLayout.LayoutParams) lp).weight = 0;
+                        }
+                        flPlayerContainer.setLayoutParams(lp);
+                    });
                 }
-                flPlayerContainer.setLayoutParams(lp);
             });
+        }
+
+        // 恢复右侧列表/标题等视图
+        hideNonPlayerViews(false);
+        if (ivFullscreen != null) ivFullscreen.setImageResource(R.drawable.icon_fullscreen);
+    }
         }
 
         if (ivFullscreen != null) ivFullscreen.setImageResource(R.drawable.icon_fullscreen);
