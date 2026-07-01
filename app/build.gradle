@@ -1,11 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 36
+    compileSdkVersion 33
 
     defaultConfig {
         applicationId 'com.mobile.novabox'
-        targetSdkVersion 36
+        targetSdkVersion 33
         versionCode 101
         versionName '1.0.1'
         multiDexEnabled true
