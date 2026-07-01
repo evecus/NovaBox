@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pad 端搜索页布局（sw600dp）
+    设计：
+      - 顶部：全宽搜索栏
+      - 聚合模式初始态：左右两栏
+          · 左栏：热门搜索（3列网格）
+          · 右栏：历史搜索（3列标签）
+      - 搜索结果态：llLayout 填满，mGridView 多列结果
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- 顶部搜索栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingLeft="8dp"
+        android:paddingRight="12dp">
+
+        <ImageView
+            android:id="@+id/ivBack"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:padding="10dp"
+            android:src="@drawable/icon_back"
+            android:tint="@android:color/black"
+            android:scaleType="fitCenter"/>
+
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="@drawable/input_search"
+            android:hint="请输入要搜索的内容"
+            android:inputType="text"
+            android:imeOptions="actionSearch"
+            android:maxLines="1"
+            android:paddingLeft="14dp"
+            android:paddingRight="14dp"
+            android:textColor="@android:color/black"
+            android:textColorHint="#99000000"
+            android:textSize="16sp"/>
+
+        <ImageView
+            android:id="@+id/tvSearch"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:padding="10dp"
+            android:src="@drawable/icon_search"
+            android:tint="@android:color/black"
+            android:scaleType="fitCenter"/>
+
+        <TextView
+            android:id="@+id/tvClear"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/tvSearchCheckboxBtn"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"/>
+    </LinearLayout>
+
+    <!-- TV 软键盘（保留 id 供代码兼容） -->
+    <com.mobile.novabox.ui.tv.widget.SearchKeyboard
+        android:id="@+id/keyBoardRoot"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"/>
+
+    <!-- 远程推送信息（保留 id 供代码兼容） -->
+    <LinearLayout
+        android:id="@+id/remoteRoot"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/tvAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"/>
+        <ImageView
+            android:id="@+id/ivQRCode"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_gravity="center_horizontal"/>
+    </LinearLayout>
+
+    <!-- ═══ 内容区：聚合首页 与 搜索结果 互斥 ═══ -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <!-- 聚合模式初始态：左热门 / 右历史 -->
+        <LinearLayout
+            android:id="@+id/llPadSearchHome"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:visibility="gone">
+
+            <!-- 左栏：热门搜索（3列） -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingRight="8dp">
+
+                <!-- 标题行，id=wordSwitch 供代码设置文字 -->
+                <TextView
+                    android:id="@+id/wordSwitch"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:gravity="center_vertical"
+                    android:text="热门搜索"
+                    android:textColor="@android:color/black"
+                    android:textSize="15sp"
+                    android:textStyle="bold"/>
+
+                <!-- 热门搜索 RecyclerView，id=mGridViewWord -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/mGridViewWord"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:nestedScrollingEnabled="false"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"/>
+            </LinearLayout>
+
+            <!-- 中间分隔线 -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="#22FFFFFF"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"/>
+
+            <!-- 右栏：历史搜索（3列标签） -->
+            <LinearLayout
+                android:id="@+id/llHistoryWord"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingLeft="8dp"
+                android:visibility="gone">
+
+                <!-- 历史搜索标题 + 清除按钮 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvHistoryTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="历史搜索"
+                        android:textColor="@android:color/black"
+                        android:textSize="15sp"
+                        android:textStyle="bold"/>
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"/>
+
+                    <ImageView
+                        android:id="@+id/tvHistoryClear"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:padding="6dp"
+                        android:src="@drawable/icon_clear"
+                        android:tint="@android:color/black"
+                        android:scaleType="fitCenter"/>
+                </LinearLayout>
+
+                <!-- 历史标签 GridLayout，3列，id=historyWordGrid -->
+                <GridLayout
+                    android:id="@+id/historyWordGrid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:columnCount="3"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- 搜索结果态（LoadSir 包裹，对应 llLayout / mGridView） -->
+        <LinearLayout
+            android:id="@+id/llLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:visibility="gone">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/mGridView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:visibility="invisible"/>
+        </LinearLayout>
+
+    </FrameLayout>
+
+</LinearLayout>

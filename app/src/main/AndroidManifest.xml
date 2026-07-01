@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.mobile.novabox">
+
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="true" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <application
+        android:name=".base.App"
+        android:allowBackup="true"
+        android:configChanges="orientation|keyboardHidden|screenSize"
+        android:hardwareAccelerated="true"
+        android:icon="@drawable/app_icon"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme.NoActionBar"
+        android:usesCleartextTraffic="true">
+
+        <!--
+            screenOrientation 全部改为 unspecified，由 BaseActivity.onCreate()
+            在运行时根据设备类型动态决定：
+              · 平板 (sw >= 600dp)  → sensorLandscape
+              · 手机               → portrait
+            PlayActivity 保留 sensorLandscape（播放器始终横屏）。
+        -->
+
+        <activity
+            android:name=".ui.activity.HomeActivity"
+            android:exported="true"
+            android:screenOrientation="unspecified">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.activity.LivePlayActivity"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:configChanges="orientation|screenSize"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.DetailActivity"
+            android:configChanges="orientation|screenSize"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.PlayActivity"
+            android:configChanges="orientation|screenSize"
+            android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name=".ui.activity.PushActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.SearchActivity"
+            android:windowSoftInputMode="stateVisible|adjustResize"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.FastSearchActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.SettingActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.HistoryActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.CollectActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.LocalFileActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.LocalVideoActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.VideoFolderActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.LocalPlayerActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.ConfigManagerActivity"
+            android:screenOrientation="unspecified"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+
+        <activity
+            android:name=".ui.activity.LiveSourceActivity"
+            android:screenOrientation="unspecified"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+
+        <!-- OpenList 网盘相关页面 -->
+        <activity
+            android:name=".ui.activity.OpenListLoginActivity"
+            android:screenOrientation="unspecified"
+            android:windowSoftInputMode="stateVisible|adjustResize" />
+
+        <activity
+            android:name=".ui.activity.OpenListBrowseActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.OpenListVideoPlayerActivity"
+            android:screenOrientation="unspecified"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+
+        <activity
+            android:name=".ui.activity.OpenListAudioPlayerActivity"
+            android:screenOrientation="unspecified" />
+
+        <receiver
+            android:name=".receiver.SearchReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.content.movie.search.Action" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".receiver.CustomWebReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.content.movie.custom.web.Action" />
+            </intent-filter>
+        </receiver>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <meta-data
+            android:name="design_width_in_dp"
+            android:value="360" />
+        <meta-data
+            android:name="design_height_in_dp"
+            android:value="780" />
+
+        <meta-data
+            android:name="xwalk_enable_download_mode"
+            android:value="enable" />
+        <meta-data
+            android:name="xwalk_verify"
+            android:value="disable" />
+    </application>
+
+</manifest>

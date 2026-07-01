@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scrollbars="none"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp">
+
+            <!-- 调试模式（隐藏，开发者模式触发） -->
+            <LinearLayout
+                android:id="@+id/llDebug"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:visibility="gone">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="调试模式"
+                    android:textColor="@android:color/black"
+                    android:textSize="15sp" />
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
+                <TextView
+                    android:id="@+id/tvDebugOpen"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/black"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- ===== 分组标题：配置 ===== -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="配置"
+                android:textColor="#AA000000"
+                android:textSize="13sp"
+                android:paddingLeft="4dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="6dp" />
+
+            <!-- 配置地址 -->
+            <LinearLayout
+                android:id="@+id/llApi"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="配置地址" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/tvApi" android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:ellipsize="end" android:singleLine="true"
+                    android:gravity="end" android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- 直播地址 -->
+            <LinearLayout
+                android:id="@+id/llLiveSource"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="直播地址" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            </LinearLayout>
+
+            <!-- 线路选择 -->
+            <LinearLayout
+                android:id="@+id/llApiLine"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:visibility="visible">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="线路选择" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/tvApiLine" android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:ellipsize="end" android:singleLine="true"
+                    android:gravity="end" android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- ===== 分组标题：播放 ===== -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="播放"
+                android:textColor="#AA000000"
+                android:textSize="13sp"
+                android:paddingLeft="4dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="6dp" />
+
+            <!-- 播放器 -->
+            <LinearLayout
+                android:id="@+id/llPlay"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="播放器" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/tvPlay" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- IJK解码方式 -->
+            <LinearLayout
+                android:id="@+id/llMediaCodec"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="IJK解码方式" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/tvMediaCodec" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- 弹幕开关 -->
+            <LinearLayout
+                android:id="@+id/danmuOpen"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="弹幕" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/danmuOpenText" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- 弹幕地址 -->
+            <LinearLayout
+                android:id="@+id/danmuApi"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="弹幕地址" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/danmuApiText" android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:ellipsize="end" android:singleLine="true"
+                    android:gravity="end" android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- 自动换线 -->
+            <LinearLayout
+                android:id="@+id/autoSwitchLine"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="自动换线" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/autoSwitchLineText" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- 去广告 -->
+            <LinearLayout
+                android:id="@+id/m3u8Ad"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="去广告" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/m3u8AdText" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- ===== 分组标题：显示 ===== -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="显示"
+                android:textColor="#AA000000"
+                android:textSize="13sp"
+                android:paddingLeft="4dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="6dp" />
+
+            <!-- 首页推荐 -->
+            <LinearLayout
+                android:id="@+id/llHomeRec"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="首页推荐" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/tvHomeRec" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- 换张壁纸 -->
+            <LinearLayout
+                android:id="@+id/llWp"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="上传壁纸" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            </LinearLayout>
+
+            <!-- 重置壁纸 -->
+            <LinearLayout
+                android:id="@+id/llWpRecovery"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="重置壁纸" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            </LinearLayout>
+
+            <!-- ===== 分组标题：其他 ===== -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="其他"
+                android:textColor="#AA000000"
+                android:textSize="13sp"
+                android:paddingLeft="4dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="6dp" />
+
+            <!-- 渲染方式 -->
+            <LinearLayout
+                android:id="@+id/llRender"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="渲染方式" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/tvRenderType" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- 安全DNS -->
+            <LinearLayout
+                android:id="@+id/llDns"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="安全DNS" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/tvDns" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- 嗅探Webview -->
+            <LinearLayout
+                android:id="@+id/llParseWebVew"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="嗅探Webview" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/tvParseWebView" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- IJK缓存 -->
+            <LinearLayout
+                android:id="@+id/llIjkCachePlay"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="IJK缓存" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/tvIjkCachePlay" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="关闭"
+                    android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- 清空缓存 -->
+            <LinearLayout
+                android:id="@+id/llClearCache"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="清空缓存" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            </LinearLayout>
+
+            <!-- 数据备份 -->
+            <LinearLayout
+                android:id="@+id/llBackup"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="数据备份" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            </LinearLayout>
+
+            <!-- 关于 -->
+            <LinearLayout
+                android:id="@+id/llAbout"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="关于" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- 播放器区域 (16:9 比例，高度在 Activity 中动态设置) -->
+    <FrameLayout
+        android:id="@+id/flOpenListPlayerContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FF000000">
+
+        <!-- 使用 aspectRatio 保持 16:9，高度=宽*9/16；在 Activity.init() 中设置 -->
+        <com.mobile.novabox.player.MyVideoView
+            android:id="@+id/mOpenListVideoView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- 控制层 -->
+        <FrameLayout
+            android:id="@+id/flOpenListControlOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#44000000"
+            android:visibility="gone">
+
+            <!-- 返回 -->
+            <ImageView
+                android:id="@+id/ivOpenListVideoBack"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_gravity="top|start"
+                android:layout_margin="8dp"
+                android:padding="8dp"
+                android:src="@drawable/icon_back"
+                android:tint="@android:color/white"
+                android:scaleType="fitCenter"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- 中央播放/暂停 -->
+            <ImageView
+                android:id="@+id/ivOpenListPlayPause"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_gravity="center"
+                android:padding="8dp"
+                android:src="@drawable/icon_pause"
+                android:tint="@android:color/white"
+                android:scaleType="fitCenter"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- 缓冲转圈 -->
+            <ProgressBar
+                android:id="@+id/pbOpenListVideoLoading"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:visibility="gone" />
+
+            <!-- 底部进度条 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="8dp">
+
+                <TextView
+                    android:id="@+id/tvOpenListCurrentPos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+
+                <SeekBar
+                    android:id="@+id/seekBarOpenListVideo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="8dp"
+                    android:layout_marginRight="8dp"
+                    android:max="1000"
+                    android:progressTint="@android:color/white"
+                    android:thumbTint="@android:color/white" />
+
+                <TextView
+                    android:id="@+id/tvOpenListDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </FrameLayout>
+    </FrameLayout>
+
+    <!-- 视频名称 -->
+    <TextView
+        android:id="@+id/tvOpenListVideoTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="14dp"
+        android:textColor="@android:color/black"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:singleLine="true"
+        android:ellipsize="end" />
+
+    <!-- 分隔线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#20000000"
+        android:layout_marginLeft="14dp"
+        android:layout_marginRight="14dp" />
+
+    <!-- 提示文字 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="14dp"
+        android:text="点击视频区域显示/隐藏控制"
+        android:textColor="#88000000"
+        android:textSize="12sp"
+        android:gravity="center" />
+
+</LinearLayout>

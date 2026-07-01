@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pad 端筛选对话框（sw600dp）
+    改动：手机版从底部弹出（gravity=bottom），宽度 match_parent
+          Pad 版从右侧弹出（gravity=end），固定宽度 380dp，占满高度
+          这样在横屏宽屏上不会遮挡全部内容
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/filterRoot"
+        android:layout_width="380dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:background="@drawable/shape_dialog_filter_bg"
+        android:orientation="vertical"
+        android:padding="@dimen/vs_20">
+    </LinearLayout>
+</FrameLayout>

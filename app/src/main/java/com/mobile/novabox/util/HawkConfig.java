@@ -1,0 +1,81 @@
+package com.mobile.novabox.util;
+
+/**
+ * @author pj567
+ * @date :2020/12/23
+ * @description:
+ */
+public class HawkConfig {
+    public static final String API_URL = "api_url";
+    public static final String EPG_URL = "epg_url";
+    public static final String SHOW_PREVIEW = "show_preview";
+    public static final String API_HISTORY = "api_history";
+    public static final String API_LINE_LIST = "api_line_list";
+    public static final String API_LINE_SOURCE = "api_line_source";
+    public static final String LIVE_API_HISTORY = "live_api_history";
+    public static final String EPG_HISTORY = "epg_history";
+    public static final String HOME_API = "home_api";
+    public static final String DEFAULT_PARSE = "parse_default";
+    public static final String DEBUG_OPEN = "debug_open";
+    public static final String PARSE_WEBVIEW = "parse_webview"; // true 系统 false xwalk
+    public static final String IJK_CODEC = "ijk_codec";
+    public static final String PLAY_TYPE = "play_type";//0 系统 1 ijk 2 exo 10 MXPlayer
+    public static final String LIVE_PLAY_TYPE = "live_play_type";//0 系统 1 ijk 2 exo 10 MXPlayer
+    public static final String PLAY_RENDER = "play_render"; //0 texture 2
+    public static final String PLAY_SCALE = "play_scale"; //0 texture 2
+    public static final String LIVE_PLAY_SCALE = "live_play_scale";
+    public static final String PLAY_TIME_STEP = "play_time_step"; //0 texture 2
+    public static final String DOH_URL = "doh_url";
+    public static final String HOME_REC = "home_rec"; // 0 豆瓣热播 1 数据源推荐 2 历史
+    public static final String HISTORY_NUM = "history_num";
+    public static final String SEARCH_VIEW = "search_view"; // 0 列表 1 缩略图
+    public static final String LIVE_CHANNEL = "last_live_channel_name";
+    public static final String LIVE_CHANNEL_REVERSE = "live_channel_reverse";
+    public static final String LIVE_CROSS_GROUP = "live_cross_group";
+    public static final String LIVE_CONNECT_TIMEOUT = "live_connect_timeout";
+    public static final String LIVE_SHOW_NET_SPEED = "live_show_net_speed";
+    public static final String LIVE_SHOW_RESOLUTION = "live_show_resolution";
+    public static final String LIVE_SHOW_TIME = "live_show_time";
+    public static final String FAST_SEARCH_MODE = "fast_search_mode";
+    public static final String SUBTITLE_TEXT_SIZE = "subtitle_text_size";
+    public static final String SUBTITLE_TIME_DELAY = "subtitle_time_delay";
+    public static final String SOURCES_FOR_SEARCH = "checked_sources_for_search";
+    public static final String HOME_REC_STYLE = "home_rec_style";
+    public static final String NOW_DATE = "now_date"; //当前日期
+    public static final String REMOTE_TVBOX = "remote_tvbox_host";
+    public static final String IJK_CACHE_PLAY = "ijk_cache_play";
+    public static final String PLAYER_IS_LIVE = "player_is_live";
+    public static final String DOH_JSON = "doh_json";
+    public static final String LIVE_GROUP_INDEX = "live_group_index";
+    public static final String LIVE_GROUP_LIST = "live_group_list";
+    public static final String LIVE_API_URL = "live_api_url";
+    public static final String M3U8_PURIFY = "m3u8_purify";
+    public static final String AUTO_SWITCH_LINE = "auto_switch_line";
+    public static final String SCREEN_DISPLAY = "screen_display";
+    public static final String LIVE_WEB_HEADER = "live_web_header";
+    public static final String DEFAULT_LOAD_LIVE = "DEFAULT_LOAD_LIVE";
+    public static final String SEARCH_HISTORY = "search_history";
+    public static final String DANMU_OPEN = "danmu_open";
+    public static final String DANMU_MAX_LINE = "danmu_max_line";
+    public static final String DANMU_SPEED = "danmu_speed";
+    public static final String DANMU_ALPHA = "danmu_alpha";
+    public static final String DANMU_SIZE_SCALE = "danmu_size_scale";
+    public static final String DANMU_RANDOM_COLOR = "danmu_random_color";
+    public static final String DANMU_API = "danmu_api";
+    public static boolean hotVodDelete;
+
+    // 多配置管理（点播仓库/线路列表，每条格式: name\turl\troutes_json）
+    public static final String VOD_CONFIG_LIST = "vod_config_list";
+    // 多直播源列表，每条格式: name\turl
+    public static final String LIVE_SOURCE_LIST = "live_source_list";
+    public static final String LIVE_SOURCE_SELECTED = "live_source_selected"; // 选中的直播源索引
+    // 当前选中的点播配置索引
+    public static final String VOD_CONFIG_SEL_CONFIG = "vod_config_sel_config";
+    // 当前选中的点播线路索引（在配置内）
+    public static final String VOD_CONFIG_SEL_ROUTE = "vod_config_sel_route";
+
+    // OpenList / AList 网盘
+    public static final String OPENLIST_SERVER_URL = "openlist_server_url";
+    public static final String OPENLIST_TOKEN = "openlist_token";
+    public static final String OPENLIST_USERNAME = "openlist_username";
+}

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pad 端设置页布局（sw600dp）
+    改动要点：
+      - 与首页保持一致，使用左侧竖向导航栏替代底部导航栏
+      - 设置内容 ViewPager 占满右侧剩余空间
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- 左侧竖向导航栏（与首页完全一致） -->
+    <LinearLayout
+        android:id="@+id/bottomNavLayout"
+        android:layout_width="72dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:background="@drawable/shape_side_nav_bg"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent">
+
+        <!-- 首页 -->
+        <LinearLayout
+            android:id="@+id/navHome"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginBottom="4dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:background="@drawable/selector_nav_item_bg">
+            <ImageView android:id="@+id/navHomeIcon" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/icon_video" android:alpha="0.5" android:tint="@android:color/black"/>
+            <TextView android:id="@+id/navHomeText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="首页" android:textColor="#80000000" android:textSize="11sp"/>
+        </LinearLayout>
+
+        <!-- 直播 -->
+        <LinearLayout
+            android:id="@+id/navLive"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginBottom="4dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:background="@drawable/selector_nav_item_bg">
+            <ImageView android:id="@+id/navLiveIcon" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/icon_live" android:alpha="0.5" android:tint="@android:color/black"/>
+            <TextView android:id="@+id/navLiveText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="直播" android:textColor="#80000000" android:textSize="11sp"/>
+        </LinearLayout>
+
+        <!-- 设置（当前页，高亮） -->
+        <LinearLayout
+            android:id="@+id/navSetting"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:background="@drawable/selector_nav_item_bg">
+            <ImageView android:id="@+id/navSettingIcon" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/icon_setting" android:alpha="1.0" android:tint="@android:color/black"/>
+            <TextView android:id="@+id/navSettingText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="设置" android:textColor="@android:color/black" android:textSize="11sp"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- 右侧设置内容 ViewPager -->
+    <com.mobile.novabox.ui.tv.widget.NoScrollViewPager
+        android:id="@+id/mViewPager"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toRightOf="@+id/bottomNavLayout"
+        app:layout_constraintRight_toRightOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

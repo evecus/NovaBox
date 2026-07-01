@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="52dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:background="@drawable/button_danmu_setting"
+    android:layout_margin="4dp">
+
+    <!-- 单选圆圈 -->
+    <ImageView
+        android:id="@+id/ivCheck"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/icon_radio_unselect"/>
+
+    <!-- 站源名称，最多2行 -->
+    <TextView
+        android:id="@+id/tvName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginLeft="10dp"
+        android:textColor="@color/dialog_text_primary"
+        android:textSize="13sp"
+        android:maxLines="2"
+        android:ellipsize="end"/>
+
+</LinearLayout>
