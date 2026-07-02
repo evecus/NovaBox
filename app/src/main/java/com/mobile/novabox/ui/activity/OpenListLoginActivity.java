@@ -51,9 +51,9 @@ public class OpenListLoginActivity extends BaseActivity {
         // 若之前勾选了"保存登录信息"，则回填三个字段并勾选勾选框
         boolean savedFlag = Hawk.get(HawkConfig.OPENLIST_SAVE_LOGIN, false);
         if (savedFlag) {
-            String savedUrl  = Hawk.get(HawkConfig.OPENLIST_SERVER_URL, "");
-            String savedUser = Hawk.get(HawkConfig.OPENLIST_USERNAME, "");
-            String savedPwd  = Hawk.get(HawkConfig.OPENLIST_PASSWORD, "");
+            String savedUrl  = Hawk.get(HawkConfig.OPENLIST_SAVED_URL, "");
+            String savedUser = Hawk.get(HawkConfig.OPENLIST_SAVED_USERNAME, "");
+            String savedPwd  = Hawk.get(HawkConfig.OPENLIST_SAVED_PASSWORD, "");
             if (!TextUtils.isEmpty(savedUrl))  etServerUrl.setText(savedUrl);
             if (!TextUtils.isEmpty(savedUser)) etUsername.setText(savedUser);
             if (!TextUtils.isEmpty(savedPwd))  etPassword.setText(savedPwd);
@@ -115,15 +115,17 @@ public class OpenListLoginActivity extends BaseActivity {
                     pbLogin.setVisibility(View.GONE);
                     btnLogin.setEnabled(true);
 
-                    // 根据勾选状态保存或清除登录信息
+                    // 根据勾选状态保存或清除登录信息（用独立 key，不受 logout() 影响）
                     if (shouldSave) {
                         Hawk.put(HawkConfig.OPENLIST_SAVE_LOGIN, true);
-                        Hawk.put(HawkConfig.OPENLIST_SERVER_URL, url);
-                        Hawk.put(HawkConfig.OPENLIST_USERNAME, user);
-                        Hawk.put(HawkConfig.OPENLIST_PASSWORD, pwd);
+                        Hawk.put(HawkConfig.OPENLIST_SAVED_URL,      url);
+                        Hawk.put(HawkConfig.OPENLIST_SAVED_USERNAME, user);
+                        Hawk.put(HawkConfig.OPENLIST_SAVED_PASSWORD, pwd);
                     } else {
                         Hawk.put(HawkConfig.OPENLIST_SAVE_LOGIN, false);
-                        Hawk.delete(HawkConfig.OPENLIST_PASSWORD);
+                        Hawk.delete(HawkConfig.OPENLIST_SAVED_URL);
+                        Hawk.delete(HawkConfig.OPENLIST_SAVED_USERNAME);
+                        Hawk.delete(HawkConfig.OPENLIST_SAVED_PASSWORD);
                     }
 
                     Toast.makeText(mContext, "登录成功", Toast.LENGTH_SHORT).show();

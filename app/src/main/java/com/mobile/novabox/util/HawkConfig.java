@@ -78,6 +78,9 @@ public class HawkConfig {
     public static final String OPENLIST_SERVER_URL = "openlist_server_url";
     public static final String OPENLIST_TOKEN = "openlist_token";
     public static final String OPENLIST_USERNAME = "openlist_username";
-    public static final String OPENLIST_PASSWORD = "openlist_password";       // 仅在用户勾选"保存登录信息"时存储
-    public static final String OPENLIST_SAVE_LOGIN = "openlist_save_login";   // boolean：是否保存登录信息
+    // "保存登录信息"功能专用 key（logout() 不会清除这三个，与 API 内部使用的 key 完全隔离）
+    public static final String OPENLIST_SAVE_LOGIN      = "openlist_save_login";       // boolean
+    public static final String OPENLIST_SAVED_URL       = "openlist_saved_url";        // 保存的服务器地址
+    public static final String OPENLIST_SAVED_USERNAME  = "openlist_saved_username";   // 保存的用户名
+    public static final String OPENLIST_SAVED_PASSWORD  = "openlist_saved_password";   // 保存的密码
 }
