@@ -402,7 +402,7 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
             lp.width = 0;
             lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
             if (lp instanceof LinearLayout.LayoutParams) {
-                ((LinearLayout.LayoutParams) lp).weight = 65;
+                ((LinearLayout.LayoutParams) lp).weight = 74;
             }
         } else {
             lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
