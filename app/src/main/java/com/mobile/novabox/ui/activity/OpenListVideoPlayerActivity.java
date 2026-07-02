@@ -352,6 +352,8 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         // 隐藏状态栏和导航栏（沉浸式）
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        // 清除根视图的 statusBar paddingTop，否则播放器容器顶部会空出一截并透出壁纸
+        clearStatusBarPadding();
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
@@ -382,9 +384,18 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
         setRequestedOrientation(isPad
                 ? ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
                 : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        // 恢复系统 UI
+        // 恢复系统 UI：必须与 applyStatusBarPadding/hideSysBar 保持一致，
+        // 不能用 SYSTEM_UI_FLAG_VISIBLE（会清除 LAYOUT_FULLSCREEN 和 LIGHT_STATUS_BAR，
+        // 导致布局突然下移且状态栏图标变白）
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+        int uiFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            uiFlags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        }
+        getWindow().getDecorView().setSystemUiVisibility(uiFlags);
+        // 恢复根视图的 statusBar paddingTop，确保内容不被状态栏遮挡
+        restoreStatusBarPadding();
         // 恢复播放器尺寸
         ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
         if (isPad) {
