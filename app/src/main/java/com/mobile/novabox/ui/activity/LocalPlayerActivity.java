@@ -379,8 +379,10 @@ public class LocalPlayerActivity extends BaseActivity {
         isFullScreen = true;
         pendingExitFullScreen = false;
 
-        // 旋转为横屏
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        if (!PadUiHelper.isPad(this)) {
+            // 手机端：旋转为横屏；平板端已是横屏，无需旋转
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        }
 
         // 隐藏状态栏和导航栏（不加 FLAG_LAYOUT_NO_LIMITS，避免退出时内容撑出屏幕边界）
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -402,7 +404,6 @@ public class LocalPlayerActivity extends BaseActivity {
             lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
             lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
             if (lp instanceof LinearLayout.LayoutParams) {
-                // 平板端原布局为水平 LinearLayout（weight=65），全屏时也需要独占
                 ((LinearLayout.LayoutParams) lp).weight = 1;
             }
             flPlayerContainer.setLayoutParams(lp);
@@ -415,10 +416,6 @@ public class LocalPlayerActivity extends BaseActivity {
 
     private void exitFullScreen() {
         isFullScreen = false;
-        pendingExitFullScreen = true; // 等 onConfigurationChanged 确认竖屏后再还原布局
-
-        // 旋转回竖屏
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         // 立即恢复系统 UI 标志（状态栏/导航栏重新显示），与 BaseActivity 保持一致
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -429,13 +426,25 @@ public class LocalPlayerActivity extends BaseActivity {
         getWindow().getDecorView().setSystemUiVisibility(uiFlags);
 
         if (ivFullscreen != null) ivFullscreen.setImageResource(R.drawable.icon_fullscreen);
-        // 布局还原推迟到 onConfigurationChanged() 确认竖屏后执行，避免在横屏尺寸下 measure 错乱
+
+        if (PadUiHelper.isPad(this)) {
+            // 平板端：BaseActivity 始终保持横屏，无需切方向，直接还原布局
+            // （若在全屏期间方向被改过，先恢复横屏）
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+            pendingExitFullScreen = false;
+            restoreSmallScreenLayout();
+        } else {
+            // 手机端：旋转回竖屏，等 onConfigurationChanged 确认竖屏后再还原布局
+            pendingExitFullScreen = true;
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        }
     }
 
     /**
      * 由于 Manifest 中配置了 configChanges="orientation|screenSize|..."，
      * 方向切换不会重建 Activity，而是回调此方法。
-     * 在这里做退出全屏后的布局还原，时机比 postDelayed 固定延迟精准。
+     * 手机端：在这里做退出全屏后的布局还原，时机比 postDelayed 固定延迟精准。
+     * 平板端：exitFullScreen() 直接调用 restoreSmallScreenLayout()，此处无需处理。
      */
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
@@ -447,7 +456,7 @@ public class LocalPlayerActivity extends BaseActivity {
         }
     }
 
-    /** 退出全屏、屏幕已切回竖屏后，还原小屏播放布局 */
+    /** 退出全屏后还原小屏播放布局 */
     private void restoreSmallScreenLayout() {
         if (isFinishing()) return;
 
@@ -482,7 +491,7 @@ public class LocalPlayerActivity extends BaseActivity {
         // 恢复标题、列表等兄弟视图
         hideNonPlayerViews(false);
 
-        // 平板端：还原右侧栏（标题+列表）的 LayoutParams，确保 weight=35 生效
+        // 平板端：还原右侧栏的 LayoutParams（weight=35），确保两栏比例正确
         if (PadUiHelper.isPad(this) && flPlayerContainer != null) {
             ViewGroup parent = (ViewGroup) flPlayerContainer.getParent();
             if (parent != null) {
