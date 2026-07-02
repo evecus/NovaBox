@@ -143,13 +143,25 @@
                 android:textSize="12sp"
                 android:visibility="gone" />
 
-            <!-- 登录按钮 -->
+            <!-- 登录按钮行（左：保存登录信息勾选框，右：登录按钮） -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:gravity="center_vertical|end"
+                android:gravity="center_vertical"
                 android:orientation="horizontal">
+
+                <!-- 保存登录信息勾选框 -->
+                <CheckBox
+                    android:id="@+id/cbOpenListSaveLogin"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="保存登录信息"
+                    android:textColor="@android:color/black"
+                    android:textSize="13sp"
+                    android:buttonTint="@android:color/black"
+                    android:checked="false" />
 
                 <ProgressBar
                     android:id="@+id/pbOpenListLogin"

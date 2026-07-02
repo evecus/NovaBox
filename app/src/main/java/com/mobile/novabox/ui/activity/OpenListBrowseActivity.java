@@ -1,5 +1,6 @@
 package com.mobile.novabox.ui.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -31,6 +32,7 @@ public class OpenListBrowseActivity extends BaseActivity {
     private TextView tvPath;
     private TextView tvEmpty;
     private TextView tvLogout;
+    private TextView tvGoHome;
     private ProgressBar pbLoading;
     private RecyclerView fileList;
     private OpenListFileAdapter adapter;
@@ -53,6 +55,7 @@ public class OpenListBrowseActivity extends BaseActivity {
         tvPath   = findViewById(R.id.tvOpenListPath);
         tvEmpty  = findViewById(R.id.tvOpenListEmpty);
         tvLogout = findViewById(R.id.tvOpenListLogout);
+        tvGoHome = findViewById(R.id.tvOpenListGoHome);
         pbLoading = findViewById(R.id.pbOpenListLoading);
         fileList = findViewById(R.id.rvOpenListFiles);
 
@@ -75,6 +78,14 @@ public class OpenListBrowseActivity extends BaseActivity {
         adapter.setOnItemClickListener((baseAdapter, view, position) -> {
             OpenListFile item = (OpenListFile) baseAdapter.getItem(position);
             if (item != null) open(item);
+        });
+
+        // 回到首页：清空返回栈，直接跳回 HomeActivity
+        tvGoHome.setOnClickListener(v -> {
+            Intent intent = new Intent(mContext, HomeActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
         });
 
         tvLogout.setOnClickListener(v -> {
