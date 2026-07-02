@@ -470,7 +470,7 @@ public class LocalPlayerActivity extends BaseActivity {
                 lp.width = 0;
                 lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
                 if (lp instanceof LinearLayout.LayoutParams) {
-                    ((LinearLayout.LayoutParams) lp).weight = 65;
+                    ((LinearLayout.LayoutParams) lp).weight = 74;
                 }
             } else {
                 // 手机端：垂直 LinearLayout，恢复播放器容器为 16:9 高度
@@ -491,7 +491,7 @@ public class LocalPlayerActivity extends BaseActivity {
         // 恢复标题、列表等兄弟视图
         hideNonPlayerViews(false);
 
-        // 平板端：还原右侧栏的 LayoutParams（weight=35），确保两栏比例正确
+        // 平板端：还原右侧栏的 LayoutParams（weight=26），确保两栏比例正确
         if (PadUiHelper.isPad(this) && flPlayerContainer != null) {
             ViewGroup parent = (ViewGroup) flPlayerContainer.getParent();
             if (parent != null) {
@@ -502,7 +502,7 @@ public class LocalPlayerActivity extends BaseActivity {
                         if (slp instanceof LinearLayout.LayoutParams) {
                             slp.width = 0;
                             slp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-                            ((LinearLayout.LayoutParams) slp).weight = 35;
+                            ((LinearLayout.LayoutParams) slp).weight = 26;
                             sibling.setLayoutParams(slp);
                         }
                     }
