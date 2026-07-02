@@ -5,12 +5,12 @@
     android:layout_height="match_parent"
     android:orientation="horizontal">
 
-    <!-- 左侧播放器区域 (约65%) -->
+    <!-- 左侧播放器区域 (约74%，参考哔哩哔哩比例) -->
     <FrameLayout
         android:id="@+id/flOpenListPlayerContainer"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="65"
+        android:layout_weight="74"
         android:background="#FF000000">
 
         <com.mobile.novabox.player.MyVideoView
@@ -114,12 +114,12 @@
         </FrameLayout>
     </FrameLayout>
 
-    <!-- 右侧：返回+标题 + 播放列表 (约35%) -->
+    <!-- 右侧：返回+标题 + 播放列表 (约26%，参考哔哩哔哩比例) -->
     <LinearLayout
         android:id="@+id/llOpenListSidePanel"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="35"
+        android:layout_weight="26"
         android:orientation="vertical"
         android:background="#EEFAFAFA">
 
