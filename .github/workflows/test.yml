@@ -86,7 +86,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: test
-          name: NovaBox test
+          name: NovaBox test release
           prerelease: true
           files: release-apks/*.apk
         env:
