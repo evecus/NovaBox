@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 平板端：横向布局，背景完全透明让全局壁纸透出 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 平板端：横向布局，背景透明让全局壁纸透出 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
-    android:background="@android:color/transparent"
-    android:padding="32dp">
+    android:background="@android:color/transparent">
 
     <!-- 不可见播放器 -->
     <com.mobile.novabox.player.MyVideoView
@@ -14,153 +12,169 @@
         android:layout_height="1dp"
         android:visibility="invisible" />
 
-    <!-- 左侧：返回键 + 封面 -->
+    <!-- 返回键：固定在左上角 -->
+    <ImageView
+        android:id="@+id/ivOpenListAudioBack"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|start"
+        android:layout_margin="12dp"
+        android:padding="10dp"
+        android:src="@drawable/icon_back"
+        android:tint="@android:color/black"
+        android:scaleType="fitCenter"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- 主内容：左封面 + 右信息 -->
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center">
+        android:orientation="horizontal"
+        android:paddingLeft="32dp"
+        android:paddingRight="32dp"
+        android:paddingTop="64dp"
+        android:paddingBottom="24dp">
 
-        <ImageView
-            android:id="@+id/ivOpenListAudioBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="8dp"
-            android:src="@drawable/icon_back"
-            android:tint="@android:color/black"
-            android:scaleType="fitCenter"
-            android:clickable="true"
-            android:focusable="true"
-            android:layout_gravity="start"
-            android:layout_marginBottom="16dp" />
-
-        <ImageView
-            android:id="@+id/ivAlbumArt"
-            android:layout_width="280dp"
-            android:layout_height="280dp"
-            android:scaleType="centerCrop"
-            android:visibility="gone" />
-
-        <LinearLayout
-            android:id="@+id/llNoCover"
-            android:layout_width="280dp"
-            android:layout_height="280dp"
-            android:gravity="center"
-            android:orientation="vertical">
+        <!-- 左侧：封面居中 -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
 
             <ImageView
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:src="@drawable/icon_live"
-                android:tint="#44000000"
-                android:scaleType="fitCenter" />
+                android:id="@+id/ivAlbumArt"
+                android:layout_width="300dp"
+                android:layout_height="300dp"
+                android:layout_gravity="center"
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="暂无封面"
-                android:textColor="#66000000"
-                android:textSize="14sp" />
-        </LinearLayout>
-    </LinearLayout>
+            <LinearLayout
+                android:id="@+id/llNoCover"
+                android:layout_width="300dp"
+                android:layout_height="300dp"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:orientation="vertical">
 
-    <!-- 右侧：歌名 + 歌手 + 歌词 + 进度条 + 播放键 -->
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center_horizontal|center_vertical"
-        android:paddingLeft="24dp">
+                <ImageView
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:src="@drawable/icon_live"
+                    android:tint="#44000000"
+                    android:scaleType="fitCenter" />
 
-        <ProgressBar
-            android:id="@+id/pbOpenListAudioLoading"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_marginBottom="8dp"
-            android:indeterminate="true"
-            android:visibility="gone" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="暂无封面"
+                    android:textColor="#66000000"
+                    android:textSize="14sp" />
+            </LinearLayout>
+        </FrameLayout>
 
-        <TextView
-            android:id="@+id/tvOpenListSongName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textColor="@android:color/black"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end" />
-
-        <TextView
-            android:id="@+id/tvOpenListArtist"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:gravity="center"
-            android:textColor="#88000000"
-            android:textSize="15sp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:visibility="gone" />
-
-        <com.mobile.novabox.ui.widget.LrcView
-            android:id="@+id/lrcViewMobile"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:layout_marginTop="12dp" />
-
+        <!-- 右侧：歌名 + 歌手 + 歌词 + 进度条 + 播放键 -->
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingLeft="24dp">
 
+            <ProgressBar
+                android:id="@+id/pbOpenListAudioLoading"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginBottom="8dp"
+                android:indeterminate="true"
+                android:visibility="gone" />
+
+            <!-- 歌名：更大 -->
             <TextView
-                android:id="@+id/tvOpenListAudioCurTime"
-                android:layout_width="40dp"
+                android:id="@+id/tvOpenListSongName"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="00:00"
-                android:textColor="#88000000"
-                android:textSize="12sp"
-                android:gravity="center" />
+                android:gravity="center"
+                android:textColor="@android:color/black"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
 
-            <SeekBar
-                android:id="@+id/seekBarOpenListAudio"
-                android:layout_width="0dp"
+            <!-- 歌手：更大 -->
+            <TextView
+                android:id="@+id/tvOpenListArtist"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:textColor="#88000000"
+                android:textSize="17sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:visibility="gone" />
+
+            <!-- 歌词：顶部和底部各留 24dp，与歌手名和进度条保持距离 -->
+            <com.mobile.novabox.ui.widget.LrcView
+                android:id="@+id/lrcViewMobile"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
                 android:layout_weight="1"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="8dp"
-                android:max="1000"
-                android:progressTint="@color/color_1890FF"
-                android:thumbTint="@color/color_1890FF" />
+                android:paddingTop="24dp"
+                android:paddingBottom="24dp" />
 
-            <TextView
-                android:id="@+id/tvOpenListAudioTotalTime"
-                android:layout_width="40dp"
+            <!-- 进度条 -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="00:00"
-                android:textColor="#88000000"
-                android:textSize="12sp"
-                android:gravity="center" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvOpenListAudioCurTime"
+                    android:layout_width="44dp"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textColor="#88000000"
+                    android:textSize="12sp"
+                    android:gravity="center" />
+
+                <SeekBar
+                    android:id="@+id/seekBarOpenListAudio"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="8dp"
+                    android:layout_marginRight="8dp"
+                    android:max="1000"
+                    android:progressTint="@color/color_1890FF"
+                    android:thumbTint="@color/color_1890FF" />
+
+                <TextView
+                    android:id="@+id/tvOpenListAudioTotalTime"
+                    android:layout_width="44dp"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textColor="#88000000"
+                    android:textSize="12sp"
+                    android:gravity="center" />
+            </LinearLayout>
+
+            <!-- 播放/暂停 -->
+            <ImageView
+                android:id="@+id/ivOpenListAudioPlayPause"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:padding="10dp"
+                android:src="@drawable/icon_pause"
+                android:tint="@android:color/black"
+                android:scaleType="fitCenter"
+                android:clickable="true"
+                android:focusable="true" />
         </LinearLayout>
-
-        <ImageView
-            android:id="@+id/ivOpenListAudioPlayPause"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:layout_marginTop="12dp"
-            android:padding="10dp"
-            android:src="@drawable/icon_pause"
-            android:tint="@android:color/black"
-            android:scaleType="fitCenter"
-            android:clickable="true"
-            android:focusable="true" />
     </LinearLayout>
-
-</LinearLayout>
+</FrameLayout>

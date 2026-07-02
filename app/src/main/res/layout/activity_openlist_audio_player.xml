@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 手机端：竖屏，背景完全透明让全局壁纸透出 -->
+<!-- 手机端：竖屏，背景透明让全局壁纸透出 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -35,24 +35,27 @@
             android:orientation="vertical"
             android:layout_marginLeft="8dp">
 
+            <!-- 歌名：更大字号 -->
             <TextView
                 android:id="@+id/tvOpenListSongName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:textColor="@android:color/black"
-                android:textSize="17sp"
+                android:textSize="20sp"
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end" />
 
+            <!-- 歌手：更大字号 -->
             <TextView
                 android:id="@+id/tvOpenListArtist"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
                 android:gravity="center"
                 android:textColor="#88000000"
-                android:textSize="13sp"
+                android:textSize="15sp"
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:visibility="gone" />
@@ -61,7 +64,7 @@
         <View android:layout_width="40dp" android:layout_height="40dp" />
     </LinearLayout>
 
-    <!-- 中间内容区：封面 / 歌词切换（点击切换） -->
+    <!-- 中间内容区：封面 / 歌词切换（点击切换，无文字提示） -->
     <FrameLayout
         android:id="@+id/flMobileCenter"
         android:layout_width="match_parent"
@@ -78,23 +81,24 @@
             android:orientation="vertical"
             android:gravity="center">
 
+            <!-- 封面更大：260dp -->
             <ImageView
                 android:id="@+id/ivAlbumArt"
-                android:layout_width="220dp"
-                android:layout_height="220dp"
+                android:layout_width="260dp"
+                android:layout_height="260dp"
                 android:scaleType="centerCrop"
                 android:visibility="gone" />
 
             <LinearLayout
                 android:id="@+id/llNoCover"
-                android:layout_width="220dp"
-                android:layout_height="220dp"
+                android:layout_width="260dp"
+                android:layout_height="260dp"
                 android:gravity="center"
                 android:orientation="vertical">
 
                 <ImageView
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
+                    android:layout_width="90dp"
+                    android:layout_height="90dp"
                     android:src="@drawable/icon_live"
                     android:tint="#44000000"
                     android:scaleType="fitCenter" />
@@ -117,23 +121,15 @@
                 android:visibility="gone" />
         </LinearLayout>
 
-        <!-- 歌词层（点击封面后显示） -->
+        <!-- 歌词层：顶部和底部留出间距，不贴边 -->
         <com.mobile.novabox.ui.widget.LrcView
             android:id="@+id/lrcViewMobile"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:paddingTop="24dp"
+            android:paddingBottom="24dp"
             android:visibility="gone" />
 
-        <!-- 切换提示 -->
-        <TextView
-            android:id="@+id/tvTapHint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center_horizontal"
-            android:layout_marginBottom="8dp"
-            android:text="点击切换歌词 / 封面"
-            android:textColor="#44000000"
-            android:textSize="11sp" />
     </FrameLayout>
 
     <!-- 底部：进度条 + 播放控制 -->
@@ -144,7 +140,7 @@
         android:paddingLeft="24dp"
         android:paddingRight="24dp"
         android:paddingBottom="24dp"
-        android:paddingTop="8dp">
+        android:paddingTop="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -155,7 +151,7 @@
 
             <TextView
                 android:id="@+id/tvOpenListAudioCurTime"
-                android:layout_width="40dp"
+                android:layout_width="44dp"
                 android:layout_height="wrap_content"
                 android:text="00:00"
                 android:textColor="#88000000"
@@ -175,7 +171,7 @@
 
             <TextView
                 android:id="@+id/tvOpenListAudioTotalTime"
-                android:layout_width="40dp"
+                android:layout_width="44dp"
                 android:layout_height="wrap_content"
                 android:text="00:00"
                 android:textColor="#88000000"

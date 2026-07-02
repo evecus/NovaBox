@@ -242,8 +242,10 @@ public class OpenListAudioPlayerActivity extends BaseActivity {
         }
         // 歌手
         if (!TextUtils.isEmpty(meta.artist)) {
-            String display = TextUtils.isEmpty(meta.album)
-                    ? meta.artist : meta.artist + " · " + meta.album;
+            // 专辑名与歌曲名相同时不显示专辑（避免重复）
+            boolean showAlbum = !TextUtils.isEmpty(meta.album)
+                    && !meta.album.equalsIgnoreCase(tvSongName.getText().toString().trim());
+            String display = showAlbum ? meta.artist + " · " + meta.album : meta.artist;
             tvArtist.setText(display);
             tvArtist.setVisibility(View.VISIBLE);
         }

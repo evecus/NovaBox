@@ -67,9 +67,9 @@ public class LrcView extends View {
         super(context, attrs, defStyleAttr);
         float sp = context.getResources().getDisplayMetrics().scaledDensity;
         float dp = context.getResources().getDisplayMetrics().density;
-        mNormalTextSize    = 22 * sp;
-        mHighlightTextSize = 25 * sp;
-        mLineSpacing       = dp * 80f;   // 行间距 80dp
+        mNormalTextSize    = 14 * sp;
+        mHighlightTextSize = 16 * sp;
+        mLineSpacing       = dp * 42f;   // 行间距 42dp
 
         mNormalPaint.setTextSize(mNormalTextSize);
         mNormalPaint.setColor(0xAA000000);
