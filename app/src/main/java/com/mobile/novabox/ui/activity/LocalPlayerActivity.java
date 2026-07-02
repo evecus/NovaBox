@@ -402,11 +402,12 @@ public class LocalPlayerActivity extends BaseActivity {
             lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
             lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
             if (lp instanceof LinearLayout.LayoutParams) {
+                // 平板端原布局为水平 LinearLayout（weight=65），全屏时也需要独占
                 ((LinearLayout.LayoutParams) lp).weight = 1;
             }
             flPlayerContainer.setLayoutParams(lp);
         }
-        // 隐藏标题、列表等非播放区域
+        // 隐藏标题、列表等非播放区域（平板端为右侧栏）
         hideNonPlayerViews(true);
 
         if (ivFullscreen != null) ivFullscreen.setImageResource(R.drawable.icon_exit_fullscreen);
@@ -453,24 +454,52 @@ public class LocalPlayerActivity extends BaseActivity {
         // 恢复状态栏顶部 padding（BaseActivity 在 onCreate 时设置的）
         restoreStatusBarPadding();
 
-        // 恢复播放器容器为 16:9 高度
         if (flPlayerContainer != null) {
-            android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
-            getWindowManager().getDefaultDisplay().getMetrics(dm);
-            // 竖屏时宽度是短边
-            int w = Math.min(dm.widthPixels, dm.heightPixels);
-            int h = w * 9 / 16;
             ViewGroup.LayoutParams lp = flPlayerContainer.getLayoutParams();
-            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            lp.height = h;
-            if (lp instanceof LinearLayout.LayoutParams) {
-                ((LinearLayout.LayoutParams) lp).weight = 0;
+            if (PadUiHelper.isPad(this)) {
+                // 平板端：水平 LinearLayout，播放器占 65% 宽度，高度 match_parent
+                lp.width = 0;
+                lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+                if (lp instanceof LinearLayout.LayoutParams) {
+                    ((LinearLayout.LayoutParams) lp).weight = 65;
+                }
+            } else {
+                // 手机端：垂直 LinearLayout，恢复播放器容器为 16:9 高度
+                android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+                getWindowManager().getDefaultDisplay().getMetrics(dm);
+                // 竖屏时宽度是短边
+                int w = Math.min(dm.widthPixels, dm.heightPixels);
+                int h = w * 9 / 16;
+                lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                lp.height = h;
+                if (lp instanceof LinearLayout.LayoutParams) {
+                    ((LinearLayout.LayoutParams) lp).weight = 0;
+                }
             }
             flPlayerContainer.setLayoutParams(lp);
         }
 
         // 恢复标题、列表等兄弟视图
         hideNonPlayerViews(false);
+
+        // 平板端：还原右侧栏（标题+列表）的 LayoutParams，确保 weight=35 生效
+        if (PadUiHelper.isPad(this) && flPlayerContainer != null) {
+            ViewGroup parent = (ViewGroup) flPlayerContainer.getParent();
+            if (parent != null) {
+                for (int i = 0; i < parent.getChildCount(); i++) {
+                    View sibling = parent.getChildAt(i);
+                    if (sibling != flPlayerContainer) {
+                        ViewGroup.LayoutParams slp = sibling.getLayoutParams();
+                        if (slp instanceof LinearLayout.LayoutParams) {
+                            slp.width = 0;
+                            slp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+                            ((LinearLayout.LayoutParams) slp).weight = 35;
+                            sibling.setLayoutParams(slp);
+                        }
+                    }
+                }
+            }
+        }
 
         // 重置 RecyclerView adapter，清除横屏期间缓存的错误 item 测量
         if (rvPlaylist != null && playlistAdapter != null) {
