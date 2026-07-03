@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pad 端（最小宽度 ≥ 600dp）专用尺寸。
+    Android 会在平板 / 横屏 Pad 上自动选取此文件，覆盖 values/dimens.xml 中的同名值。
+-->
+<resources>
+    <!-- ── 文字大小（Pad 上字号整体放大约 15%） ── -->
+    <dimen name="ts_10">11sp</dimen>
+    <dimen name="ts_16">14sp</dimen>
+    <dimen name="ts_20">15sp</dimen>
+    <dimen name="ts_22">16sp</dimen>
+    <dimen name="ts_24">17sp</dimen>
+    <dimen name="ts_26">18sp</dimen>
+    <dimen name="ts_28">19sp</dimen>
+    <dimen name="ts_30">20sp</dimen>
+    <dimen name="ts_34">22sp</dimen>
+    <dimen name="ts_40">25sp</dimen>
+    <dimen name="ts_50">28sp</dimen>
+    <dimen name="ts_100">36sp</dimen>
+
+    <!-- ── 圆角 & 边框 ── -->
+    <dimen name="focus_border_1">1dp</dimen>
+    <dimen name="focus_border_2">2dp</dimen>
+    <dimen name="radius_5">6dp</dimen>
+    <dimen name="radius_10">10dp</dimen>
+    <dimen name="radius_20">14dp</dimen>
+    <dimen name="preview_player_radius">10dp</dimen>
+
+    <!-- ── 负偏移量（保持不变） ── -->
+    <dimen name="vs_4_">-4dp</dimen>
+    <dimen name="vs_20_">-20dp</dimen>
+    <dimen name="vs_25_">-25dp</dimen>
+    <dimen name="vs_60_">-60dp</dimen>
+
+    <!-- ── 通用间距 / 尺寸（Pad 上适当放大） ── -->
+    <dimen name="vs_0">0dp</dimen>
+    <dimen name="vs_1">1dp</dimen>
+    <dimen name="vs_2">2dp</dimen>
+    <dimen name="vs_3">3dp</dimen>
+    <dimen name="vs_4">4dp</dimen>
+    <dimen name="vs_5">6dp</dimen>
+    <dimen name="vs_6">8dp</dimen>
+    <dimen name="vs_7">8dp</dimen>
+    <dimen name="vs_8">10dp</dimen>
+    <dimen name="vs_10">12dp</dimen>
+    <dimen name="vs_12">14dp</dimen>
+    <dimen name="vs_15">18dp</dimen>
+    <dimen name="vs_20">24dp</dimen>
+    <dimen name="vs_24">28dp</dimen>
+    <dimen name="vs_28">32dp</dimen>
+    <dimen name="vs_30">36dp</dimen>
+    <dimen name="vs_35">42dp</dimen>
+    <dimen name="vs_40">48dp</dimen>
+    <dimen name="vs_45">52dp</dimen>
+    <dimen name="vs_48">56dp</dimen>
+    <dimen name="vs_50">58dp</dimen>
+    <dimen name="vs_60">68dp</dimen>
+    <dimen name="vs_70">80dp</dimen>
+    <dimen name="vs_76">88dp</dimen>
+    <dimen name="vs_80">96dp</dimen>
+    <dimen name="vs_90">108dp</dimen>
+    <dimen name="vs_100">120dp</dimen>
+    <dimen name="vs_108">124dp</dimen>
+    <dimen name="vs_120">140dp</dimen>
+    <dimen name="vs_128">148dp</dimen>
+    <dimen name="vs_130">150dp</dimen>
+    <dimen name="vs_140">162dp</dimen>
+    <dimen name="vs_150">174dp</dimen>
+    <dimen name="vs_160">185dp</dimen>
+    <dimen name="vs_162">186dp</dimen>
+    <dimen name="vs_165">190dp</dimen>
+    <dimen name="vs_170">196dp</dimen>
+    <dimen name="vs_180">208dp</dimen>
+    <dimen name="vs_190">220dp</dimen>
+    <dimen name="vs_200">232dp</dimen>
+    <dimen name="vs_214">248dp</dimen>
+    <dimen name="vs_204">236dp</dimen>
+    <dimen name="vs_220">254dp</dimen>
+    <dimen name="vs_230">266dp</dimen>
+    <dimen name="vs_240">278dp</dimen>
+    <dimen name="vs_250">290dp</dimen>
+    <dimen name="vs_270">312dp</dimen>
+    <dimen name="vs_272">314dp</dimen>
+    <dimen name="vs_280">324dp</dimen>
+    <dimen name="vs_300">348dp</dimen>
+    <dimen name="vs_320">370dp</dimen>
+    <dimen name="vs_340">394dp</dimen>
+    <dimen name="vs_360">416dp</dimen>
+    <dimen name="vs_390">452dp</dimen>
+    <dimen name="vs_400">464dp</dimen>
+    <dimen name="vs_410">475dp</dimen>
+    <dimen name="vs_420">486dp</dimen>
+    <dimen name="vs_440">509dp</dimen>
+    <dimen name="vs_470">544dp</dimen>
+    <dimen name="vs_480">556dp</dimen>
+    <dimen name="vs_520">600dp</dimen>
+    <dimen name="vs_600">694dp</dimen>
+    <dimen name="vs_610">706dp</dimen>
+    <dimen name="vs_640">740dp</dimen>
+    <dimen name="vs_720">833dp</dimen>
+    <dimen name="vs_960">960dp</dimen>
+
+    <!-- ── Pad 专属：左侧导航栏宽度 ── -->
+    <dimen name="pad_side_nav_width">72dp</dimen>
+    <!-- Pad 专属：对话框最大宽度（横屏不铺满） -->
+    <dimen name="pad_dialog_max_width">560dp</dimen>
+    <!-- Pad 专属：直播频道侧栏宽度 -->
+    <dimen name="pad_live_channel_width">260dp</dimen>
+    <!-- Pad 专属：详情页集数面板宽度 -->
+    <dimen name="pad_detail_episode_width">320dp</dimen>
+</resources>

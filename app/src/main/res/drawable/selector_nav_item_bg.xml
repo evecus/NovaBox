@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 左侧竖向导航栏各 item 的状态背景（Pad 端专用） -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 选中态：半透明白色背景 + 圆角 -->
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#33FFFFFF"/>
+            <corners android:radius="8dp"/>
+        </shape>
+    </item>
+    <!-- 按下态：稍深 -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#22FFFFFF"/>
+            <corners android:radius="8dp"/>
+        </shape>
+    </item>
+    <!-- 默认：透明 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent"/>
+        </shape>
+    </item>
+</selector>

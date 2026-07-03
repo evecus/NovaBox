@@ -1,0 +1,82 @@
+name: Test Debug
+on:
+  workflow_dispatch:        # 允许手动触发
+
+jobs:
+  # ── arm64-v8a Debug ────────────────────────────────────────────
+  build-arm64:
+    name: Build arm64-v8a Debug
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Create local.properties
+        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build arm64-v8a Debug APK
+        run: ./gradlew assembleJava64Debug --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
+
+      - name: List output APKs (arm64)
+        run: find app/build/outputs/apk -name "*.apk" | sort
+
+      - name: Upload arm64-v8a Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovaBox-arm64-Debug-${{ github.run_number }}
+          path: app/build/outputs/apk/java64/debug/*.apk
+          retention-days: 30
+
+  # ── 创建 GitHub Release（build 成功后）──────────────────────
+  release:
+    name: Create GitHub Release
+    needs: [build-arm64]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all APK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: NovaBox-*
+          merge-multiple: true
+          path: release-apks/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: test-debug
+          name: NovaBox debug test
+          prerelease: true
+          files: release-apks/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
