@@ -87,6 +87,34 @@ public class AudioMetadataLoader {
 
     // ─── ID3v2 解析 ───────────────────────────────────────────────────────────
 
+    /**
+     * 同步读取本地音频文件的 ID3 tag（歌词/封面等），在子线程调用。
+     */
+    public static Metadata loadLocal(String filePath) {
+        try {
+            java.io.File file = new java.io.File(filePath);
+            if (!file.exists()) return null;
+            long readLen = Math.min(file.length(), FETCH_BYTES);
+            byte[] data = new byte[(int) readLen];
+            java.io.FileInputStream fis = new java.io.FileInputStream(file);
+            int read = 0;
+            try {
+                while (read < data.length) {
+                    int n = fis.read(data, read, data.length - read);
+                    if (n < 0) break;
+                    read += n;
+                }
+            } finally {
+                fis.close();
+            }
+            if (read < 10) return null;
+            return parse(data);
+        } catch (Exception e) {
+            Log.e(TAG, "loadLocal error: " + e.getMessage());
+            return null;
+        }
+    }
+
     private static Metadata parse(byte[] data) {
         Metadata meta = new Metadata();
         if (data.length < 10) return meta;

@@ -447,56 +447,119 @@ public class LocalAudioPlayerActivity extends BaseActivity {
         if (metaExecutor.isShutdown()) metaExecutor = Executors.newSingleThreadExecutor();
         String path = song.path;
         metaExecutor.execute(() -> {
+            String title  = null;
+            String artist = null;
+            Bitmap bmp    = null;
+            String lrcContent = null;
+
+            // 1. MediaMetadataRetriever 读基本信息 + 封面
             MediaMetadataRetriever ret = new MediaMetadataRetriever();
             try {
                 ret.setDataSource(path);
-                String title  = ret.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
-                String artist = ret.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
-                byte[] cover  = ret.getEmbeddedPicture();
-                Bitmap bmp = cover != null ? android.graphics.BitmapFactory.decodeByteArray(cover, 0, cover.length) : null;
-
-                // 读歌词（同名 .lrc 文件）
-                String lrcPath = path.replaceAll("\\.[^.]+$", ".lrc");
-                String lrcContent = null;
-                File lrcFile = new File(lrcPath);
-                if (lrcFile.exists()) {
-                    try {
-                        lrcContent = new String(java.nio.file.Files.readAllBytes(lrcFile.toPath()), "UTF-8");
-                    } catch (Exception ignore) {}
-                }
-                final String finalTitle  = title;
-                final String finalArtist = artist;
-                final Bitmap finalBmp    = bmp;
-                final String finalLrc    = lrcContent;
-
-                handler.post(() -> {
-                    if (isActivityUnavailable()) return;
-                    // 仅当还是同一首歌时才更新
-                    if (currentIndex < playlist.size() && playlist.get(currentIndex).path.equals(path)) {
-                        if (!TextUtils.isEmpty(finalTitle)) {
-                            tvSongName.setText(finalTitle);
-                            playlist.get(currentIndex).title = finalTitle;
-                        }
-                        if (!TextUtils.isEmpty(finalArtist)) {
-                            tvArtist.setText(finalArtist);
-                            tvArtist.setVisibility(View.VISIBLE);
-                            playlist.get(currentIndex).artist = finalArtist;
-                        }
-                        if (finalBmp != null) {
-                            ivAlbumArt.setImageBitmap(finalBmp);
-                            ivAlbumArt.setVisibility(View.VISIBLE);
-                            llNoCover.setVisibility(View.GONE);
-                        }
-                        lrcView.setLrc(finalLrc);
-                        if (queueVisible) updateQueueUI();
-                    }
-                });
+                title  = ret.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+                artist = ret.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+                byte[] cover = ret.getEmbeddedPicture();
+                if (cover != null)
+                    bmp = android.graphics.BitmapFactory.decodeByteArray(cover, 0, cover.length);
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
                 try { ret.release(); } catch (Exception ignore) {}
             }
+
+            // 2. AudioMetadataLoader 读 ID3 内嵌歌词（USLT 帧）
+            try {
+                java.io.InputStream is = new java.io.FileInputStream(path);
+                byte[] header = new byte[10];
+                if (is.read(header) == 10 && header[0] == 'I' && header[1] == 'D' && header[2] == '3') {
+                    // 有 ID3 标签，用 AudioMetadataLoader 解析
+                    is.close();
+                    com.mobile.novabox.util.AudioMetadataLoader.Metadata meta =
+                            com.mobile.novabox.util.AudioMetadataLoader.loadLocal(path);
+                    if (meta != null) {
+                        if (!android.text.TextUtils.isEmpty(meta.lyrics)) lrcContent = meta.lyrics;
+                        if (!android.text.TextUtils.isEmpty(meta.title)  && android.text.TextUtils.isEmpty(title))  title  = meta.title;
+                        if (!android.text.TextUtils.isEmpty(meta.artist) && android.text.TextUtils.isEmpty(artist)) artist = meta.artist;
+                        if (bmp == null && meta.cover != null) bmp = meta.cover;
+                    }
+                } else {
+                    is.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            // 3. 同名 .lrc 文件兜底（兼容所有 Android 版本）
+            if (android.text.TextUtils.isEmpty(lrcContent)) {
+                String lrcPath = path.substring(0, path.lastIndexOf('.') + 1) + "lrc";
+                File lrcFile = new File(lrcPath);
+                if (!lrcFile.exists()) {
+                    // 尝试大写 .LRC
+                    lrcFile = new File(path.substring(0, path.lastIndexOf('.') + 1) + "LRC");
+                }
+                if (lrcFile.exists()) {
+                    lrcContent = readFileCompat(lrcFile);
+                }
+            }
+
+            final String finalTitle  = title;
+            final String finalArtist = artist;
+            final Bitmap finalBmp    = bmp;
+            final String finalLrc    = lrcContent;
+
+            handler.post(() -> {
+                if (isActivityUnavailable()) return;
+                if (currentIndex < playlist.size() && playlist.get(currentIndex).path.equals(path)) {
+                    if (!TextUtils.isEmpty(finalTitle)) {
+                        tvSongName.setText(finalTitle);
+                        playlist.get(currentIndex).title = finalTitle;
+                    }
+                    if (!TextUtils.isEmpty(finalArtist)) {
+                        tvArtist.setText(finalArtist);
+                        tvArtist.setVisibility(View.VISIBLE);
+                        playlist.get(currentIndex).artist = finalArtist;
+                    }
+                    if (finalBmp != null) {
+                        ivAlbumArt.setImageBitmap(finalBmp);
+                        ivAlbumArt.setVisibility(View.VISIBLE);
+                        llNoCover.setVisibility(View.GONE);
+                    }
+                    lrcView.setLrc(finalLrc);
+                    if (queueVisible) updateQueueUI();
+                }
+            });
         });
+    }
+
+    /** 兼容所有 Android 版本读文本文件 */
+    private String readFileCompat(File file) {
+        java.io.BufferedReader reader = null;
+        try {
+            reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(new java.io.FileInputStream(file), "UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append('\n');
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            // 尝试 GBK 编码（部分中文 lrc 文件）
+            try {
+                reader = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(new java.io.FileInputStream(file), "GBK"));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line).append('\n');
+                }
+                return sb.toString();
+            } catch (Exception e2) {
+                return null;
+            }
+        } finally {
+            if (reader != null) try { reader.close(); } catch (Exception ignore) {}
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
