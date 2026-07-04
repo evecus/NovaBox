@@ -26,7 +26,7 @@
         android:clickable="true"
         android:focusable="true" />
 
-    <!-- 主内容：左封面 + 右信息 -->
+    <!-- ===== 主内容：左封面区 + 右信息区 ===== -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -36,46 +36,187 @@
         android:paddingTop="64dp"
         android:paddingBottom="24dp">
 
-        <!-- 左侧：封面居中 -->
+        <!-- 左侧：封面 + 上下划手势区（整列作为手势区） -->
         <FrameLayout
+            android:id="@+id/flPadCoverArea"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true">
 
-            <ImageView
-                android:id="@+id/ivAlbumArt"
-                android:layout_width="300dp"
-                android:layout_height="300dp"
-                android:layout_gravity="center"
-                android:scaleType="centerCrop"
-                android:visibility="gone" />
-
+            <!-- 封面/无封面 显示（正常播放时） -->
             <LinearLayout
-                android:id="@+id/llNoCover"
-                android:layout_width="300dp"
-                android:layout_height="300dp"
-                android:layout_gravity="center"
+                android:id="@+id/llPadCoverContent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:gravity="center"
                 android:orientation="vertical">
 
                 <ImageView
-                    android:layout_width="100dp"
-                    android:layout_height="100dp"
-                    android:src="@drawable/icon_live"
-                    android:tint="#44000000"
-                    android:scaleType="fitCenter" />
+                    android:id="@+id/ivAlbumArt"
+                    android:layout_width="300dp"
+                    android:layout_height="300dp"
+                    android:layout_gravity="center"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="暂无封面"
-                    android:textColor="#66000000"
-                    android:textSize="14sp" />
+                <LinearLayout
+                    android:id="@+id/llNoCover"
+                    android:layout_width="300dp"
+                    android:layout_height="300dp"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="100dp"
+                        android:layout_height="100dp"
+                        android:src="@drawable/icon_live"
+                        android:tint="#44000000"
+                        android:scaleType="fitCenter" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="暂无封面"
+                        android:textColor="#66000000"
+                        android:textSize="14sp" />
+                </LinearLayout>
             </LinearLayout>
+
+            <!-- 播放列表覆盖层（上划显示，覆盖左侧封面区） -->
+            <LinearLayout
+                android:id="@+id/llQueuePanel"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:background="@android:color/transparent"
+                android:visibility="gone">
+
+                <!-- 提示 -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="4dp"
+                    android:text="此处向下轻扫以返回播放界面"
+                    android:textColor="#88000000"
+                    android:textSize="13sp" />
+
+                <!-- 当前播放歌曲 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvQueueCurrentSong"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@android:color/black"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+
+                        <TextView
+                            android:id="@+id/tvQueueCurrentArtist"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="#88000000"
+                            android:textSize="12sp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:visibility="gone" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 数量行 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:paddingBottom="4dp">
+
+                    <TextView
+                        android:id="@+id/tvQueueCount"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="#88000000"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="播放队列"
+                        android:gravity="center"
+                        android:textColor="@android:color/black"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#22000000" />
+
+                <!-- 列表 -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvQueueList"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:clipToPadding="false"
+                    android:paddingBottom="16dp" />
+
+                <!-- 播放模式 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:padding="10dp">
+
+                    <TextView
+                        android:id="@+id/tvQueuePlayMode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="#22000000"
+                        android:paddingLeft="16dp"
+                        android:paddingRight="16dp"
+                        android:paddingTop="7dp"
+                        android:paddingBottom="7dp"
+                        android:textColor="@android:color/black"
+                        android:textSize="13sp"
+                        android:text="随机播放模式"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </LinearLayout>
+
+            </LinearLayout>
+
         </FrameLayout>
 
-        <!-- 右侧：歌名 + 歌手 + 歌词 + 进度条 + 播放键 -->
+        <!-- 右侧：歌名 + 歌手 + 歌词 + 进度条 + 播放控制行 -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -92,7 +233,6 @@
                 android:indeterminate="true"
                 android:visibility="gone" />
 
-            <!-- 歌名：更大 -->
             <TextView
                 android:id="@+id/tvOpenListSongName"
                 android:layout_width="match_parent"
@@ -104,7 +244,6 @@
                 android:maxLines="1"
                 android:ellipsize="end" />
 
-            <!-- 歌手：更大 -->
             <TextView
                 android:id="@+id/tvOpenListArtist"
                 android:layout_width="match_parent"
@@ -117,7 +256,6 @@
                 android:ellipsize="end"
                 android:visibility="gone" />
 
-            <!-- 歌词：顶部和底部各留 24dp，与歌手名和进度条保持距离 -->
             <com.mobile.novabox.ui.widget.LrcView
                 android:id="@+id/lrcViewMobile"
                 android:layout_width="match_parent"
@@ -163,18 +301,85 @@
                     android:gravity="center" />
             </LinearLayout>
 
-            <!-- 播放/暂停 -->
-            <ImageView
-                android:id="@+id/ivOpenListAudioPlayPause"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                android:padding="10dp"
-                android:src="@drawable/icon_pause"
-                android:tint="@android:color/black"
-                android:scaleType="fitCenter"
-                android:clickable="true"
-                android:focusable="true" />
+            <!-- 播放控制行：播放模式 | 上一首 | 播放/暂停 | 下一首 | 播放列表 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp">
+
+                <ImageView
+                    android:id="@+id/ivPlayMode"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_play_mode_list"
+                    android:scaleType="fitCenter"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <ImageView
+                    android:id="@+id/ivSkipPrev"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_skip_previous"
+                    android:scaleType="fitCenter"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <ImageView
+                    android:id="@+id/ivOpenListAudioPlayPause"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_weight="1.4"
+                    android:padding="10dp"
+                    android:src="@drawable/icon_pause"
+                    android:tint="@android:color/black"
+                    android:scaleType="fitCenter"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <ImageView
+                    android:id="@+id/ivSkipNext"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_skip_next"
+                    android:scaleType="fitCenter"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <ImageView
+                    android:id="@+id/ivQueueList"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_queue_music"
+                    android:scaleType="fitCenter"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </LinearLayout>
+
         </LinearLayout>
     </LinearLayout>
+
+    <!-- 手机端专用 View（平板不用，用 gone 占位防止 Activity 报 NPE） -->
+    <FrameLayout
+        android:id="@+id/flMobileCenter"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+    <LinearLayout
+        android:id="@+id/llCoverPanel"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
 </FrameLayout>
