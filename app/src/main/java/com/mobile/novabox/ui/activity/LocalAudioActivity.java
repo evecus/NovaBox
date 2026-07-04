@@ -239,23 +239,56 @@ public class LocalAudioActivity extends BaseActivity {
     private Map<String, List<LocalAudioFile>> buildGroups() {
         Map<String, List<LocalAudioFile>> map = new LinkedHashMap<>();
         for (LocalAudioFile f : allFiles) {
-            String key;
-            switch (currentCategory) {
-                case CAT_ALBUM:
-                    key = (f.album  != null && !f.album.isEmpty())  ? f.album  : "未知专辑";
-                    break;
-                case CAT_ARTIST:
-                    key = (f.artist != null && !f.artist.isEmpty()) ? f.artist : "未知艺术家";
-                    break;
-                case CAT_FOLDER:
-                    key = f.folderPath != null ? f.folderPath : "/";
-                    break;
-                default: key = ""; break;
+            if (currentCategory == CAT_ARTIST) {
+                // 拆分多艺术家，将歌曲同时放入每个艺术家目录
+                List<String> artists = splitArtists(f.artist);
+                for (String artist : artists) {
+                    if (!map.containsKey(artist)) map.put(artist, new ArrayList<>());
+                    map.get(artist).add(f);
+                }
+            } else {
+                String key;
+                switch (currentCategory) {
+                    case CAT_ALBUM:
+                        key = (f.album != null && !f.album.isEmpty()) ? f.album : "未知专辑";
+                        break;
+                    case CAT_FOLDER:
+                        key = f.folderPath != null ? f.folderPath : "/";
+                        break;
+                    default: key = ""; break;
+                }
+                if (!map.containsKey(key)) map.put(key, new ArrayList<>());
+                map.get(key).add(f);
             }
-            if (!map.containsKey(key)) map.put(key, new ArrayList<>());
-            map.get(key).add(f);
         }
         return map;
+    }
+
+    /**
+     * 将艺术家字段按常见分隔符拆分，返回去重后的单个艺术家列表。
+     * 支持：/ 、 , & × · feat. ft. vs. x（大小写均可）
+     */
+    private List<String> splitArtists(String artist) {
+        List<String> result = new ArrayList<>();
+        if (artist == null || artist.isEmpty()) {
+            result.add("未知艺术家");
+            return result;
+        }
+        // 先把 feat./ft./vs./×/· 等替换成统一分隔符 |，再按 | / , & 、 拆分
+        String normalized = artist
+                .replaceAll("(?i)\\bfeat\\.?\\s*", "|")
+                .replaceAll("(?i)\\bft\\.?\\s*",   "|")
+                .replaceAll("(?i)\\bvs\\.?\\s*",   "|")
+                .replaceAll("[/,&×·、]",            "|");
+        String[] parts = normalized.split("\\|");
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty() && !result.contains(trimmed)) {
+                result.add(trimmed);
+            }
+        }
+        if (result.isEmpty()) result.add("未知艺术家");
+        return result;
     }
 
     private void sortSongs(List<LocalAudioFile> list, int sort) {
