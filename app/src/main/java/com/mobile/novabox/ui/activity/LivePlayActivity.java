@@ -1864,6 +1864,15 @@ public class LivePlayActivity extends BaseActivity {
         // 更新手机端UI
         updateMobileChannelName(currentLiveChannelItem.getChannelName());
         updateMobileSourceList();
+        // 同步刷新主列表三列高亮
+        liveChannelGroupAdapter.setSelectedGroupIndex(currentChannelGroupIndex);
+        liveChannelItemAdapter.setSelectedChannelIndex(currentLiveChannelIndex);
+        if (liveSourceAdapter != null && currentLiveChannelItem != null) {
+            int srcIdx = currentLiveChannelItem.getSourceIndex();
+            if (srcIdx >= 0 && srcIdx < liveSourceAdapter.getData().size()) {
+                liveSourceAdapter.selectItem(srcIdx, true, false);
+            }
+        }
         backcontroller.setVisibility(View.GONE);
         ll_right_top_huikan.setVisibility(View.GONE);
         if(mVideoView!=null){
@@ -2873,10 +2882,14 @@ public class LivePlayActivity extends BaseActivity {
                         mHandler.post(() -> Toast.makeText(LivePlayActivity.this, msg, Toast.LENGTH_SHORT).show());
                     }
                 });
+                // 多源切换：立即关闭弹窗
+                hideMobileSettingsDialog();
                 break;
         }
-        mHandler.removeCallbacks(mHideSettingLayoutRun);
-        mHandler.postDelayed(mHideSettingLayoutRun, postTimeout);
+        if (liveSettingGroupAdapter.getSelectedGroupIndex() != 5) {
+            mHandler.removeCallbacks(mHideSettingLayoutRun);
+            mHandler.postDelayed(mHideSettingLayoutRun, postTimeout);
+        }
     }
 
     private String getPreferredLiveRefreshChannelName() {
@@ -3181,6 +3194,47 @@ public class LivePlayActivity extends BaseActivity {
         liveChannelGroupAdapter.setNewData(liveChannelGroupList);
         currentLiveChannelIndex = -1;
         selectChannelGroup(lastChannelGroupIndex, false, lastLiveChannelIndex);
+
+        // 初次进入直接显示三列列表，高亮当前分组/频道/源
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                refreshAndShowChannelListWithHighlight();
+            }
+        }, 120);
+    }
+
+    /**
+     * 刷新三列列表（分组、频道、源）并高亮当前播放项，立即显示不做动画。
+     */
+    private void refreshAndShowChannelListWithHighlight() {
+        if (liveChannelGroupList.isEmpty()) return;
+        // 刷新频道列表数据
+        List<LiveChannelItem> channels = getLiveChannels(currentChannelGroupIndex);
+        liveChannelItemAdapter.setNewData(channels);
+        mLastChannelGroupIndex = currentChannelGroupIndex;
+        mLastChannelList = new ArrayList<>(channels);
+        // 高亮分组
+        liveChannelGroupAdapter.setSelectedGroupIndex(currentChannelGroupIndex);
+        liveChannelGroupAdapter.setFocusedGroupIndex(-1);
+        // 高亮频道
+        liveChannelItemAdapter.setSelectedChannelIndex(currentLiveChannelIndex);
+        liveChannelItemAdapter.setFocusedChannelIndex(-1);
+        // 刷新源列表
+        loadCurrentSourceList();
+        updateMobileSourceList();
+        // 高亮源
+        if (currentLiveChannelItem != null) {
+            int srcIdx = currentLiveChannelItem.getSourceIndex();
+            if (srcIdx >= 0 && liveSourceAdapter != null && srcIdx < liveSourceAdapter.getData().size()) {
+                liveSourceAdapter.selectItem(srcIdx, true, false);
+            }
+        }
+        // 滚动定位
+        if (currentChannelGroupIndex >= 0)
+            mChannelGroupView.scrollToPosition(currentChannelGroupIndex);
+        if (currentLiveChannelIndex >= 0 && mLiveChannelView != null)
+            mLiveChannelView.scrollToPosition(currentLiveChannelIndex);
     }
 
     private boolean isListOrSettingLayoutVisible() {
