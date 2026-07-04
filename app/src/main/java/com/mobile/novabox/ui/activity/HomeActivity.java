@@ -43,6 +43,7 @@ import com.mobile.novabox.ui.activity.CollectActivity;
 import com.mobile.novabox.ui.activity.HistoryActivity;
 import com.mobile.novabox.ui.activity.LivePlayActivity;
 import com.mobile.novabox.ui.activity.LocalVideoActivity;
+import com.mobile.novabox.ui.activity.LocalAudioActivity;
 import com.mobile.novabox.ui.activity.SearchActivity;
 import com.mobile.novabox.ui.adapter.HomePageAdapter;
 import com.mobile.novabox.ui.adapter.SelectDialogAdapter;
@@ -185,6 +186,15 @@ public class HomeActivity extends BaseActivity {
             btnLocalVideo.setOnClickListener(v -> {
                 FastClickCheckUtil.check(v);
                 jumpActivity(LocalVideoActivity.class);
+            });
+        }
+
+        // 本地音乐按钮
+        View btnLocalAudio = findViewById(R.id.btnLocalAudio);
+        if (btnLocalAudio != null) {
+            btnLocalAudio.setOnClickListener(v -> {
+                FastClickCheckUtil.check(v);
+                jumpActivity(LocalAudioActivity.class);
             });
         }
 

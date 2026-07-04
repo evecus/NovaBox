@@ -134,6 +134,18 @@
             android:name=".ui.activity.OpenListAudioPlayerActivity"
             android:screenOrientation="unspecified" />
 
+        <activity
+            android:name=".ui.activity.LocalAudioActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.LocalAudioDirActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.LocalAudioPlayerActivity"
+            android:screenOrientation="unspecified" />
+
         <receiver
             android:name=".receiver.SearchReceiver"
             android:exported="false">
