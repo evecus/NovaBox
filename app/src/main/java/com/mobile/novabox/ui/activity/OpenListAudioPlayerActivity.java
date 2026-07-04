@@ -1,283 +1,395 @@
-package com.mobile.novabox.ui.activity;
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 手机端：竖屏，背景透明让全局壁纸透出 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
 
-import android.graphics.Bitmap;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.text.TextUtils;
-import android.view.View;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.SeekBar;
-import android.widget.TextView;
-import android.widget.Toast;
+    <!-- ===== 主播放界面 ===== -->
+    <LinearLayout
+        android:id="@+id/llPlayerMain"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@android:color/transparent">
 
-import com.mobile.novabox.R;
-import com.mobile.novabox.base.BaseActivity;
-import com.mobile.novabox.bean.OpenListFsGetData;
-import com.mobile.novabox.player.MyVideoView;
-import com.mobile.novabox.ui.widget.LrcView;
-import com.mobile.novabox.util.AudioMetadataLoader;
-import com.mobile.novabox.util.OkGoHelper;
-import com.mobile.novabox.util.OpenListApi;
-import com.mobile.novabox.util.PadUiHelper;
-import com.mobile.novabox.util.PlayerHelper;
+        <!-- 顶部：返回 + 歌名 + 歌手 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="8dp"
+            android:paddingRight="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="8dp">
 
-import java.util.HashMap;
-import java.util.Map;
+            <ImageView
+                android:id="@+id/ivOpenListAudioBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="8dp"
+                android:src="@drawable/icon_back"
+                android:tint="@android:color/black"
+                android:scaleType="fitCenter"
+                android:clickable="true"
+                android:focusable="true" />
 
-import xyz.doikki.videoplayer.player.VideoView;
-import xyz.doikki.videoplayer.util.PlayerUtils;
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginLeft="8dp">
 
-public class OpenListAudioPlayerActivity extends BaseActivity {
+                <TextView
+                    android:id="@+id/tvOpenListSongName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textColor="@android:color/black"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
-    private MyVideoView mVideoView;
-    private TextView    tvSongName;
-    private TextView    tvArtist;
-    private TextView    tvCurrentTime;
-    private TextView    tvTotalTime;
-    private SeekBar     seekBar;
-    private ProgressBar pbLoading;
-    private ImageView   ivPlayPause;
-    private ImageView   ivBack;
-    private ImageView   ivAlbumArt;
-    private View        llNoCover;
-    private LrcView     lrcView;
+                <TextView
+                    android:id="@+id/tvOpenListArtist"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center"
+                    android:textColor="#88000000"
+                    android:textSize="15sp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:visibility="gone" />
+            </LinearLayout>
 
-    // 手机端专用
-    private FrameLayout flMobileCenter;
-    private LinearLayout llCoverPanel;
-    private boolean showingLrc = false;  // 手机端：当前显示歌词还是封面
+            <View android:layout_width="40dp" android:layout_height="40dp" />
+        </LinearLayout>
 
-    private String  path;
-    private String  name;
-    private boolean userSeeking = false;
-    private boolean isPad;
+        <!-- 中间内容区：封面 / 歌词切换（左右划切换） -->
+        <FrameLayout
+            android:id="@+id/flMobileCenter"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true">
 
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private final Runnable progressRunnable = new Runnable() {
-        @Override public void run() {
-            if (mVideoView != null && !userSeeking) {
-                int pos = PlayerUtils.safeTimeMs(mVideoView.getCurrentPosition());
-                int dur = PlayerUtils.safeTimeMs(mVideoView.getDuration());
-                if (dur > 0) seekBar.setProgress(pos * 1000 / dur);
-                tvCurrentTime.setText(PlayerUtils.stringForTime(pos));
-                tvTotalTime.setText(PlayerUtils.stringForTime(dur));
-                if (lrcView != null) lrcView.updateProgress(pos);
-            }
-            handler.postDelayed(this, 250);
-        }
-    };
+            <!-- 封面层 -->
+            <LinearLayout
+                android:id="@+id/llCoverPanel"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center">
 
-    @Override
-    protected int getLayoutResID() {
-        return R.layout.activity_openlist_audio_player;
-    }
+                <ImageView
+                    android:id="@+id/ivAlbumArt"
+                    android:layout_width="260dp"
+                    android:layout_height="260dp"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone" />
 
-    @Override
-    protected void init() {
-        isPad = PadUiHelper.isPad(this);
+                <LinearLayout
+                    android:id="@+id/llNoCover"
+                    android:layout_width="260dp"
+                    android:layout_height="260dp"
+                    android:gravity="center"
+                    android:orientation="vertical">
 
-        Bundle bundle = getIntent() != null ? getIntent().getExtras() : null;
-        path = bundle != null ? bundle.getString("path", "") : "";
-        name = bundle != null ? bundle.getString("name", "") : "";
+                    <ImageView
+                        android:layout_width="90dp"
+                        android:layout_height="90dp"
+                        android:src="@drawable/icon_live"
+                        android:tint="#44000000"
+                        android:scaleType="fitCenter" />
 
-        if (TextUtils.isEmpty(path)) {
-            Toast.makeText(mContext, "文件路径无效", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="暂无封面"
+                        android:textColor="#66000000"
+                        android:textSize="13sp" />
+                </LinearLayout>
 
-        mVideoView    = findViewById(R.id.mOpenListAudioView);
-        tvSongName    = findViewById(R.id.tvOpenListSongName);
-        tvArtist      = findViewById(R.id.tvOpenListArtist);
-        tvCurrentTime = findViewById(R.id.tvOpenListAudioCurTime);
-        tvTotalTime   = findViewById(R.id.tvOpenListAudioTotalTime);
-        seekBar       = findViewById(R.id.seekBarOpenListAudio);
-        pbLoading     = findViewById(R.id.pbOpenListAudioLoading);
-        ivPlayPause   = findViewById(R.id.ivOpenListAudioPlayPause);
-        ivBack        = findViewById(R.id.ivOpenListAudioBack);
-        ivAlbumArt    = findViewById(R.id.ivAlbumArt);
-        llNoCover     = findViewById(R.id.llNoCover);
-        lrcView       = findViewById(R.id.lrcViewMobile);
+                <ProgressBar
+                    android:id="@+id/pbOpenListAudioLoading"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginTop="16dp"
+                    android:indeterminate="true"
+                    android:visibility="gone" />
+            </LinearLayout>
 
-        if (!isPad) {
-            flMobileCenter = findViewById(R.id.flMobileCenter);
-            llCoverPanel   = findViewById(R.id.llCoverPanel);
-            // 手机端：点击中间区域切换封面/歌词
-            flMobileCenter.setOnClickListener(v -> toggleCoverLrc());
-        }
+            <!-- 歌词层 -->
+            <com.mobile.novabox.ui.widget.LrcView
+                android:id="@+id/lrcViewMobile"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingTop="24dp"
+                android:paddingBottom="24dp"
+                android:visibility="gone" />
 
-        tvSongName.setText(stripExtension(name));
-        lrcView.setEmptyText("暂无歌词");
-        PlayerHelper.updateCfg(mVideoView);
+        </FrameLayout>
 
-        ivBack.setOnClickListener(v -> finish());
+        <!-- 底部控制区 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
+            android:paddingBottom="24dp"
+            android:paddingTop="16dp">
 
-        ivPlayPause.setOnClickListener(v -> {
-            if (mVideoView.isPlaying()) {
-                mVideoView.pause();
-                ivPlayPause.setImageResource(R.drawable.icon_play_mini);
-            } else {
-                mVideoView.start();
-                ivPlayPause.setImageResource(R.drawable.icon_pause);
-            }
-        });
+            <!-- 进度条行 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
 
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    long dur = mVideoView.getDuration();
-                    tvCurrentTime.setText(PlayerUtils.stringForTime((int)(dur * progress / 1000)));
-                }
-            }
-            @Override public void onStartTrackingTouch(SeekBar bar) { userSeeking = true; }
-            @Override
-            public void onStopTrackingTouch(SeekBar bar) {
-                mVideoView.seekTo(mVideoView.getDuration() * bar.getProgress() / 1000);
-                userSeeking = false;
-            }
-        });
+                <TextView
+                    android:id="@+id/tvOpenListAudioCurTime"
+                    android:layout_width="44dp"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textColor="#88000000"
+                    android:textSize="12sp"
+                    android:gravity="center" />
 
-        mVideoView.addOnStateChangeListener(new VideoView.SimpleOnStateChangeListener() {
-            @Override
-            public void onPlayStateChanged(int state) {
-                switch (state) {
-                    case VideoView.STATE_PREPARING:
-                    case VideoView.STATE_BUFFERING:
-                        pbLoading.setVisibility(View.VISIBLE);
-                        break;
-                    case VideoView.STATE_PLAYING:
-                    case VideoView.STATE_BUFFERED:
-                        pbLoading.setVisibility(View.GONE);
-                        ivPlayPause.setImageResource(R.drawable.icon_pause);
-                        break;
-                    case VideoView.STATE_PAUSED:
-                        pbLoading.setVisibility(View.GONE);
-                        ivPlayPause.setImageResource(R.drawable.icon_play_mini);
-                        break;
-                    default:
-                        pbLoading.setVisibility(View.GONE);
-                        break;
-                }
-            }
-        });
+                <SeekBar
+                    android:id="@+id/seekBarOpenListAudio"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="8dp"
+                    android:layout_marginRight="8dp"
+                    android:max="1000"
+                    android:progressTint="@color/color_1890FF"
+                    android:thumbTint="@color/color_1890FF" />
 
-        handler.post(progressRunnable);
-        loadAndPlay();
-    }
+                <TextView
+                    android:id="@+id/tvOpenListAudioTotalTime"
+                    android:layout_width="44dp"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textColor="#88000000"
+                    android:textSize="12sp"
+                    android:gravity="center" />
+            </LinearLayout>
 
-    // ─── 手机端：切换封面 / 歌词 ─────────────────────────────────────────────
+            <!-- 播放控制行：播放模式 | 上一首 | 播放/暂停 | 下一首 | 播放列表 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-    private void toggleCoverLrc() {
-        showingLrc = !showingLrc;
-        if (showingLrc) {
-            llCoverPanel.setVisibility(View.GONE);
-            lrcView.setVisibility(View.VISIBLE);
-        } else {
-            lrcView.setVisibility(View.GONE);
-            llCoverPanel.setVisibility(View.VISIBLE);
-        }
-    }
+                <!-- 播放模式切换 -->
+                <ImageView
+                    android:id="@+id/ivPlayMode"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_play_mode_list"
+                    android:scaleType="fitCenter"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
 
-    // ─── 加载播放 ────────────────────────────────────────────────────────────
+                <!-- 上一首 -->
+                <ImageView
+                    android:id="@+id/ivSkipPrev"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_skip_previous"
+                    android:scaleType="fitCenter"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
 
-    private void loadAndPlay() {
-        pbLoading.setVisibility(View.VISIBLE);
-        OpenListApi.getFile(path, new OpenListApi.Callback<OpenListFsGetData>() {
-            @Override
-            public void onSuccess(OpenListFsGetData data) {
-                runOnUiThread(() -> {
-                    if (isActivityUnavailable()) return;
-                    if (TextUtils.isEmpty(data.rawUrl)) {
-                        Toast.makeText(mContext, "未获取到播放地址", Toast.LENGTH_SHORT).show();
-                        finish();
-                        return;
-                    }
-                    Map<String, String> headers = new HashMap<>();
-                    String token = OpenListApi.getToken();
-                    if (!TextUtils.isEmpty(token)) headers.put("Authorization", token);
+                <!-- 播放/暂停 -->
+                <ImageView
+                    android:id="@+id/ivOpenListAudioPlayPause"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_weight="1.4"
+                    android:padding="10dp"
+                    android:src="@drawable/icon_pause"
+                    android:tint="@android:color/black"
+                    android:scaleType="fitCenter"
+                    android:clickable="true"
+                    android:focusable="true" />
 
-                    mVideoView.setUrl(data.rawUrl, headers);
-                    mVideoView.start();
+                <!-- 下一首 -->
+                <ImageView
+                    android:id="@+id/ivSkipNext"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_skip_next"
+                    android:scaleType="fitCenter"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
 
-                    // 异步读取 ID3（封面 / 歌手 / 歌词）
-                    AudioMetadataLoader.loadAsync(
-                            data.rawUrl, headers, OkGoHelper.getDefaultClient(),
-                            new AudioMetadataLoader.Callback() {
-                                @Override
-                                public void onLoaded(AudioMetadataLoader.Metadata meta) {
-                                    runOnUiThread(() -> {
-                                        if (isActivityUnavailable()) return;
-                                        applyMetadata(meta);
-                                    });
-                                }
-                                @Override public void onError(String msg) { /* 不影响播放 */ }
-                            });
-                });
-            }
+                <!-- 播放列表 -->
+                <ImageView
+                    android:id="@+id/ivQueueList"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_queue_music"
+                    android:scaleType="fitCenter"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
 
-            @Override
-            public void onError(String msg) {
-                runOnUiThread(() -> {
-                    if (isActivityUnavailable()) return;
-                    Toast.makeText(mContext,
-                            TextUtils.isEmpty(msg) ? "获取播放地址失败" : msg,
-                            Toast.LENGTH_SHORT).show();
-                    finish();
-                });
-            }
-        });
-    }
+            </LinearLayout>
+        </LinearLayout>
 
-    // ─── 应用元数据 ───────────────────────────────────────────────────────────
+    </LinearLayout>
 
-    private void applyMetadata(AudioMetadataLoader.Metadata meta) {
-        // 歌名
-        if (!TextUtils.isEmpty(meta.title)) {
-            tvSongName.setText(meta.title);
-        }
-        // 歌手
-        if (!TextUtils.isEmpty(meta.artist)) {
-            tvArtist.setText(meta.artist);
-            tvArtist.setVisibility(View.VISIBLE);
-        }
-        // 封面
-        if (meta.cover != null) {
-            ivAlbumArt.setImageBitmap(meta.cover);
-            ivAlbumArt.setVisibility(View.VISIBLE);
-            llNoCover.setVisibility(View.GONE);
-        } else {
-            ivAlbumArt.setVisibility(View.GONE);
-            llNoCover.setVisibility(View.VISIBLE);
-        }
-        // 歌词
-        lrcView.setLrc(meta.lyrics);
-    }
+    <!-- ===== 播放列表覆盖层（上划显示，下划关闭） ===== -->
+    <LinearLayout
+        android:id="@+id/llQueuePanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@android:color/transparent"
+        android:visibility="gone"
+        android:translationY="0dp">
 
-    // ─── 生命周期 ─────────────────────────────────────────────────────────────
+        <!-- 提示信息 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp"
+            android:text="此处向下轻扫以返回播放界面"
+            android:textColor="#88000000"
+            android:textSize="13sp" />
 
-    @Override protected void onPause()  { super.onPause();  if (mVideoView != null) mVideoView.pause(); }
-    @Override protected void onResume() { super.onResume(); if (mVideoView != null) mVideoView.resume(); }
-    @Override
-    protected void onDestroy() {
-        handler.removeCallbacksAndMessages(null);
-        if (mVideoView != null) { mVideoView.release(); mVideoView = null; }
-        super.onDestroy();
-    }
+        <!-- 当前播放歌曲信息行 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-    private String stripExtension(String filename) {
-        if (TextUtils.isEmpty(filename)) return "";
-        int dot = filename.lastIndexOf('.');
-        return dot > 0 ? filename.substring(0, dot) : filename;
-    }
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-    private boolean isActivityUnavailable() {
-        return isFinishing() ||
-                (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1
-                        && isDestroyed());
-    }
-}
+                <TextView
+                    android:id="@+id/tvQueueCurrentSong"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/tvQueueCurrentArtist"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#88000000"
+                    android:textSize="13sp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 播放队列数量 / 清除 行 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:id="@+id/tvQueueCount"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="#88000000"
+                android:textSize="13sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="播放队列"
+                android:gravity="center"
+                android:textColor="@android:color/black"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#22000000" />
+
+        <!-- 歌曲列表 -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvQueueList"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingBottom="24dp" />
+
+        <!-- 播放模式按钮（底部） -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/tvQueuePlayMode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#22000000"
+                android:paddingLeft="18dp"
+                android:paddingRight="18dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:textColor="@android:color/black"
+                android:textSize="14sp"
+                android:text="随机播放模式"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <com.mobile.novabox.player.MyVideoView
+        android:id="@+id/mOpenListAudioView"
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:visibility="invisible" />
+
+</FrameLayout>
