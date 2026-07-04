@@ -67,6 +67,9 @@ public class OpenListAudioPlayerActivity extends BaseActivity {
     private FrameLayout flMobileCenter;
     private LinearLayout llCoverPanel;
 
+    // 平板端专用
+    private FrameLayout flPadCoverArea;
+
     // 播放列表面板
     private LinearLayout llQueuePanel;
     private RecyclerView rvQueueList;
@@ -242,8 +245,14 @@ public class OpenListAudioPlayerActivity extends BaseActivity {
             }
         });
 
-        // ─── 手机端手势：中间区域左/右划切换封面/歌词 ─────────────────────────
-        setupPlayerGesture();
+        // ─── 手势初始化 ───────────────────────────────────────────────────────
+        if (isPad) {
+            flPadCoverArea = findViewById(R.id.flPadCoverArea);
+            setupPadCoverGesture();
+        } else {
+            // 手机端：中间区域左/右划切换封面/歌词，上划打开播放列表
+            setupPlayerGesture();
+        }
         setupQueueGesture();
 
         // ─── 开始加载 ─────────────────────────────────────────────────────────
@@ -255,6 +264,37 @@ public class OpenListAudioPlayerActivity extends BaseActivity {
     // ═══════════════════════════════════════════════════════════════════════════
     //  手势设置
     // ═══════════════════════════════════════════════════════════════════════════
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  平板端手势：左侧封面区 上划=打开播放列表 / 下划=关闭播放列表
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @SuppressLint("ClickableViewAccessibility")
+    private void setupPadCoverGesture() {
+        GestureDetector padGesture = new GestureDetector(this,
+                new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2,
+                                   float vX, float vY) {
+                if (e1 == null || e2 == null) return false;
+                float dY = e2.getY() - e1.getY();
+                if (Math.abs(dY) > 80 && Math.abs(vY) > 100) {
+                    if (dY < 0 && !queueVisible) {
+                        showQueuePanel();
+                        return true;
+                    } else if (dY > 0 && queueVisible) {
+                        hideQueuePanel();
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
+        flPadCoverArea.setOnTouchListener((v, event) -> {
+            padGesture.onTouchEvent(event);
+            return !queueVisible; // 列表显示时不拦截（让 RecyclerView 能滚动）
+        });
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     private void setupPlayerGesture() {
@@ -317,7 +357,7 @@ public class OpenListAudioPlayerActivity extends BaseActivity {
             }
         });
 
-        // 找提示文字区域附着手势
+        // 提示文字区域：下划关闭（手机端/平板端通用）
         View tipArea = llQueuePanel.getChildAt(0);
         if (tipArea != null) {
             tipArea.setOnTouchListener((v, event) -> {
@@ -325,10 +365,10 @@ public class OpenListAudioPlayerActivity extends BaseActivity {
                 return true;
             });
         }
-        // 整个面板头部区域
+        // 面板整体：不拦截，让 RecyclerView 能正常滚动，手势探测只是旁听
         llQueuePanel.setOnTouchListener((v, event) -> {
             queueGestureDetector.onTouchEvent(event);
-            return false; // 不拦截，让 RecyclerView 也能滚动
+            return false;
         });
     }
 
@@ -370,14 +410,20 @@ public class OpenListAudioPlayerActivity extends BaseActivity {
         if (queueVisible) return;
         queueVisible = true;
         llQueuePanel.setVisibility(View.VISIBLE);
-        llQueuePanel.setTranslationY(llQueuePanel.getHeight() > 0
-                ? llQueuePanel.getHeight() : 2000f);
+        if (isPad) {
+            // 平板：从上往下滑入（覆盖左侧封面区）
+            float startY = -(llQueuePanel.getHeight() > 0 ? llQueuePanel.getHeight() : 2000f);
+            llQueuePanel.setTranslationY(startY);
+        } else {
+            // 手机：从底部往上滑入
+            llQueuePanel.setTranslationY(llQueuePanel.getHeight() > 0
+                    ? llQueuePanel.getHeight() : 2000f);
+        }
         llQueuePanel.animate()
                 .translationY(0f)
                 .setDuration(300)
                 .start();
         updateQueueUI();
-        // 滚动到当前播放项
         if (currentIndex >= 0) {
             rvQueueList.post(() -> rvQueueList.scrollToPosition(currentIndex));
         }
@@ -386,8 +432,14 @@ public class OpenListAudioPlayerActivity extends BaseActivity {
     private void hideQueuePanel() {
         if (!queueVisible) return;
         queueVisible = false;
-        float targetY = llQueuePanel.getHeight() > 0
-                ? llQueuePanel.getHeight() : 2000f;
+        float targetY;
+        if (isPad) {
+            // 平板：向上滑出
+            targetY = -(llQueuePanel.getHeight() > 0 ? llQueuePanel.getHeight() : 2000f);
+        } else {
+            // 手机：向下滑出
+            targetY = llQueuePanel.getHeight() > 0 ? llQueuePanel.getHeight() : 2000f;
+        }
         llQueuePanel.animate()
                 .translationY(targetY)
                 .setDuration(300)
