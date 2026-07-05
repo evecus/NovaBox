@@ -279,7 +279,7 @@ public class LocalAudioActivity extends BaseActivity {
                 .replaceAll("(?i)\\bfeat\\.?\\s*", "|")
                 .replaceAll("(?i)\\bft\\.?\\s*",   "|")
                 .replaceAll("(?i)\\bvs\\.?\\s*",   "|")
-                .replaceAll("[/,&×·、]",            "|");
+                .replaceAll("[/,&×·、;；]",         "|");
         String[] parts = normalized.split("\\|");
         for (String part : parts) {
             String trimmed = part.trim();
