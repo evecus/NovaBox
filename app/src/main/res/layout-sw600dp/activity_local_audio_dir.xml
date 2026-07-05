@@ -11,27 +11,34 @@
         android:paddingLeft="8dp"
         android:paddingRight="8dp">
 
-        <ImageView
-            android:id="@+id/ivBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_centerVertical="true"
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
             android:layout_alignParentStart="true"
-            android:padding="8dp"
-            android:src="@drawable/icon_back"
-            android:tint="@android:color/black"
-            android:scaleType="fitCenter"/>
+            android:layout_toStartOf="@+id/tvSort"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-        <TextView
-            android:id="@+id/tvDirTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:textColor="@android:color/black"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end"/>
+            <ImageView
+                android:id="@+id/ivBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="8dp"
+                android:src="@drawable/icon_back"
+                android:tint="@android:color/black"
+                android:scaleType="fitCenter"/>
+
+            <TextView
+                android:id="@+id/tvDirTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:textColor="@android:color/black"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"/>
+        </LinearLayout>
 
         <TextView
             android:id="@+id/tvSort"

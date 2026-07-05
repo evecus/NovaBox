@@ -5,42 +5,46 @@
     android:orientation="vertical"
     android:background="@android:color/transparent">
 
-    <!-- 顶部导航栏 -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:paddingLeft="8dp"
         android:paddingRight="8dp">
 
-        <ImageView
-            android:id="@+id/ivBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_centerVertical="true"
-            android:layout_alignParentStart="true"
-            android:padding="8dp"
-            android:src="@drawable/icon_back"
-            android:tint="@android:color/black"
-            android:scaleType="fitCenter"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:text="本地音频"
-            android:textColor="@android:color/black"
-            android:textSize="18sp"
-            android:textStyle="bold"/>
-
-        <!-- 右侧：排序 + 分类 -->
+        <!-- 左侧：返回 + 标题 -->
         <LinearLayout
-            android:id="@+id/llRightButtons"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_alignParentEnd="true"
+            android:layout_height="match_parent"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:layout_alignParentStart="true">
+
+            <ImageView
+                android:id="@+id/ivBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="8dp"
+                android:src="@drawable/icon_back"
+                android:tint="@android:color/black"
+                android:scaleType="fitCenter"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="本地音频"
+                android:textColor="@android:color/black"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <!-- 右侧：排序 + 刷新 + 分类 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_alignParentEnd="true">
 
             <TextView
                 android:id="@+id/tvSort"
