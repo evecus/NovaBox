@@ -117,6 +117,12 @@ public class LocalPlayerActivity extends BaseActivity {
             if (tvVideoTitle != null) tvVideoTitle.setText(videoTitle != null ? videoTitle : "正在播放");
             isLoaded = true;
             startPlay(videoUrl);
+        } else if (videoUrl != null && folderPath == null) {
+            // 直接传了单个视频文件路径（视频分类模式直接点击）
+            if (tvVideoTitle != null) tvVideoTitle.setText(videoTitle != null ? videoTitle : "正在播放");
+            if (rvPlaylist != null) rvPlaylist.setVisibility(View.GONE);
+            isLoaded = true;
+            startPlay(videoUrl);
         } else {
             isLoaded = true;
             loadFolderAndPlay();
