@@ -103,21 +103,6 @@ public class LocalVideoActivity extends BaseActivity {
         }
         rvFolders.setAdapter(folderAdapter);
 
-        folderAdapter.setOnItemClickListener((adapter, view, position) -> {
-            VideoFolderAdapter.FolderInfo info = folderAdapter.getData().get(position);
-            Bundle bundle = new Bundle();
-            bundle.putString("folderPath", info.path);
-            bundle.putString("folderName", info.name);
-            if (currentCategory == CAT_VIDEO) {
-                // 视频分类：直接播放点击项
-                bundle.putBoolean("directPlay", true);
-                bundle.putInt("startIndex", position);
-                bundle.putStringArray("videoList", getVideoPathArray());
-            }
-            bundle.putInt("sortVideo", currentSortVideo);
-            jumpActivity(VideoFolderActivity.class, bundle);
-        });
-
         checkPermissionAndScan();
     }
 

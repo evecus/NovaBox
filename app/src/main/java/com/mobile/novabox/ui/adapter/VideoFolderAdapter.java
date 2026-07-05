@@ -27,6 +27,12 @@ public class VideoFolderAdapter extends BaseQuickAdapter<VideoFolderAdapter.Fold
     @Override
     protected void convert(BaseViewHolder helper, FolderInfo item) {
         helper.setText(R.id.tvFolderName, item.name);
-        helper.setText(R.id.tvVideoCount, item.videoCount + " 个视频");
+        if (item.videoCount >= 0) {
+            helper.setText(R.id.tvVideoCount, item.videoCount + " 个视频");
+            helper.setVisible(R.id.tvVideoCount, true);
+        } else {
+            // 视频分类直接平铺模式，不显示数量
+            helper.setVisible(R.id.tvVideoCount, false);
+        }
     }
 }
