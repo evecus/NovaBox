@@ -380,8 +380,11 @@ public class LocalPlayerActivity extends BaseActivity {
         pendingExitFullScreen = false;
 
         if (!PadUiHelper.isPad(this)) {
-            // 手机端：旋转为横屏；平板端已是横屏，无需旋转
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+            // 手机端：仅横屏视频才旋转；竖屏视频保持竖屏全屏
+            if (isLandscapeVideo()) {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+            }
+            // 竖屏视频不旋转，直接走下方沉浸式逻辑
         }
 
         // 隐藏状态栏和导航栏（不加 FLAG_LAYOUT_NO_LIMITS，避免退出时内容撑出屏幕边界）
@@ -429,14 +432,19 @@ public class LocalPlayerActivity extends BaseActivity {
 
         if (PadUiHelper.isPad(this)) {
             // 平板端：BaseActivity 始终保持横屏，无需切方向，直接还原布局
-            // （若在全屏期间方向被改过，先恢复横屏）
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
             pendingExitFullScreen = false;
             restoreSmallScreenLayout();
         } else {
-            // 手机端：旋转回竖屏，等 onConfigurationChanged 确认竖屏后再还原布局
-            pendingExitFullScreen = true;
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            if (isLandscapeVideo()) {
+                // 手机端横屏视频：旋转回竖屏，等 onConfigurationChanged 后还原布局
+                pendingExitFullScreen = true;
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            } else {
+                // 手机端竖屏视频：进入时没旋转，退出时直接还原布局即可
+                pendingExitFullScreen = false;
+                restoreSmallScreenLayout();
+            }
         }
     }
 
@@ -457,6 +465,14 @@ public class LocalPlayerActivity extends BaseActivity {
     }
 
     /** 退出全屏后还原小屏播放布局 */
+    /** 判断当前视频是否为横屏（宽 > 高）。未知时默认按横屏处理。 */
+    private boolean isLandscapeVideo() {
+        if (mVideoView == null) return true;
+        int[] size = mVideoView.getVideoSize();
+        if (size == null || size.length < 2 || size[1] == 0) return true;
+        return size[0] > size[1];
+    }
+
     private void restoreSmallScreenLayout() {
         if (isFinishing()) return;
 

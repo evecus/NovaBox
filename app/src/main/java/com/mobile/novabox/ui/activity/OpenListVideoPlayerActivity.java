@@ -348,8 +348,12 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
 
     private void enterFullScreen() {
         isFullScreen = true;
-        // 横屏
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        if (!isPad) {
+            // 手机端：仅横屏视频才旋转
+            if (isLandscapeVideo()) {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+            }
+        }
         // 隐藏状态栏和导航栏（沉浸式）
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         // 清除根视图的 statusBar paddingTop，否则播放器容器顶部会空出一截并透出壁纸
@@ -381,9 +385,13 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
     private void exitFullScreen() {
         isFullScreen = false;
         // 恢复方向
-        setRequestedOrientation(isPad
-                ? ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        if (isPad) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        } else if (isLandscapeVideo()) {
+            // 手机横屏视频：旋转回竖屏
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        }
+        // 竖屏视频进入全屏时没有旋转，退出时也无需旋转
         // 恢复系统 UI：必须与 applyStatusBarPadding/hideSysBar 保持一致，
         // 不能用 SYSTEM_UI_FLAG_VISIBLE（会清除 LAYOUT_FULLSCREEN 和 LIGHT_STATUS_BAR，
         // 导致布局突然下移且状态栏图标变白）
@@ -429,6 +437,14 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
             ivBack.setVisibility(View.GONE);
         }
         ivFullscreen.setImageResource(R.drawable.icon_fullscreen);
+    }
+
+    /** 判断当前视频是否为横屏（宽 > 高）。未知时默认按横屏处理。 */
+    private boolean isLandscapeVideo() {
+        if (mVideoView == null) return true;
+        int[] size = mVideoView.getVideoSize();
+        if (size == null || size.length < 2 || size[1] == 0) return true;
+        return size[0] > size[1];
     }
 
     /** 全屏时隐藏播放器容器以外的所有兄弟视图 */
