@@ -31,6 +31,8 @@ import com.mobile.novabox.R;
 import com.mobile.novabox.base.BaseActivity;
 import com.mobile.novabox.ui.adapter.LocalVideoFileAdapter;
 import com.mobile.novabox.ui.adapter.VideoFolderAdapter;
+import com.mobile.novabox.util.LocalMediaPrefs;
+import com.mobile.novabox.util.MediaCoverCache;
 import com.mobile.novabox.util.PadUiHelper;
 
 import java.io.File;
@@ -83,6 +85,11 @@ public class LocalVideoActivity extends BaseActivity {
 
     @Override
     protected void init() {
+        // 恢复上次保存的“分类”“排序”选择，不再每次进入页面都回到默认值
+        currentCategory   = LocalMediaPrefs.loadVideoCategory(this, CAT_VIDEO);
+        currentSortVideo  = LocalMediaPrefs.loadVideoSortVideo(this, SORT_NAME_ASC);
+        currentSortFolder = LocalMediaPrefs.loadVideoSortFolder(this, SORT_FOLDER_NAME_ASC);
+
         findViewById(R.id.ivBack).setOnClickListener(v -> onBackPressed());
         findViewById(R.id.ivLinkPlay).setOnClickListener(v -> showLinkDialog());
         findViewById(R.id.tvRefresh).setOnClickListener(v -> {
@@ -160,7 +167,24 @@ public class LocalVideoActivity extends BaseActivity {
                 if (files.isEmpty())
                     Toast.makeText(this, "未找到本地视频", Toast.LENGTH_SHORT).show();
             });
+            // 扫描到的视频逐个提取/缓存封面帧，生成一个后刷新一次列表，
+            // 用户能看到封面逐步"点亮"，不用等全部扫描完
+            extractCoversAndRefresh(files);
         });
+    }
+
+    private void extractCoversAndRefresh(List<File> files) {
+        int refreshEvery = 5;
+        int count = 0;
+        for (File f : files) {
+            if (executor.isShutdown()) return;
+            MediaCoverCache.getOrCreateVideoCover(this, f);
+            count++;
+            if (count % refreshEvery == 0) {
+                mainHandler.post(this::refreshList);
+            }
+        }
+        mainHandler.post(this::refreshList);
     }
 
     private List<File> doScanAll() {
@@ -273,7 +297,11 @@ public class LocalVideoActivity extends BaseActivity {
         showOptionDialog("选择分类",
                 new String[]{"视频", "文件夹"},
                 currentCategory,
-                idx -> { currentCategory = idx; refreshList(); });
+                idx -> {
+                    currentCategory = idx;
+                    LocalMediaPrefs.saveVideoCategory(this, currentCategory);
+                    refreshList();
+                });
     }
 
     private void showSortDialog() {
@@ -281,12 +309,20 @@ public class LocalVideoActivity extends BaseActivity {
             showOptionDialog("视频排序",
                     new String[]{"名称升序", "名称降序", "修改时间升序", "修改时间降序"},
                     currentSortVideo,
-                    idx -> { currentSortVideo = idx; refreshList(); });
+                    idx -> {
+                        currentSortVideo = idx;
+                        LocalMediaPrefs.saveVideoSortVideo(this, currentSortVideo);
+                        refreshList();
+                    });
         } else {
             showOptionDialog("文件夹排序",
                     new String[]{"名称升序", "名称降序"},
                     currentSortFolder,
-                    idx -> { currentSortFolder = idx; refreshList(); });
+                    idx -> {
+                        currentSortFolder = idx;
+                        LocalMediaPrefs.saveVideoSortFolder(this, currentSortFolder);
+                        refreshList();
+                    });
         }
     }
 

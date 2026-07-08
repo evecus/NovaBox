@@ -16,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -31,7 +32,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.mobile.novabox.R;
 import com.mobile.novabox.base.BaseActivity;
 import com.mobile.novabox.bean.LocalAudioFile;
+import com.mobile.novabox.picasso.RoundTransformation;
+import com.mobile.novabox.util.LocalMediaPrefs;
+import com.mobile.novabox.util.MediaCoverCache;
 import com.mobile.novabox.util.PadUiHelper;
+import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -84,6 +89,11 @@ public class LocalAudioActivity extends BaseActivity {
 
     @Override
     protected void init() {
+        // 恢复上次保存的"分类""排序"选择
+        currentCategory  = LocalMediaPrefs.loadAudioCategory(this, CAT_SONG);
+        currentSortSong  = LocalMediaPrefs.loadAudioSortSong(this, SORT_SONG_TITLE_ASC);
+        currentSortGroup = LocalMediaPrefs.loadAudioSortGroup(this, SORT_GROUP_NAME_ASC);
+
         findViewById(R.id.ivBack).setOnClickListener(v -> finish());
 
         rvList = findViewById(R.id.rvList);
@@ -133,7 +143,25 @@ public class LocalAudioActivity extends BaseActivity {
                 if (files.isEmpty())
                     Toast.makeText(this, "未找到本地音乐", Toast.LENGTH_SHORT).show();
             });
+            // 逐首提取/缓存内嵌封面（没有内嵌封面的歌曲会跳过，返回 null），
+            // 每处理若干首刷新一次列表，让封面逐步显示出来
+            extractCoversAndRefresh(files);
         });
+    }
+
+    private void extractCoversAndRefresh(List<LocalAudioFile> files) {
+        int refreshEvery = 5;
+        int count = 0;
+        for (LocalAudioFile f : files) {
+            if (executor.isShutdown()) return;
+            File cover = MediaCoverCache.getOrCreateAudioCover(this, f.path, f.modified);
+            f.coverPath = cover != null ? cover.getAbsolutePath() : null;
+            count++;
+            if (count % refreshEvery == 0) {
+                mainHandler.post(this::refreshList);
+            }
+        }
+        mainHandler.post(this::refreshList);
     }
 
     private List<LocalAudioFile> doScan() {
@@ -327,6 +355,7 @@ public class LocalAudioActivity extends BaseActivity {
                 currentCategory,
                 idx -> {
                     currentCategory = idx;
+                    LocalMediaPrefs.saveAudioCategory(this, currentCategory);
                     refreshList();
                 });
     }
@@ -338,12 +367,20 @@ public class LocalAudioActivity extends BaseActivity {
             showOptionDialog("歌曲排序",
                     new String[]{"歌曲名升序", "歌曲名降序", "艺术家升序", "艺术家降序", "修改时间升序", "修改时间降序"},
                     currentSortSong,
-                    idx -> { currentSortSong = idx; refreshList(); });
+                    idx -> {
+                        currentSortSong = idx;
+                        LocalMediaPrefs.saveAudioSortSong(this, currentSortSong);
+                        refreshList();
+                    });
         } else {
             showOptionDialog("目录排序",
                     new String[]{"名称升序", "名称降序", "修改时间升序", "修改时间降序"},
                     currentSortGroup - 10,
-                    idx -> { currentSortGroup = idx + 10; refreshList(); });
+                    idx -> {
+                        currentSortGroup = idx + 10;
+                        LocalMediaPrefs.saveAudioSortGroup(this, currentSortGroup);
+                        refreshList();
+                    });
         }
     }
 
@@ -391,10 +428,12 @@ public class LocalAudioActivity extends BaseActivity {
 
         class VH extends RecyclerView.ViewHolder {
             TextView tvTitle, tvArtist;
+            ImageView ivCover;
             VH(View v) {
                 super(v);
                 tvTitle  = v.findViewById(R.id.tvSongTitle);
                 tvArtist = v.findViewById(R.id.tvSongArtist);
+                ivCover  = v.findViewById(R.id.ivSongCover);
             }
         }
         @Override public VH onCreateViewHolder(ViewGroup p, int t) {
@@ -407,12 +446,41 @@ public class LocalAudioActivity extends BaseActivity {
             String artist = f.artist != null && !f.artist.isEmpty() ? f.artist : "";
             h.tvArtist.setVisibility(artist.isEmpty() ? View.GONE : View.VISIBLE);
             h.tvArtist.setText(artist);
+            bindCover(h.ivCover, f);
             h.itemView.setOnClickListener(v -> {
                 // 播放，列表 = 当前排序后全部歌曲
                 playSong(data, pos);
             });
         }
         @Override public int getItemCount() { return data.size(); }
+    }
+
+    // ─── 封面绑定 ──────────────────────────────────────────────────────────
+
+    private void bindCover(ImageView iv, LocalAudioFile f) {
+        File cover = MediaCoverCache.peekAudioCover(this, f.path, f.modified);
+        if (cover != null) {
+            iv.setPadding(0, 0, 0, 0);
+            Picasso.get()
+                    .load(cover)
+                    .transform(new RoundTransformation(cover.getAbsolutePath())
+                            .centerCorp(true)
+                            .override(dp(40), dp(40))
+                            .roundRadius(dp(6), RoundTransformation.RoundType.ALL))
+                    .placeholder(R.drawable.ic_music_note)
+                    .error(R.drawable.ic_music_note)
+                    .noFade()
+                    .into(iv);
+        } else {
+            int pad = dp(8);
+            iv.setPadding(pad, pad, pad, pad);
+            iv.setImageResource(R.drawable.ic_music_note);
+        }
+    }
+
+    private int dp(int value) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(value * density);
     }
 
     // ─── Adapter：分组列表 ────────────────────────────────────────────────────

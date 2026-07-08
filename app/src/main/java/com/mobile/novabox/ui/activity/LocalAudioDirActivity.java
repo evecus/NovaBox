@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -16,7 +17,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.mobile.novabox.R;
 import com.mobile.novabox.base.BaseActivity;
 import com.mobile.novabox.bean.LocalAudioFile;
+import com.mobile.novabox.picasso.RoundTransformation;
+import com.mobile.novabox.util.MediaCoverCache;
+import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -48,6 +53,7 @@ public class LocalAudioDirActivity extends BaseActivity {
                 LocalAudioFile f = new LocalAudioFile();
                 f.path  = p;
                 f.title = stripExt(new java.io.File(p).getName());
+                f.modified = new java.io.File(p).lastModified();
                 songs.add(f);
             }
         }
@@ -124,10 +130,12 @@ public class LocalAudioDirActivity extends BaseActivity {
 
         class VH extends RecyclerView.ViewHolder {
             TextView tvTitle, tvArtist;
+            ImageView ivCover;
             VH(View v) {
                 super(v);
                 tvTitle  = v.findViewById(R.id.tvSongTitle);
                 tvArtist = v.findViewById(R.id.tvSongArtist);
+                ivCover  = v.findViewById(R.id.ivSongCover);
             }
         }
         @Override public VH onCreateViewHolder(ViewGroup p, int t) {
@@ -140,9 +148,38 @@ public class LocalAudioDirActivity extends BaseActivity {
             String artist = f.artist != null && !f.artist.isEmpty() ? f.artist : "";
             h.tvArtist.setVisibility(artist.isEmpty() ? View.GONE : View.VISIBLE);
             h.tvArtist.setText(artist);
+            bindCover(h.ivCover, f);
             h.itemView.setOnClickListener(v -> playSong(data, pos));
         }
         @Override public int getItemCount() { return data.size(); }
+    }
+
+    // ─── 封面绑定 ──────────────────────────────────────────────────────────
+
+    private void bindCover(ImageView iv, LocalAudioFile f) {
+        File cover = MediaCoverCache.peekAudioCover(this, f.path, f.modified);
+        if (cover != null) {
+            iv.setPadding(0, 0, 0, 0);
+            Picasso.get()
+                    .load(cover)
+                    .transform(new RoundTransformation(cover.getAbsolutePath())
+                            .centerCorp(true)
+                            .override(dp(40), dp(40))
+                            .roundRadius(dp(6), RoundTransformation.RoundType.ALL))
+                    .placeholder(R.drawable.ic_music_note)
+                    .error(R.drawable.ic_music_note)
+                    .noFade()
+                    .into(iv);
+        } else {
+            int pad = dp(8);
+            iv.setPadding(pad, pad, pad, pad);
+            iv.setImageResource(R.drawable.ic_music_note);
+        }
+    }
+
+    private int dp(int value) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(value * density);
     }
 
     private void playSong(List<LocalAudioFile> playlist, int index) {

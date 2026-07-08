@@ -8,6 +8,7 @@ public class LocalAudioFile {
     public String folderPath; // 所在文件夹路径
     public long   modified;   // 修改时间（ms）
     public long   size;
+    public String coverPath;  // 缓存的封面图本地路径（没有内嵌封面时为 null）
 
     public LocalAudioFile() {}
 }

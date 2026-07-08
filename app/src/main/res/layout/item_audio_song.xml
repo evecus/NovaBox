@@ -11,11 +11,12 @@
     android:background="?attr/selectableItemBackground">
 
     <ImageView
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:id="@+id/ivSongCover"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:src="@drawable/ic_music_note"
-        android:tint="#80000000"
-        android:scaleType="fitCenter"/>
+        android:scaleType="centerCrop"
+        android:background="@drawable/shape_local_card_bg"/>
 
     <LinearLayout
         android:layout_width="0dp"

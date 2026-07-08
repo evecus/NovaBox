@@ -9,12 +9,12 @@
     android:background="@drawable/shape_local_card_bg">
 
     <ImageView
-        android:layout_width="36dp"
+        android:id="@+id/ivVideoCover"
+        android:layout_width="52dp"
         android:layout_height="36dp"
         android:src="@drawable/icon_local_video"
-        android:tint="@android:color/black"
-        android:alpha="0.7"
-        android:scaleType="fitCenter"/>
+        android:scaleType="centerCrop"
+        android:background="@drawable/shape_local_card_bg"/>
 
     <LinearLayout
         android:layout_width="0dp"
