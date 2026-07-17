@@ -1,6 +1,7 @@
 package com.mobile.novabox.ui.activity;
 
 import android.app.Dialog;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,10 +19,8 @@ import com.mobile.novabox.R;
 import com.mobile.novabox.base.BaseActivity;
 import com.mobile.novabox.bean.LocalAudioFile;
 import com.mobile.novabox.picasso.RoundTransformation;
-import com.mobile.novabox.util.MediaCoverCache;
-import com.squareup.picasso.Picasso;
+import com.mobile.novabox.util.AudioCoverMemoryCache;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -32,6 +31,11 @@ public class LocalAudioDirActivity extends BaseActivity {
     private List<LocalAudioFile> songs = new ArrayList<>();
     private RecyclerView rvSongs;
     private int sortMode = LocalAudioActivity.SORT_SONG_TITLE_ASC;
+
+    // 音乐封面：内存态、分批增量加载，不落盘（见 AudioCoverMemoryCache 类注释）。
+    // 这里是"某个文件夹/分组下的歌曲子列表"，规模通常远小于全量歌曲库，但复用同一套
+    // 策略保持行为一致，实现和维护成本也更低。
+    private final AudioCoverMemoryCache coverCache = new AudioCoverMemoryCache();
 
     @Override
     protected int getLayoutResID() { return R.layout.activity_local_audio_dir; }
@@ -59,8 +63,37 @@ public class LocalAudioDirActivity extends BaseActivity {
         }
 
         rvSongs = findViewById(R.id.rvSongs);
-        rvSongs.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        rvSongs.setLayoutManager(layoutManager);
+        rvSongs.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@androidx.annotation.NonNull RecyclerView recyclerView, int dx, int dy) {
+                int lastVisible = layoutManager.findLastVisibleItemPosition();
+                if (lastVisible < 0) return;
+                coverCache.ensureVisible(lastVisible, sortedSongsSnapshot(), () -> {
+                    RecyclerView.Adapter<?> adapter = rvSongs.getAdapter();
+                    if (adapter != null) adapter.notifyDataSetChanged();
+                });
+            }
+        });
         refreshList();
+        coverCache.ensureFirstBatch(sortedSongsSnapshot(), () -> {
+            RecyclerView.Adapter<?> adapter = rvSongs.getAdapter();
+            if (adapter != null) adapter.notifyDataSetChanged();
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        coverCache.dispose();
+    }
+
+    /** 当前排序方式下的歌曲列表快照，供封面内存缓存按可见位置增量加载使用。 */
+    private List<LocalAudioFile> sortedSongsSnapshot() {
+        List<LocalAudioFile> sorted = new ArrayList<>(songs);
+        sortSongs(sorted, sortMode);
+        return sorted;
     }
 
     private void refreshList() {
@@ -105,7 +138,13 @@ public class LocalAudioDirActivity extends BaseActivity {
         }
         rg.setOnCheckedChangeListener((group, checkedId) -> {
             sortMode = checkedId;
+            // 排序方式变了，"前 200"对应的歌曲集合也变了，重新计算。
+            coverCache.reset();
             refreshList();
+            coverCache.ensureFirstBatch(sortedSongsSnapshot(), () -> {
+                RecyclerView.Adapter<?> adapter = rvSongs.getAdapter();
+                if (adapter != null) adapter.notifyDataSetChanged();
+            });
             dlg.dismiss();
         });
 
@@ -156,20 +195,32 @@ public class LocalAudioDirActivity extends BaseActivity {
 
     // ─── 封面绑定 ──────────────────────────────────────────────────────────
 
+    /**
+     * 音乐封面只在内存里持有（见 AudioCoverMemoryCache 类注释），不落盘、不经过
+     * Picasso 磁盘/内存二级缓存，直接用 RoundTransformation 对内存中的 Bitmap
+     * 做圆角裁剪后绑定到 ImageView。
+     *
+     * 尚未加载到该位置（coverLoaded=false）或加载后确认无内嵌封面（coverBitmap=null）
+     * 时都展示默认图标，用户观感上是"封面逐步点亮"。
+     */
     private void bindCover(ImageView iv, LocalAudioFile f) {
-        File cover = MediaCoverCache.peekAudioCover(this, f.path, f.modified);
-        if (cover != null) {
+        Bitmap source = f.coverBitmap;
+        if (source != null && !source.isRecycled()) {
             iv.setPadding(0, 0, 0, 0);
-            Picasso.get()
-                    .load(cover)
-                    .transform(new RoundTransformation(cover.getAbsolutePath())
-                            .centerCorp(true)
-                            .override(dp(40), dp(40))
-                            .roundRadius(dp(6), RoundTransformation.RoundType.ALL))
-                    .placeholder(R.drawable.ic_music_note)
-                    .error(R.drawable.ic_music_note)
-                    .noFade()
-                    .into(iv);
+            try {
+                // RoundTransformation.transform() 会 recycle 传入的 source，
+                // 这里传一份拷贝，保留 LocalAudioFile 持有的原始 Bitmap 供下次
+                // 列表重建（换排序）时复用，避免重复解码同一张封面。
+                Bitmap copy = source.copy(source.getConfig() != null ? source.getConfig() : Bitmap.Config.ARGB_8888, true);
+                Bitmap rounded = new RoundTransformation(f.path)
+                        .centerCorp(true)
+                        .override(dp(40), dp(40))
+                        .roundRadius(dp(6), RoundTransformation.RoundType.ALL)
+                        .transform(copy);
+                iv.setImageBitmap(rounded);
+            } catch (Exception e) {
+                iv.setImageResource(R.drawable.ic_music_note);
+            }
         } else {
             int pad = dp(8);
             iv.setPadding(pad, pad, pad, pad);
