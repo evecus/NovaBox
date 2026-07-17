@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -32,11 +33,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.mobile.novabox.R;
 import com.mobile.novabox.base.BaseActivity;
 import com.mobile.novabox.bean.LocalAudioFile;
+import com.mobile.novabox.cache.LocalAudioEntity;
+import com.mobile.novabox.data.AppDataManager;
 import com.mobile.novabox.picasso.RoundTransformation;
+import com.mobile.novabox.util.AudioCoverMemoryCache;
 import com.mobile.novabox.util.LocalMediaPrefs;
-import com.mobile.novabox.util.MediaCoverCache;
 import com.mobile.novabox.util.PadUiHelper;
-import com.squareup.picasso.Picasso;
+import com.mobile.novabox.util.StorageVolumeHelper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -84,6 +87,9 @@ public class LocalAudioActivity extends BaseActivity {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    // 音乐封面：内存态、分批增量加载，不落盘（见 AudioCoverMemoryCache 类注释）。
+    private final AudioCoverMemoryCache coverCache = new AudioCoverMemoryCache();
+
     @Override
     protected int getLayoutResID() { return R.layout.activity_local_audio; }
 
@@ -97,7 +103,21 @@ public class LocalAudioActivity extends BaseActivity {
         findViewById(R.id.ivBack).setOnClickListener(v -> finish());
 
         rvList = findViewById(R.id.rvList);
-        rvList.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        rvList.setLayoutManager(layoutManager);
+        // 滚动到还没加载封面的位置时，按批次增量加载（见 AudioCoverMemoryCache）。
+        rvList.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                if (currentCategory != CAT_SONG) return; // 分组视图不展示封面，无需加载
+                int lastVisible = layoutManager.findLastVisibleItemPosition();
+                if (lastVisible < 0) return;
+                coverCache.ensureVisible(lastVisible, sortedSongsSnapshot(), () -> {
+                    RecyclerView.Adapter<?> adapter = rvList.getAdapter();
+                    if (adapter != null) adapter.notifyDataSetChanged();
+                });
+            }
+        });
 
         findViewById(R.id.tvRefresh).setOnClickListener(v -> {
             Toast.makeText(this, "正在扫描本地音乐...", Toast.LENGTH_SHORT).show();
@@ -118,7 +138,7 @@ public class LocalAudioActivity extends BaseActivity {
         if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{perm}, REQUEST_STORAGE);
         } else {
-            scanAudio();
+            loadFromCacheOrScan();
         }
     }
 
@@ -127,8 +147,62 @@ public class LocalAudioActivity extends BaseActivity {
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_STORAGE) {
-            scanAudio();
+            loadFromCacheOrScan();
         }
+    }
+
+    // ─── 扫描结果缓存（Room）─────────────────────────────────────────────────
+
+    /**
+     * 进页面时优先读数据库缓存直接展示，秒开、不用每次都重新扫描磁盘、重新解析
+     * ID3/FLAC/OGG 标签；缓存为空（首次进入 / 之前从未成功扫描过）时才自动触发
+     * 一次完整扫描。封面不落库，展示时由 {@link #coverCache} 按需分批加载。
+     */
+    private void loadFromCacheOrScan() {
+        if (executor.isShutdown()) executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            List<LocalAudioEntity> cached;
+            try {
+                cached = AppDataManager.get().getLocalAudioDao().getAll();
+            } catch (Exception e) {
+                cached = new ArrayList<>();
+            }
+            if (!cached.isEmpty()) {
+                List<LocalAudioFile> files = new ArrayList<>();
+                for (LocalAudioEntity e : cached) files.add(toLocalAudioFile(e));
+                mainHandler.post(() -> {
+                    allFiles = files;
+                    coverCache.reset();
+                    refreshList();
+                });
+            } else {
+                scanAudio();
+            }
+        });
+    }
+
+    private LocalAudioFile toLocalAudioFile(LocalAudioEntity e) {
+        LocalAudioFile f = new LocalAudioFile();
+        f.path       = e.path;
+        f.title      = e.title;
+        f.artist     = e.artist;
+        f.album      = e.album;
+        f.folderPath = e.folder;
+        f.modified   = e.modified;
+        f.size       = e.size;
+        return f;
+    }
+
+    private LocalAudioEntity toEntity(LocalAudioFile f) {
+        LocalAudioEntity e = new LocalAudioEntity();
+        e.path     = f.path;
+        e.title    = f.title;
+        e.artist   = f.artist;
+        e.album    = f.album;
+        e.folder   = f.folderPath;
+        e.size     = f.size;
+        e.modified = f.modified;
+        return e;
     }
 
     // ─── 扫描 ──────────────────────────────────────────────────────────────────
@@ -139,31 +213,44 @@ public class LocalAudioActivity extends BaseActivity {
             List<LocalAudioFile> files = doScan();
             mainHandler.post(() -> {
                 allFiles = files;
+                coverCache.reset();
                 refreshList();
                 if (files.isEmpty())
                     Toast.makeText(this, "未找到本地音乐", Toast.LENGTH_SHORT).show();
             });
-            // 逐首提取/缓存内嵌封面（没有内嵌封面的歌曲会跳过，返回 null），
-            // 每处理若干首刷新一次列表，让封面逐步显示出来
-            extractCoversAndRefresh(files);
+            saveScanResultToDb(files);
+            // 首屏封面预加载：列表刚展示出来就把当前排序下的前一批封面加载好，
+            // 不用等用户开始滚动才触发。
+            mainHandler.post(() -> coverCache.ensureFirstBatch(sortedSongsSnapshot(), () -> {
+                RecyclerView.Adapter<?> adapter = rvList.getAdapter();
+                if (adapter != null) adapter.notifyDataSetChanged();
+            }));
         });
     }
 
-    private void extractCoversAndRefresh(List<LocalAudioFile> files) {
-        int refreshEvery = 5;
-        int count = 0;
-        for (LocalAudioFile f : files) {
-            if (executor.isShutdown()) return;
-            File cover = MediaCoverCache.getOrCreateAudioCover(this, f.path, f.modified);
-            f.coverPath = cover != null ? cover.getAbsolutePath() : null;
-            count++;
-            if (count % refreshEvery == 0) {
-                mainHandler.post(this::refreshList);
-            }
-        }
-        mainHandler.post(this::refreshList);
+    private void saveScanResultToDb(List<LocalAudioFile> files) {
+        List<LocalAudioEntity> entities = new ArrayList<>();
+        for (LocalAudioFile f : files) entities.add(toEntity(f));
+        try {
+            AppDataManager.get().getLocalAudioDao().replaceAll(entities);
+        } catch (Exception ignored) {}
     }
 
+    /** 当前排序方式下的歌曲列表快照，供封面内存缓存按可见位置增量加载使用。 */
+    private List<LocalAudioFile> sortedSongsSnapshot() {
+        List<LocalAudioFile> sorted = new ArrayList<>(allFiles);
+        sortSongs(sorted, currentSortSong);
+        return sorted;
+    }
+
+    /**
+     * 扫描本地音频文件。
+     *
+     * 先走 MediaStore 查询（速度快，能拿到系统媒体库里的 title/artist/album）；
+     * 查不到结果时兜底走文件系统递归扫描——扫描根目录不再写死 /sdcard、
+     * /storage/emulated/0，而是用 {@link StorageVolumeHelper} 动态发现设备上所有
+     * 已挂载的存储卷（内部存储 + SD 卡 + U 盘等），覆盖外置存储设备。
+     */
     private List<LocalAudioFile> doScan() {
         List<LocalAudioFile> list = new ArrayList<>();
         Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
@@ -207,18 +294,17 @@ public class LocalAudioActivity extends BaseActivity {
             }
         } catch (Exception e) { e.printStackTrace(); }
 
-        // fallback: file system scan
+        // fallback: file system scan，根目录动态发现所有存储卷
         if (list.isEmpty()) {
-            for (String root : new String[]{"/sdcard", "/storage/emulated/0"}) {
-                File dir = new File(root);
-                if (!dir.exists() || !dir.canRead()) continue;
-                scanFs(dir, list, 0);
+            for (File root : StorageVolumeHelper.discoverRoots(this)) {
+                if (!root.canRead()) continue;
+                scanFs(root, list, new java.util.HashSet<>(), 0);
             }
         }
         return list;
     }
 
-    private void scanFs(File dir, List<LocalAudioFile> list, int depth) {
+    private void scanFs(File dir, List<LocalAudioFile> list, java.util.Set<String> seen, int depth) {
         if (depth > 8) return;
         File[] files = dir.listFiles();
         if (files == null) return;
@@ -226,8 +312,17 @@ public class LocalAudioActivity extends BaseActivity {
             if (f.isDirectory()) {
                 String n = f.getName();
                 if (n.startsWith(".") || n.equals("Android")) continue;
-                scanFs(f, list, depth + 1);
+                scanFs(f, list, seen, depth + 1);
             } else if (isAudioFile(f.getName())) {
+                // 真实路径去重，避免存储卷之间的符号链接互指导致重复记录
+                // （例如 /sdcard -> /storage/emulated/0）。
+                String dedupeKey;
+                try {
+                    dedupeKey = f.getCanonicalPath();
+                } catch (Exception e) {
+                    dedupeKey = f.getAbsolutePath();
+                }
+                if (!seen.add(dedupeKey)) continue;
                 LocalAudioFile af = new LocalAudioFile();
                 af.path       = f.getAbsolutePath();
                 af.title      = stripExt(f.getName());
@@ -356,7 +451,17 @@ public class LocalAudioActivity extends BaseActivity {
                 idx -> {
                     currentCategory = idx;
                     LocalMediaPrefs.saveAudioCategory(this, currentCategory);
-                    refreshList();
+                    // 切到"歌曲"分类时，列表顺序变了，"前 200"要按新顺序重新计算。
+                    if (currentCategory == CAT_SONG) {
+                        coverCache.reset();
+                        refreshList();
+                        coverCache.ensureFirstBatch(sortedSongsSnapshot(), () -> {
+                            RecyclerView.Adapter<?> adapter = rvList.getAdapter();
+                            if (adapter != null) adapter.notifyDataSetChanged();
+                        });
+                    } else {
+                        refreshList();
+                    }
                 });
     }
 
@@ -370,7 +475,13 @@ public class LocalAudioActivity extends BaseActivity {
                     idx -> {
                         currentSortSong = idx;
                         LocalMediaPrefs.saveAudioSortSong(this, currentSortSong);
+                        // 排序方式变了，"前 200"对应的歌曲集合也变了，重新计算。
+                        coverCache.reset();
                         refreshList();
+                        coverCache.ensureFirstBatch(sortedSongsSnapshot(), () -> {
+                            RecyclerView.Adapter<?> adapter = rvList.getAdapter();
+                            if (adapter != null) adapter.notifyDataSetChanged();
+                        });
                     });
         } else {
             showOptionDialog("目录排序",
@@ -457,20 +568,32 @@ public class LocalAudioActivity extends BaseActivity {
 
     // ─── 封面绑定 ──────────────────────────────────────────────────────────
 
+    /**
+     * 音乐封面只在内存里持有（见 {@link AudioCoverMemoryCache} 类注释），不落盘、
+     * 不经过 Picasso 磁盘/内存二级缓存，直接用 {@link RoundTransformation} 对内存中
+     * 的 Bitmap 做圆角裁剪后绑定到 ImageView。
+     *
+     * 尚未加载到该位置（coverLoaded=false）或加载后确认无内嵌封面（coverBitmap=null）
+     * 时都展示默认图标；两者用同一个占位符即可，用户观感上是"封面逐步点亮"。
+     */
     private void bindCover(ImageView iv, LocalAudioFile f) {
-        File cover = MediaCoverCache.peekAudioCover(this, f.path, f.modified);
-        if (cover != null) {
+        Bitmap source = f.coverBitmap;
+        if (source != null && !source.isRecycled()) {
             iv.setPadding(0, 0, 0, 0);
-            Picasso.get()
-                    .load(cover)
-                    .transform(new RoundTransformation(cover.getAbsolutePath())
-                            .centerCorp(true)
-                            .override(dp(40), dp(40))
-                            .roundRadius(dp(6), RoundTransformation.RoundType.ALL))
-                    .placeholder(R.drawable.ic_music_note)
-                    .error(R.drawable.ic_music_note)
-                    .noFade()
-                    .into(iv);
+            try {
+                // RoundTransformation.transform() 会 recycle 传入的 source，
+                // 这里传一份拷贝，保留 LocalAudioFile 持有的原始 Bitmap 供下次
+                // 列表重建（换排序/换分类）时复用，避免重复解码同一张封面。
+                Bitmap copy = source.copy(source.getConfig() != null ? source.getConfig() : Bitmap.Config.ARGB_8888, true);
+                Bitmap rounded = new RoundTransformation(f.path)
+                        .centerCorp(true)
+                        .override(dp(40), dp(40))
+                        .roundRadius(dp(6), RoundTransformation.RoundType.ALL)
+                        .transform(copy);
+                iv.setImageBitmap(rounded);
+            } catch (Exception e) {
+                iv.setImageResource(R.drawable.ic_music_note);
+            }
         } else {
             int pad = dp(8);
             iv.setPadding(pad, pad, pad, pad);
@@ -547,5 +670,6 @@ public class LocalAudioActivity extends BaseActivity {
     protected void onDestroy() {
         super.onDestroy();
         executor.shutdownNow();
+        coverCache.dispose();
     }
 }

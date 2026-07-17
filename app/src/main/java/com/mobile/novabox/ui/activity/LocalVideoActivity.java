@@ -29,11 +29,14 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.mobile.novabox.R;
 import com.mobile.novabox.base.BaseActivity;
+import com.mobile.novabox.cache.LocalVideoEntity;
+import com.mobile.novabox.data.AppDataManager;
 import com.mobile.novabox.ui.adapter.LocalVideoFileAdapter;
 import com.mobile.novabox.ui.adapter.VideoFolderAdapter;
 import com.mobile.novabox.util.LocalMediaPrefs;
 import com.mobile.novabox.util.MediaCoverCache;
 import com.mobile.novabox.util.PadUiHelper;
+import com.mobile.novabox.util.StorageVolumeHelper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -137,7 +140,7 @@ public class LocalVideoActivity extends BaseActivity {
         if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{perm}, REQUEST_STORAGE);
         } else {
-            scanVideos();
+            loadFromCacheOrScan();
         }
     }
 
@@ -147,11 +150,61 @@ public class LocalVideoActivity extends BaseActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_STORAGE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                scanVideos();
+                loadFromCacheOrScan();
             } else {
                 Toast.makeText(this, "需要存储权限才能扫描本地视频", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    // ─── 扫描结果缓存（Room）─────────────────────────────────────────────────
+
+    /**
+     * 进页面时优先读数据库缓存直接展示，秒开、不用每次都重新扫描磁盘、重新截图；
+     * 缓存为空（首次进入 / 之前从未成功扫描过）时才自动触发一次完整扫描。
+     */
+    private void loadFromCacheOrScan() {
+        if (executor.isShutdown()) executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            List<LocalVideoEntity> cached;
+            try {
+                cached = AppDataManager.get().getLocalVideoDao().getAll();
+            } catch (Exception e) {
+                cached = new ArrayList<>();
+            }
+            if (!cached.isEmpty()) {
+                List<File> files = new ArrayList<>();
+                for (LocalVideoEntity e : cached) files.add(new File(e.path));
+                mainHandler.post(() -> {
+                    allVideoFiles = files;
+                    buildFolderEntries();
+                    refreshList();
+                });
+                // 缓存里可能有部分视频当初缩略图生成失败（thumbPath 为空），
+                // 补齐这部分缺失的缩略图，不需要重新扫描整个文件列表。
+                enqueueMissingThumbnails(cached);
+            } else {
+                scanVideos();
+            }
+        });
+    }
+
+    /** 补齐数据库缓存中还没有缩略图的记录，生成后写回数据库并刷新列表。 */
+    private void enqueueMissingThumbnails(List<LocalVideoEntity> cached) {
+        int refreshEvery = 5;
+        int count = 0;
+        for (LocalVideoEntity e : cached) {
+            if (executor.isShutdown()) return;
+            if (e.thumbPath != null && !e.thumbPath.isEmpty()) continue;
+            File cover = MediaCoverCache.getOrCreateVideoCover(this, new File(e.path));
+            String thumbPath = cover != null ? cover.getAbsolutePath() : "";
+            try {
+                AppDataManager.get().getLocalVideoDao().updateThumbPath(e.path, thumbPath);
+            } catch (Exception ignored) {}
+            count++;
+            if (count % refreshEvery == 0) mainHandler.post(this::refreshList);
+        }
+        mainHandler.post(this::refreshList);
     }
 
     // ─── 扫描 ──────────────────────────────────────────────────────────────────
@@ -167,10 +220,30 @@ public class LocalVideoActivity extends BaseActivity {
                 if (files.isEmpty())
                     Toast.makeText(this, "未找到本地视频", Toast.LENGTH_SHORT).show();
             });
+            // 扫描结果先原样写入数据库（缩略图路径留空），下次进页面即可直接从
+            // 缓存恢复，不需要重新扫描磁盘；缩略图随后异步生成，生成一个更新一条。
+            saveScanResultToDb(files);
             // 扫描到的视频逐个提取/缓存封面帧，生成一个后刷新一次列表，
             // 用户能看到封面逐步"点亮"，不用等全部扫描完
             extractCoversAndRefresh(files);
         });
+    }
+
+    private void saveScanResultToDb(List<File> files) {
+        List<LocalVideoEntity> entities = new ArrayList<>();
+        for (File f : files) {
+            LocalVideoEntity e = new LocalVideoEntity();
+            e.path = f.getAbsolutePath();
+            e.name = f.getName();
+            e.folder = f.getParent() != null ? f.getParent() : "/";
+            e.size = f.length();
+            e.modified = f.lastModified();
+            e.thumbPath = "";
+            entities.add(e);
+        }
+        try {
+            AppDataManager.get().getLocalVideoDao().replaceAll(entities);
+        } catch (Exception ignored) {}
     }
 
     private void extractCoversAndRefresh(List<File> files) {
@@ -178,7 +251,11 @@ public class LocalVideoActivity extends BaseActivity {
         int count = 0;
         for (File f : files) {
             if (executor.isShutdown()) return;
-            MediaCoverCache.getOrCreateVideoCover(this, f);
+            File cover = MediaCoverCache.getOrCreateVideoCover(this, f);
+            String thumbPath = cover != null ? cover.getAbsolutePath() : "";
+            try {
+                AppDataManager.get().getLocalVideoDao().updateThumbPath(f.getAbsolutePath(), thumbPath);
+            } catch (Exception ignored) {}
             count++;
             if (count % refreshEvery == 0) {
                 mainHandler.post(this::refreshList);
@@ -187,6 +264,14 @@ public class LocalVideoActivity extends BaseActivity {
         mainHandler.post(this::refreshList);
     }
 
+    /**
+     * 扫描本地视频文件。
+     *
+     * 先走 MediaStore 查询（速度快、覆盖大多数场景）；查不到结果时兜底走文件系统
+     * 递归扫描——扫描根目录不再写死 /sdcard、/storage/emulated/0，而是用
+     * {@link StorageVolumeHelper} 动态发现设备上所有已挂载的存储卷（内部存储 +
+     * SD 卡 + U 盘等），覆盖外置存储设备。
+     */
     private List<File> doScanAll() {
         List<File> list = new ArrayList<>();
         Set<String> seen = new HashSet<>();
@@ -205,10 +290,9 @@ public class LocalVideoActivity extends BaseActivity {
             }
         } catch (Exception e) { e.printStackTrace(); }
         if (list.isEmpty()) {
-            for (String root : new String[]{"/sdcard", "/storage/emulated/0"}) {
-                File dir = new File(root);
-                if (!dir.exists() || !dir.canRead()) continue;
-                scanFs(dir, list, seen, 0);
+            for (File root : StorageVolumeHelper.discoverRoots(this)) {
+                if (!root.canRead()) continue;
+                scanFs(root, list, seen, 0);
             }
         }
         return list;
@@ -222,8 +306,17 @@ public class LocalVideoActivity extends BaseActivity {
             if (f.isDirectory()) {
                 String n = f.getName();
                 if (!n.startsWith(".") && !n.equals("Android")) scanFs(f, list, seen, depth + 1);
-            } else if (isVideoFile(f.getName()) && seen.add(f.getAbsolutePath())) {
-                list.add(f);
+            } else if (isVideoFile(f.getName())) {
+                // 用真实路径（解析符号链接后）去重：不同存储卷根目录之间可能存在
+                // 符号链接互指（如 /sdcard -> /storage/emulated/0），仅靠原始
+                // 绝对路径字符串去重无法识别，会导致同一物理文件被重复记录。
+                String dedupeKey;
+                try {
+                    dedupeKey = f.getCanonicalPath();
+                } catch (Exception e) {
+                    dedupeKey = f.getAbsolutePath();
+                }
+                if (seen.add(dedupeKey)) list.add(f);
             }
         }
     }

@@ -24,7 +24,10 @@ import java.io.IOException;
  * @since 2020/5/15
  */
 public class AppDataManager {
-    private static final int DB_FILE_VERSION = 3;
+    // v3 -> v4：新增 localVideo / localAudio 两张表（本地视频/音乐扫描结果缓存）。
+    // 沿用本类既有的"换库文件名"升级方式（而非 Room migration），旧库文件保留在
+    // 磁盘上不再使用，新库文件按 @Database entities 自动建表，无需手写 migration。
+    private static final int DB_FILE_VERSION = 4;
     private static final String DB_NAME = "tvbox";
     private static AppDataManager manager;
     private static AppDataBase dbInstance;
