@@ -1,5 +1,6 @@
 package com.mobile.novabox.cache;
 
+import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
@@ -17,8 +18,9 @@ import androidx.room.PrimaryKey;
 public class LocalVideoEntity {
 
     @PrimaryKey
+    @NonNull
     @ColumnInfo(name = "path")
-    public String path;
+    public String path = "";
 
     @ColumnInfo(name = "name")
     public String name;

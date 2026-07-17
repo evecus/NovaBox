@@ -1,5 +1,6 @@
 package com.mobile.novabox.cache;
 
+import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
@@ -18,8 +19,9 @@ import androidx.room.PrimaryKey;
 public class LocalAudioEntity {
 
     @PrimaryKey
+    @NonNull
     @ColumnInfo(name = "path")
-    public String path;
+    public String path = "";
 
     @ColumnInfo(name = "title")
     public String title;
