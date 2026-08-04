@@ -1459,6 +1459,29 @@ public class DetailActivity extends BaseActivity {
                 // getRootView() 拿到的仍是横屏宽度，导致算出的高度异常，
                 // 从而出现播放区域和下方简介内容互相重叠/错位的画面（与首次进入播放页不一致）。
                 playerAreaOriginalParent.addView(playerAreaContainer, playerAreaOriginalIndex, playerAreaOriginalLp);
+
+                // Pad 端（layout-sw600dp）左右分栏布局在横竖屏下结构完全一致（没有单独的
+                // -land 变体），setRequestedOrientation 不会改变分栏宽度比例，因此这里可以
+                // 立即按当前宽度重新计算 16:9 高度，不需要像手机那样等待旋转动画结束。
+                // 同时，由于 Activity 现在不会因 screenLayout 变化而重建，playerAreaContainer
+                // 的 LayoutParams 对象在多次进入/退出全屏后可能不再准确反映当前分栏宽度
+                // （例如窗口尺寸、分屏等变化），重新计算一次可以避免画面缩小悬浮、四周留黑边的问题。
+                if (com.mobile.novabox.util.PadUiHelper.isPad(mContext)) {
+                    final ViewGroup fixedParent = playerAreaOriginalParent;
+                    playerAreaContainer.post(() -> {
+                        if (playerAreaContainer == null || fullWindows) return;
+                        int columnW = fixedParent.getWidth();
+                        if (columnW <= 0) columnW = playerAreaContainer.getRootView().getWidth();
+                        int h = columnW * 9 / 16;
+                        ViewGroup.LayoutParams lp = playerAreaContainer.getLayoutParams();
+                        if (lp != null && h > 0) {
+                            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                            lp.height = h;
+                            playerAreaContainer.setLayoutParams(lp);
+                            playerAreaOriginalLp = lp;
+                        }
+                    });
+                }
             }
 
             // 内部播放 Fragment 容器始终铺满 playerAreaContainer，与 playerAreaContainer 的尺寸保持同步，
@@ -1475,8 +1498,43 @@ public class DetailActivity extends BaseActivity {
             if (miniControlsOverlay != null) {
                 showMiniControls();
             }
+
+            // 由于 Activity 不再因横竖屏切换而重建（configChanges 已声明 screenLayout 等），
+            // playerAreaContainer 被从 decorView 移回原父布局后，部分设备/播放器内核
+            // （尤其是 Pad 端左右分栏布局）不会自动触发一次完整的重新测量/布局，
+            // 导致播放画面仍按退出前的尺寸渲染，出现画面缩小悬浮、周围大片黑边的问题。
+            // 这里显式强制这条视图链重新测量布局，并在下一帧结束后再触发一次，
+            // 确保播放器内核（TextureView/SurfaceView）拿到的是恢复后的真实尺寸。
+            forceRelayoutPlayerArea();
         }
         toggleSubtitleTextSize();
+    }
+
+    /**
+     * 强制播放器容器链重新测量布局，修复退出全屏后（Activity 未重建的情况下）
+     * 播放画面未按恢复后的容器尺寸重新铺满的问题。
+     */
+    private void forceRelayoutPlayerArea() {
+        if (playerAreaContainer != null) {
+            playerAreaContainer.requestLayout();
+        }
+        if (llPlayerFragmentContainer != null) {
+            llPlayerFragmentContainer.requestLayout();
+        }
+        if (playFragment != null && playFragment.getPlayer() != null) {
+            playFragment.getPlayer().requestLayout();
+        }
+        // 再延迟一帧执行一次，确保此时 playerAreaContainer 已经完成从 PORTRAIT
+        // 切换带来的宽度变化测量（避免在旋转动画/测量尚未落定前的中间态上取值）。
+        if (playerAreaContainer != null) {
+            playerAreaContainer.post(() -> {
+                if (playerAreaContainer != null) playerAreaContainer.requestLayout();
+                if (llPlayerFragmentContainer != null) llPlayerFragmentContainer.requestLayout();
+                if (playFragment != null && playFragment.getPlayer() != null) {
+                    playFragment.getPlayer().requestLayout();
+                }
+            });
+        }
     }
 
     void toggleSubtitleTextSize() {
