@@ -154,6 +154,8 @@ public class LivePlayActivity extends BaseActivity {
     private boolean exitingLivePlay = false;
     // Pad 端横屏始终是横屏，用此标记区分"全屏模式"与"正常浏览模式"
     private boolean mIsPadFullscreen = false;
+    // 手机端"不旋转全屏"标记（竖屏策略/传感器策略竖拿时直接展开全屏UI）
+    private boolean mIsPortraitFullscreen = false;
     private static final long EPG_LOAD_DELAY = 1200L;
     private static final int RESOLUTION_INFO_MAX_RETRY = 10;
     private static final long RESOLUTION_INFO_RETRY_DELAY = 300L;
@@ -1125,8 +1127,8 @@ public class LivePlayActivity extends BaseActivity {
                 return;
             }
             // 非全屏，直接退出直播页回首页
-        } else if (!com.mobile.novabox.util.PadUiHelper.isPad(this) && isLandscape()) {
-            // 手机横屏全屏逻辑保持不变
+        } else if (!com.mobile.novabox.util.PadUiHelper.isPad(this) && (isLandscape() || mIsPortraitFullscreen)) {
+            // 手机全屏（横屏全屏 or 竖屏全屏）：退出全屏
             exitFullscreenMode();
             return;
         }
@@ -1280,14 +1282,14 @@ public class LivePlayActivity extends BaseActivity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         // 全屏时直接在 onKeyDown 拦截返回键，绕过国产系统"再次滑动返回"确认层
-        if (keyCode == KeyEvent.KEYCODE_BACK && isLandscape()) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && (isLandscape() || mIsPortraitFullscreen)) {
             boolean isPad = com.mobile.novabox.util.PadUiHelper.isPad(this);
             if (!isPad || mIsPadFullscreen) {
-                // 手机横屏 或 pad真正全屏：退出全屏
+                // 手机全屏（横屏/竖屏全屏）或 pad 真正全屏：退出全屏
                 exitFullscreenMode();
                 return true;
             }
-            // pad非全屏横屏：让onBackPressed处理（走正常返回）
+            // pad 非全屏横屏：让 onBackPressed 处理
         }
         if ((keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) && event.getRepeatCount() == 0) {
             mLongPressRunnable = new Runnable() {
@@ -1379,25 +1381,34 @@ public class LivePlayActivity extends BaseActivity {
     @Override
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        // 竖屏策略：屏幕方向锁定竖屏，不响应物理旋转
-        if (!com.mobile.novabox.util.PadUiHelper.isPad(this)
-                && com.mobile.novabox.util.OrientationHelper.getMode()
-                   == com.mobile.novabox.util.OrientationHelper.MODE_PORT) {
-            return;
+        boolean isPad = com.mobile.novabox.util.PadUiHelper.isPad(this);
+        int mode = com.mobile.novabox.util.OrientationHelper.getMode();
+        if (!isPad) {
+            if (mode == com.mobile.novabox.util.OrientationHelper.MODE_PORT) {
+                // 竖屏策略：屏幕锁定竖屏，物理旋转无效，直接忽略
+                return;
+            }
+            if (newConfig.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) {
+                // 手机竖屏方向变化：
+                // 如果是传感器策略且当前处于"不旋转全屏"状态，说明用户竖拿手机，
+                // 传感器触发了竖屏回调，但我们已经在竖屏全屏了，不需要 exitFullscreenMode
+                if (mIsPortraitFullscreen) return;
+                // 其他情况（横屏策略/自动策略旋转回竖屏）：退出全屏
+                if (mIsPadFullscreen) exitFullscreenMode();
+                return;
+            }
         }
-        // 竖屏策略已在上方 return，其余策略（自动/横屏/传感器）正常响应旋转：
-        //   横屏 → enterFullscreenMode；竖屏 → exitFullscreenMode
-        // 传感器策略下，系统根据 SCREEN_ORIENTATION_SENSOR 自动旋转，
-        // onConfigurationChanged 会在旋转完成后被调到，此处逻辑正确。
+        // 横屏方向变化（手机横屏 or 平板任意方向）
         if (newConfig.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
             enterFullscreenMode();
-        } else {
-            exitFullscreenMode();
+        } else if (!isPad) {
+            if (mIsPadFullscreen) exitFullscreenMode();
         }
     }
 
     private void enterFullscreenMode() {
         mIsPadFullscreen = true;
+        mIsPortraitFullscreen = false; // 旋转横屏全屏，清除竖屏全屏标记
         // 沉浸式全屏（手机/Pad通用）
         getWindow().getDecorView().setSystemUiVisibility(
             View.SYSTEM_UI_FLAG_FULLSCREEN
@@ -1438,6 +1449,7 @@ public class LivePlayActivity extends BaseActivity {
 
     private void exitFullscreenMode() {
         mIsPadFullscreen = false;
+        mIsPortraitFullscreen = false; // 同时清除竖屏全屏标记
         // 恢复系统UI
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
         // 显示信息栏、频道列表外层容器和左侧/底部导航栏
@@ -2627,8 +2639,8 @@ public class LivePlayActivity extends BaseActivity {
         ivBackBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isLandscape()) {
-                    // 横屏时退出全屏回竖屏（直接调exitFullscreenMode，一步到位）
+                if (isLandscape() || mIsPortraitFullscreen) {
+                    // 横屏全屏 or 竖屏全屏：退出全屏
                     exitFullscreenMode();
                 } else {
                     finish();
@@ -2654,13 +2666,15 @@ public class LivePlayActivity extends BaseActivity {
                 } else {
                     int mode = com.mobile.novabox.util.OrientationHelper.getMode();
                     if (mode == com.mobile.novabox.util.OrientationHelper.MODE_PORT) {
-                        // 竖屏策略：不旋转，直接展开全屏 UI（竖屏全屏）
+                        // 竖屏策略：不旋转，直接展开竖屏全屏 UI
+                        mIsPortraitFullscreen = true;
                         enterFullscreenMode();
                     } else if (mode == com.mobile.novabox.util.OrientationHelper.MODE_SENSOR) {
-                        // 传感器策略：设置传感器方向，同时直接展开全屏 UI
-                        // 若手机此时已横拿，系统会旋转，onConfigurationChanged 会再次触发 enterFullscreenMode 无害；
-                        // 若手机竖拿，系统不旋转，直接展开竖屏全屏 UI
+                        // 传感器策略：解锁传感器，让系统决定方向
+                        // 手机竖拿：系统不旋转 → 直接展开竖屏全屏 UI，设标记
+                        // 手机横拿：系统会旋转触发 onConfigurationChanged → enterFullscreenMode（不设标记）
                         setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+                        mIsPortraitFullscreen = true; // 先设标记；横屏时 enterFullscreenMode 会清除它
                         enterFullscreenMode();
                     } else {
                         // 横屏/自动策略：旋转到横屏，等 onConfigurationChanged 触发 enterFullscreenMode
