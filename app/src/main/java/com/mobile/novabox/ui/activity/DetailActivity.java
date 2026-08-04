@@ -291,14 +291,7 @@ public class DetailActivity extends BaseActivity {
         if (showPreview) {
             // Show player area at 16:9 aspect ratio
             playerAreaContainer.post(() -> {
-                // On tablet, player is in the left column (73% of screen); on phone use full width
-                int screenW = playerAreaContainer.getRootView().getWidth();
-                int w = com.mobile.novabox.util.PadUiHelper.isPad(mContext)
-                        ? (int)(screenW * 0.73f) : screenW;
-                int h = w * 9 / 16;
-                ViewGroup.LayoutParams lp = playerAreaContainer.getLayoutParams();
-                lp.height = h;
-                playerAreaContainer.setLayoutParams(lp);
+                applyPlayerAreaSize();
                 playerAreaContainer.setVisibility(View.VISIBLE);
             });
             // Hide thumb in topLayout when player is active
@@ -1453,36 +1446,14 @@ public class DetailActivity extends BaseActivity {
             if (playerAreaContainer != null && playerAreaOriginalParent != null) {
                 FrameLayout decorRoot = (FrameLayout) getWindow().getDecorView();
                 decorRoot.removeView(playerAreaContainer);
-                // 直接复用进入全屏前保存的原始 LayoutParams（其中已经是正确的竖屏 16:9 高度），
-                // 不再重新根据 getRootView().getWidth() 计算高度。
-                // 之前的做法会在 post() 回调里用宽度反算高度，
-                // 但此时 setRequestedOrientation(PORTRAIT) 触发的横转竖屏切换往往还没完成，
-                // getRootView() 拿到的仍是横屏宽度，导致算出的高度异常，
-                // 从而出现播放区域和下方简介内容互相重叠/错位的画面（与首次进入播放页不一致）。
                 playerAreaOriginalParent.addView(playerAreaContainer, playerAreaOriginalIndex, playerAreaOriginalLp);
 
-                // Pad 端（layout-sw600dp）左右分栏布局在横竖屏下结构完全一致（没有单独的
-                // -land 变体），setRequestedOrientation 不会改变分栏宽度比例，因此这里可以
-                // 立即按当前宽度重新计算 16:9 高度，不需要像手机那样等待旋转动画结束。
-                // 同时，由于 Activity 现在不会因 screenLayout 变化而重建，playerAreaContainer
-                // 的 LayoutParams 对象在多次进入/退出全屏后可能不再准确反映当前分栏宽度
-                // （例如窗口尺寸、分屏等变化），重新计算一次可以避免画面缩小悬浮、四周留黑边的问题。
-                if (com.mobile.novabox.util.PadUiHelper.isPad(mContext)) {
-                    final ViewGroup fixedParent = playerAreaOriginalParent;
-                    playerAreaContainer.post(() -> {
-                        if (playerAreaContainer == null || fullWindows) return;
-                        int columnW = fixedParent.getWidth();
-                        if (columnW <= 0) columnW = playerAreaContainer.getRootView().getWidth();
-                        int h = columnW * 9 / 16;
-                        ViewGroup.LayoutParams lp = playerAreaContainer.getLayoutParams();
-                        if (lp != null && h > 0) {
-                            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                            lp.height = h;
-                            playerAreaContainer.setLayoutParams(lp);
-                            playerAreaOriginalLp = lp;
-                        }
-                    });
-                }
+                // 不再依赖“进全屏前保存的旧 LayoutParams”，因为它在多次进出全屏、
+                // 或者 Activity 因 screenLayout 变化不再重建之后，可能已经不能准确
+                // 反映当前分栏/屏幕宽度，从而导致播放区域高度错误（画面悬浮、四周留黑边）。
+                // 统一改为退出全屏后重新按当前宽度计算一次 16:9 高度（与首次进入播放页
+                // 使用完全相同的计算方式，见 applyPlayerAreaSize()），确保两处逻辑一致。
+                playerAreaContainer.post(this::applyPlayerAreaSize);
             }
 
             // 内部播放 Fragment 容器始终铺满 playerAreaContainer，与 playerAreaContainer 的尺寸保持同步，
@@ -1512,6 +1483,27 @@ public class DetailActivity extends BaseActivity {
     }
 
     /**
+     * 统一计算并应用 playerAreaContainer 的宽高（16:9），供首次进入播放页
+     * 和退出全屏恢复小屏两处场景共用同一套计算逻辑，避免两处结果不一致
+     * 导致的画面悬浮/留黑边问题。
+     * Pad 端播放器位于左栏（约屏幕宽度的 73%），手机端铺满整个宽度。
+     */
+    private void applyPlayerAreaSize() {
+        if (playerAreaContainer == null) return;
+        int screenW = playerAreaContainer.getRootView().getWidth();
+        int w = com.mobile.novabox.util.PadUiHelper.isPad(mContext)
+                ? (int) (screenW * 0.73f) : screenW;
+        if (w <= 0) return;
+        int h = w * 9 / 16;
+        ViewGroup.LayoutParams lp = playerAreaContainer.getLayoutParams();
+        if (lp == null) return;
+        lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        lp.height = h;
+        playerAreaContainer.setLayoutParams(lp);
+        playerAreaOriginalLp = lp;
+    }
+
+    /**
      * 强制播放器容器链重新测量布局，修复退出全屏后（Activity 未重建的情况下）
      * 播放画面未按恢复后的容器尺寸重新铺满、画面悬浮缩小在中间的问题。
      *
@@ -1536,6 +1528,7 @@ public class DetailActivity extends BaseActivity {
 
     private void relayoutPlayerAreaOnce() {
         if (fullWindows) return; // 已经又切回全屏，跳过过期的延迟回调
+        applyPlayerAreaSize();
         if (playerAreaContainer != null) {
             playerAreaContainer.requestLayout();
         }
