@@ -42,6 +42,7 @@ import com.mobile.novabox.bean.VodInfo;
 import com.mobile.novabox.cache.RoomDataManger;
 import com.mobile.novabox.event.RefreshEvent;
 import com.mobile.novabox.picasso.RoundTransformation;
+import com.mobile.novabox.player.MyVideoView;
 import com.mobile.novabox.ui.adapter.SeriesAdapter;
 import com.mobile.novabox.ui.adapter.SeriesFlagAdapter;
 import com.mobile.novabox.ui.dialog.DescDialog;
@@ -1512,27 +1513,44 @@ public class DetailActivity extends BaseActivity {
 
     /**
      * 强制播放器容器链重新测量布局，修复退出全屏后（Activity 未重建的情况下）
-     * 播放画面未按恢复后的容器尺寸重新铺满的问题。
+     * 播放画面未按恢复后的容器尺寸重新铺满、画面悬浮缩小在中间的问题。
+     *
+     * 单纯调用 requestLayout() 只能让容器（ViewGroup）本身重新走一遍测量流程，
+     * 但播放内核（TextureView/SurfaceView）在被从 decorView 摘下再挂回原布局后，
+     * 其内部渲染 Surface 的尺寸缓存不一定会跟着刷新——它是在 SurfaceTexture 的
+     * onSurfaceTextureSizeChanged 回调里才会真正更新绘制尺寸，而这个回调只在
+     * View 的实际测量尺寸发生变化时才会触发。如果测量前后数值恰好一致
+     * （或者内核没有正确监听到这次测量），画面就会停留在退出全屏前的（悬浮/居中）状态。
+     *
+     * 这里改用更强的做法：先把播放视图整体隐藏再显示（GONE -> VISIBLE），
+     * 这会强制 View 树完全脱离当前的测量缓存，下一次显示时必定重新走一次完整的
+     * measure/layout，从而让播放内核的渲染 Surface 拿到正确的新尺寸。
      */
     private void forceRelayoutPlayerArea() {
+        relayoutPlayerAreaOnce();
+        if (playerAreaContainer != null) {
+            playerAreaContainer.post(this::relayoutPlayerAreaOnce);
+            playerAreaContainer.postDelayed(this::relayoutPlayerAreaOnce, 150);
+        }
+    }
+
+    private void relayoutPlayerAreaOnce() {
+        if (fullWindows) return; // 已经又切回全屏，跳过过期的延迟回调
         if (playerAreaContainer != null) {
             playerAreaContainer.requestLayout();
         }
         if (llPlayerFragmentContainer != null) {
             llPlayerFragmentContainer.requestLayout();
         }
-        if (playFragment != null && playFragment.getPlayer() != null) {
-            playFragment.getPlayer().requestLayout();
-        }
-        // 再延迟一帧执行一次，确保此时 playerAreaContainer 已经完成从 PORTRAIT
-        // 切换带来的宽度变化测量（避免在旋转动画/测量尚未落定前的中间态上取值）。
-        if (playerAreaContainer != null) {
-            playerAreaContainer.post(() -> {
-                if (playerAreaContainer != null) playerAreaContainer.requestLayout();
-                if (llPlayerFragmentContainer != null) llPlayerFragmentContainer.requestLayout();
-                if (playFragment != null && playFragment.getPlayer() != null) {
-                    playFragment.getPlayer().requestLayout();
-                }
+        MyVideoView player = (playFragment != null) ? playFragment.getPlayer() : null;
+        if (player != null) {
+            // GONE -> VISIBLE 强制播放内核（TextureView/SurfaceView）丢弃旧的测量缓存，
+            // 下一帧必定重新measure，从而按当前容器尺寸重新铺满画面。
+            player.setVisibility(View.GONE);
+            player.requestLayout();
+            player.post(() -> {
+                player.setVisibility(View.VISIBLE);
+                player.requestLayout();
             });
         }
     }
