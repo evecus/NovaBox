@@ -1545,14 +1545,22 @@ public class DetailActivity extends BaseActivity {
         }
         MyVideoView player = (playFragment != null) ? playFragment.getPlayer() : null;
         if (player != null) {
-            // GONE -> VISIBLE 强制播放内核（TextureView/SurfaceView）丢弃旧的测量缓存，
-            // 下一帧必定重新measure，从而按当前容器尺寸重新铺满画面。
-            player.setVisibility(View.GONE);
-            player.requestLayout();
-            player.post(() -> {
-                player.setVisibility(View.VISIBLE);
+            // 平板端不切换屏幕方向，View 挂回原位后尺寸变化可预期，
+            // requestLayout() 就能让播放内核拿到正确尺寸，无需 GONE/VISIBLE，
+            // 避免产生一帧空白画面（闪屏）。
+            // 手机端仍用 GONE->VISIBLE 强制刷新（方向切换后内核缓存可能未更新）。
+            if (com.mobile.novabox.util.PadUiHelper.isPad(mContext)) {
                 player.requestLayout();
-            });
+            } else {
+                // GONE -> VISIBLE 强制播放内核（TextureView/SurfaceView）丢弃旧的测量缓存，
+                // 下一帧必定重新measure，从而按当前容器尺寸重新铺满画面。
+                player.setVisibility(View.GONE);
+                player.requestLayout();
+                player.post(() -> {
+                    player.setVisibility(View.VISIBLE);
+                    player.requestLayout();
+                });
+            }
         }
     }
 
