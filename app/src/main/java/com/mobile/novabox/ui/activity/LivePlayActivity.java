@@ -1379,6 +1379,12 @@ public class LivePlayActivity extends BaseActivity {
     @Override
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        // 竖屏策略：锁定竖屏，忽略物理旋转触发的配置变化
+        if (!com.mobile.novabox.util.PadUiHelper.isPad(this)
+                && com.mobile.novabox.util.OrientationHelper.getMode()
+                   == com.mobile.novabox.util.OrientationHelper.MODE_PORT) {
+            return;
+        }
         if (newConfig.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
             enterFullscreenMode();
         } else {

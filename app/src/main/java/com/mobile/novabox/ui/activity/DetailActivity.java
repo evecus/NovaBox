@@ -1393,9 +1393,8 @@ public class DetailActivity extends BaseActivity {
             // ---- 进入横屏全屏 ----
             // 平板端已处于横屏分栏布局，不需要也不应该强制旋转屏幕方向，
             // 否则退出全屏时的 setRequestedOrientation(PORTRAIT) 会破坏分栏布局。
-            if (!com.mobile.novabox.util.PadUiHelper.isPad(mContext)) {
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-            }
+            // 根据手机端全屏方向策略决定是否旋转（平板端跳过）
+            com.mobile.novabox.util.OrientationHelper.applyDetailEnterFullscreen(DetailActivity.this);
             // 隐藏系统 UI
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 getWindow().getInsetsController().hide(
@@ -1438,9 +1437,8 @@ public class DetailActivity extends BaseActivity {
             // ---- 退出全屏，恢复小屏 ----
             // 平板端不操作屏幕方向（始终保持横屏分栏），只恢复 View 层布局；
             // 手机端才切回竖屏。
-            if (!com.mobile.novabox.util.PadUiHelper.isPad(mContext)) {
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            }
+            // 根据手机端全屏方向策略恢复方向（平板端跳过）
+            com.mobile.novabox.util.OrientationHelper.applyDetailExitFullscreen(DetailActivity.this);
             // 恢复系统 UI
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 getWindow().getInsetsController().show(
