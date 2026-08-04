@@ -348,12 +348,8 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
 
     private void enterFullScreen() {
         isFullScreen = true;
-        if (!isPad) {
-            // 手机端：仅横屏视频才旋转
-            if (isLandscapeVideo()) {
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-            }
-        }
+        // 根据手机端全屏方向策略决定是否旋转（平板端跳过）
+        com.mobile.novabox.util.OrientationHelper.applyEnterFullscreen(this, isLandscapeVideo());
         // 隐藏状态栏和导航栏（沉浸式）
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         // 清除根视图的 statusBar paddingTop，否则播放器容器顶部会空出一截并透出壁纸
@@ -387,11 +383,9 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
         // 恢复方向
         if (isPad) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-        } else if (isLandscapeVideo()) {
-            // 手机横屏视频：旋转回竖屏
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        } else {
+            com.mobile.novabox.util.OrientationHelper.applyExitFullscreen(this, isLandscapeVideo());
         }
-        // 竖屏视频进入全屏时没有旋转，退出时也无需旋转
         // 恢复系统 UI：必须与 applyStatusBarPadding/hideSysBar 保持一致，
         // 不能用 SYSTEM_UI_FLAG_VISIBLE（会清除 LAYOUT_FULLSCREEN 和 LIGHT_STATUS_BAR，
         // 导致布局突然下移且状态栏图标变白）

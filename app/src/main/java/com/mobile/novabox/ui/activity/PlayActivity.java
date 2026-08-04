@@ -123,10 +123,14 @@ import xyz.doikki.videoplayer.player.ProgressManager;
 
 public class PlayActivity extends BaseActivity {
 
-    /** PlayActivity 始终横屏，不随设备类型改变。 */
+    /** 根据手机端全屏方向策略决定启动方向（平板端由 BaseActivity 默认横屏）。 */
     @Override
     protected void enforceOrientationForDevice() {
-        setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        if (com.mobile.novabox.util.PadUiHelper.isPad(this)) {
+            setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        } else {
+            setRequestedOrientation(com.mobile.novabox.util.OrientationHelper.getPlayActivityOrientation());
+        }
     }
 
     private MyVideoView mVideoView;

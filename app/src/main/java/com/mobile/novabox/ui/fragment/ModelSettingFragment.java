@@ -90,6 +90,7 @@ public class ModelSettingFragment extends BaseLazyFragment {
     private TextView tvm3u8AdText;
     private TextView tvAutoSwitchLineText;
     private TextView tvIjkCachePlay;
+    private TextView tvFullscreenOrientation;
     private ApiDialog apiDialog;
     private boolean selectLocalLive;
     private TextView tvDanmuOpenText;
@@ -137,6 +138,7 @@ public class ModelSettingFragment extends BaseLazyFragment {
         tvDns = findViewById(R.id.tvDns);
         tvHomeRec = findViewById(R.id.tvHomeRec);
         tvIjkCachePlay = findViewById(R.id.tvIjkCachePlay);
+        tvFullscreenOrientation = findViewById(R.id.tvFullscreenOrientation);
         tvMediaCodec.setText(Hawk.get(HawkConfig.IJK_CODEC, "硬解码"));
         tvDebugOpen.setText(Hawk.get(HawkConfig.DEBUG_OPEN, false) ? "已打开" : "已关闭");
         tvParseWebView.setText(Hawk.get(HawkConfig.PARSE_WEBVIEW, true) ? "系统自带" : "XWalkView");
@@ -148,6 +150,18 @@ public class ModelSettingFragment extends BaseLazyFragment {
         tvPlay.setText(PlayerHelper.getPlayerName(Hawk.get(HawkConfig.PLAY_TYPE, 0)));
         tvRender.setText(PlayerHelper.getRenderName(Hawk.get(HawkConfig.PLAY_RENDER, 0)));
         tvIjkCachePlay.setText(Hawk.get(HawkConfig.IJK_CACHE_PLAY, false) ? "开启" : "关闭");
+        // 全屏播放方向：仅手机端显示，平板端隐藏
+        android.view.View llFullscreenOrientationRow = findViewById(R.id.llFullscreenOrientation);
+        if (com.mobile.novabox.util.PadUiHelper.isPad(mContext)) {
+            if (llFullscreenOrientationRow != null) llFullscreenOrientationRow.setVisibility(android.view.View.GONE);
+        } else {
+            if (llFullscreenOrientationRow != null) llFullscreenOrientationRow.setVisibility(android.view.View.VISIBLE);
+            if (tvFullscreenOrientation != null) {
+                tvFullscreenOrientation.setText(
+                    com.mobile.novabox.util.OrientationHelper.getModeName(
+                        com.mobile.novabox.util.OrientationHelper.getMode()));
+            }
+        }
         findViewById(R.id.llDebug).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -488,6 +502,44 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 tvAutoSwitchLineText.setText(enable ? "开启" : "关闭");
             }
         });
+        // 全屏播放方向选择
+        if (llFullscreenOrientationRow != null && !com.mobile.novabox.util.PadUiHelper.isPad(mContext)) {
+            llFullscreenOrientationRow.setOnClickListener(v -> {
+                com.mobile.novabox.util.FastClickCheckUtil.check(v);
+                int cur = com.mobile.novabox.util.OrientationHelper.getMode();
+                java.util.ArrayList<Integer> modes = new java.util.ArrayList<>();
+                modes.add(com.mobile.novabox.util.OrientationHelper.MODE_AUTO);
+                modes.add(com.mobile.novabox.util.OrientationHelper.MODE_PORT);
+                modes.add(com.mobile.novabox.util.OrientationHelper.MODE_LAND);
+                modes.add(com.mobile.novabox.util.OrientationHelper.MODE_SENSOR);
+                SelectDialog<Integer> dialog = new SelectDialog<>(mActivity);
+                dialog.setTip("请选择全屏播放方向");
+                dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<Integer>() {
+                    @Override
+                    public void click(Integer value, int pos) {
+                        Hawk.put(HawkConfig.FULLSCREEN_ORIENTATION, modes.get(pos));
+                        if (tvFullscreenOrientation != null) {
+                            tvFullscreenOrientation.setText(
+                                com.mobile.novabox.util.OrientationHelper.getModeName(modes.get(pos)));
+                        }
+                    }
+                    @Override
+                    public String getDisplay(Integer val) {
+                        return com.mobile.novabox.util.OrientationHelper.getModeName(modes.get(val));
+                    }
+                }, new androidx.recyclerview.widget.DiffUtil.ItemCallback<Integer>() {
+                    @Override
+                    public boolean areItemsTheSame(@androidx.annotation.NonNull Integer o, @androidx.annotation.NonNull Integer n) {
+                        return o.intValue() == n.intValue();
+                    }
+                    @Override
+                    public boolean areContentsTheSame(@androidx.annotation.NonNull Integer o, @androidx.annotation.NonNull Integer n) {
+                        return o.intValue() == n.intValue();
+                    }
+                }, modes, modes.indexOf(cur));
+                dialog.show();
+            });
+        }
         findViewById(R.id.llIjkCachePlay).setOnClickListener((view -> onClickIjkCachePlay(view)));
         findViewById(R.id.llClearCache).setOnClickListener((view -> onClickClearCache(view)));
     }

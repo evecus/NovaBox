@@ -213,6 +213,24 @@
                     android:layout_height="wrap_content" android:textColor="#AA000000" android:textSize="13sp"/>
             </LinearLayout>
 
+            <!-- 全屏播放方向（手机端可见，平板端隐藏） -->
+            <LinearLayout
+                android:id="@+id/llFullscreenOrientation"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/shape_setting_model_focus"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="全屏播放方向" android:textColor="@android:color/black" android:textSize="15sp"/>
+                <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                <TextView android:id="@+id/tvFullscreenOrientation" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textColor="#AA000000" android:textSize="13sp"/>
+            </LinearLayout>
+
             <!-- 去广告 -->
             <LinearLayout
                 android:id="@+id/m3u8Ad"

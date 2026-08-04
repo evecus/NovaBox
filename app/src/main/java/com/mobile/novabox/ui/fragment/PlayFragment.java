@@ -948,7 +948,11 @@ public class PlayFragment extends BaseLazyFragment {
 
     public boolean onBackPressed() {
         int requestedOrientation = requireActivity().getRequestedOrientation();
-        if (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+        // 当前竖屏且不是"竖屏策略"时（即用户手动切了竖屏），先转回横屏
+        if ((requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+                && com.mobile.novabox.util.OrientationHelper.getMode() != com.mobile.novabox.util.OrientationHelper.MODE_PORT) {
             requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
             mController.mLandscapePortraitBtn.setText("竖屏");
         }

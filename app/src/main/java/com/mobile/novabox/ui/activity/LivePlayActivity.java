@@ -2639,7 +2639,11 @@ public class LivePlayActivity extends BaseActivity {
         ivFullscreenBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (com.mobile.novabox.util.PadUiHelper.isPad(LivePlayActivity.this)) { enterFullscreenMode(); } else { setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE); }
+                if (com.mobile.novabox.util.PadUiHelper.isPad(LivePlayActivity.this)) {
+                        enterFullscreenMode();
+                    } else {
+                        com.mobile.novabox.util.OrientationHelper.applyLiveEnterFullscreen(LivePlayActivity.this);
+                    }
                 hideControlOverlay();
             }
         });

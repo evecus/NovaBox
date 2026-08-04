@@ -83,4 +83,14 @@ public class HawkConfig {
     public static final String OPENLIST_SAVED_URL       = "openlist_saved_url";        // 保存的服务器地址
     public static final String OPENLIST_SAVED_USERNAME  = "openlist_saved_username";   // 保存的用户名
     public static final String OPENLIST_SAVED_PASSWORD  = "openlist_saved_password";   // 保存的密码
+
+    /**
+     * 手机端全屏播放方向策略（int）：
+     *   0 = 自动（横屏视频旋转横屏，竖屏视频不旋转）
+     *   1 = 竖屏（所有视频都不旋转屏幕方向）
+     *   2 = 横屏（所有视频都旋转到横屏，现有行为）
+     *   3 = 跟随传感器（手机实际朝向决定是否旋转）
+     * 平板端不使用此配置。
+     */
+    public static final String FULLSCREEN_ORIENTATION = "fullscreen_orientation";
 }

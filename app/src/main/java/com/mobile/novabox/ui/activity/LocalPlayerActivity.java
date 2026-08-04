@@ -385,13 +385,8 @@ public class LocalPlayerActivity extends BaseActivity {
         isFullScreen = true;
         pendingExitFullScreen = false;
 
-        if (!PadUiHelper.isPad(this)) {
-            // 手机端：仅横屏视频才旋转；竖屏视频保持竖屏全屏
-            if (isLandscapeVideo()) {
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-            }
-            // 竖屏视频不旋转，直接走下方沉浸式逻辑
-        }
+        // 根据手机端全屏方向策略决定是否旋转（平板端跳过）
+        com.mobile.novabox.util.OrientationHelper.applyEnterFullscreen(this, isLandscapeVideo());
 
         // 隐藏状态栏和导航栏（不加 FLAG_LAYOUT_NO_LIMITS，避免退出时内容撑出屏幕边界）
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -442,12 +437,13 @@ public class LocalPlayerActivity extends BaseActivity {
             pendingExitFullScreen = false;
             restoreSmallScreenLayout();
         } else {
-            if (isLandscapeVideo()) {
-                // 手机端横屏视频：旋转回竖屏，等 onConfigurationChanged 后还原布局
+            // 根据策略决定是否旋转回竖屏
+            boolean willRotate = com.mobile.novabox.util.OrientationHelper.applyExitFullscreen(this, isLandscapeVideo());
+            if (willRotate) {
+                // 发起了旋转，等 onConfigurationChanged 后还原布局
                 pendingExitFullScreen = true;
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
             } else {
-                // 手机端竖屏视频：进入时没旋转，退出时直接还原布局即可
+                // 没有旋转，直接还原布局
                 pendingExitFullScreen = false;
                 restoreSmallScreenLayout();
             }
