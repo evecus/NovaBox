@@ -122,6 +122,8 @@
                     android:layout_marginStart="6dp"
                     android:layout_marginEnd="6dp"
                     android:progressTint="@color/color_02F8E1"
+                    android:progressBackgroundTint="#B3FFFFFF"
+                    android:progressBackgroundTintMode="src_atop"
                     android:thumbTint="@color/color_02F8E1"
                     android:max="1000" />
 

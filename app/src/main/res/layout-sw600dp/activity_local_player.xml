@@ -87,6 +87,8 @@
                     android:layout_marginRight="10dp"
                     android:max="1000"
                     android:progressTint="@android:color/white"
+                    android:progressBackgroundTint="#B3FFFFFF"
+                    android:progressBackgroundTintMode="src_atop"
                     android:thumbTint="@android:color/white"/>
 
                 <TextView
