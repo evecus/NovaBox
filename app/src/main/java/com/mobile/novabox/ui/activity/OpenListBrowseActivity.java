@@ -19,6 +19,7 @@ import com.mobile.novabox.bean.OpenListFile;
 import com.mobile.novabox.bean.OpenListFsListData;
 import com.mobile.novabox.ui.adapter.OpenListFileAdapter;
 import com.mobile.novabox.util.OpenListApi;
+import com.orhanobut.hawk.Hawk;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -94,6 +95,43 @@ public class OpenListBrowseActivity extends BaseActivity {
             finish();
         });
 
+        // 每次进入浏览页时，若用户之前勾选了"保存登录信息"，
+        // 则先用保存的凭据静默重新登录，刷新服务端 token，避免 token 过期导致内容加载失败。
+        // 登录成功后再发起目录请求；登录失败则跳回登录页让用户重新输入。
+        boolean hasSavedLogin = Hawk.get(com.mobile.novabox.util.HawkConfig.OPENLIST_SAVE_LOGIN, false);
+        if (hasSavedLogin) {
+            String savedUrl  = Hawk.get(com.mobile.novabox.util.HawkConfig.OPENLIST_SAVED_URL, "");
+            String savedUser = Hawk.get(com.mobile.novabox.util.HawkConfig.OPENLIST_SAVED_USERNAME, "");
+            String savedPwd  = Hawk.get(com.mobile.novabox.util.HawkConfig.OPENLIST_SAVED_PASSWORD, "");
+            if (!android.text.TextUtils.isEmpty(savedUrl) && !android.text.TextUtils.isEmpty(savedUser)) {
+                pbLoading.setVisibility(View.VISIBLE);
+                OpenListApi.login(savedUrl, savedUser, savedPwd, new OpenListApi.Callback<String>() {
+                    @Override
+                    public void onSuccess(String token) {
+                        runOnUiThread(() -> {
+                            if (isActivityUnavailable()) return;
+                            // token 已由 OpenListApi.login() 写入 Hawk，直接加载目录
+                            loadDir("/");
+                        });
+                    }
+
+                    @Override
+                    public void onError(String msg) {
+                        runOnUiThread(() -> {
+                            if (isActivityUnavailable()) return;
+                            pbLoading.setVisibility(View.GONE);
+                            // 登录失败（凭据无效），跳回登录页
+                            Toast.makeText(mContext, "登录已失效，请重新登录", Toast.LENGTH_SHORT).show();
+                            OpenListApi.logout();
+                            jumpActivity(OpenListLoginActivity.class);
+                            finish();
+                        });
+                    }
+                });
+                return; // 等待登录回调，不在此处直接 loadDir
+            }
+        }
+        // 没有保存登录信息：直接用已有 token 加载目录（原有行为）
         loadDir("/");
     }
 
