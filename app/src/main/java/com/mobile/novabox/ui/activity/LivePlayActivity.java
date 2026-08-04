@@ -1379,12 +1379,16 @@ public class LivePlayActivity extends BaseActivity {
     @Override
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        // 竖屏策略：锁定竖屏，忽略物理旋转触发的配置变化
+        // 竖屏策略：屏幕方向锁定竖屏，不响应物理旋转
         if (!com.mobile.novabox.util.PadUiHelper.isPad(this)
                 && com.mobile.novabox.util.OrientationHelper.getMode()
                    == com.mobile.novabox.util.OrientationHelper.MODE_PORT) {
             return;
         }
+        // 竖屏策略已在上方 return，其余策略（自动/横屏/传感器）正常响应旋转：
+        //   横屏 → enterFullscreenMode；竖屏 → exitFullscreenMode
+        // 传感器策略下，系统根据 SCREEN_ORIENTATION_SENSOR 自动旋转，
+        // onConfigurationChanged 会在旋转完成后被调到，此处逻辑正确。
         if (newConfig.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
             enterFullscreenMode();
         } else {
@@ -2646,10 +2650,23 @@ public class LivePlayActivity extends BaseActivity {
             @Override
             public void onClick(View v) {
                 if (com.mobile.novabox.util.PadUiHelper.isPad(LivePlayActivity.this)) {
+                    enterFullscreenMode();
+                } else {
+                    int mode = com.mobile.novabox.util.OrientationHelper.getMode();
+                    if (mode == com.mobile.novabox.util.OrientationHelper.MODE_PORT) {
+                        // 竖屏策略：不旋转，直接展开全屏 UI（竖屏全屏）
+                        enterFullscreenMode();
+                    } else if (mode == com.mobile.novabox.util.OrientationHelper.MODE_SENSOR) {
+                        // 传感器策略：设置传感器方向，同时直接展开全屏 UI
+                        // 若手机此时已横拿，系统会旋转，onConfigurationChanged 会再次触发 enterFullscreenMode 无害；
+                        // 若手机竖拿，系统不旋转，直接展开竖屏全屏 UI
+                        setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR);
                         enterFullscreenMode();
                     } else {
-                        com.mobile.novabox.util.OrientationHelper.applyLiveEnterFullscreen(LivePlayActivity.this);
+                        // 横屏/自动策略：旋转到横屏，等 onConfigurationChanged 触发 enterFullscreenMode
+                        setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
                     }
+                }
                 hideControlOverlay();
             }
         });
