@@ -154,6 +154,8 @@ public class LivePlayActivity extends BaseActivity {
     private boolean exitingLivePlay = false;
     // Pad 端横屏始终是横屏，用此标记区分"全屏模式"与"正常浏览模式"
     private boolean mIsPadFullscreen = false;
+    // 竖屏/传感器策略下"不旋转全屏"标记
+    private boolean mIsPortraitFullscreen = false;
     private static final long EPG_LOAD_DELAY = 1200L;
     private static final int RESOLUTION_INFO_MAX_RETRY = 10;
     private static final long RESOLUTION_INFO_RETRY_DELAY = 300L;
@@ -1125,8 +1127,7 @@ public class LivePlayActivity extends BaseActivity {
                 return;
             }
             // 非全屏，直接退出直播页回首页
-        } else if (!com.mobile.novabox.util.PadUiHelper.isPad(this) && isLandscape()) {
-            // 手机横屏全屏逻辑保持不变
+        } else if (!com.mobile.novabox.util.PadUiHelper.isPad(this) && (isLandscape() || mIsPortraitFullscreen)) {
             exitFullscreenMode();
             return;
         }
@@ -1280,7 +1281,7 @@ public class LivePlayActivity extends BaseActivity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         // 全屏时直接在 onKeyDown 拦截返回键，绕过国产系统"再次滑动返回"确认层
-        if (keyCode == KeyEvent.KEYCODE_BACK && isLandscape()) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && (isLandscape() || mIsPortraitFullscreen)) {
             boolean isPad = com.mobile.novabox.util.PadUiHelper.isPad(this);
             if (!isPad || mIsPadFullscreen) {
                 // 手机横屏 或 pad真正全屏：退出全屏
@@ -1380,14 +1381,25 @@ public class LivePlayActivity extends BaseActivity {
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         if (newConfig.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
+            // 旋转到横屏：进入全屏（同时清除竖屏全屏标记）
             enterFullscreenMode();
         } else {
+            // 旋转到竖屏
+            if (mIsPortraitFullscreen) {
+                // 竖屏全屏状态下传感器旋回竖屏，保持全屏不退出
+                return;
+            }
+            if (!mIsPadFullscreen) {
+                // 已经不在全屏（exitFullscreenMode 刚执行完），忽略此次回调
+                return;
+            }
             exitFullscreenMode();
         }
     }
 
     private void enterFullscreenMode() {
         mIsPadFullscreen = true;
+        mIsPortraitFullscreen = false;
         // 沉浸式全屏（手机/Pad通用）
         getWindow().getDecorView().setSystemUiVisibility(
             View.SYSTEM_UI_FLAG_FULLSCREEN
@@ -1428,6 +1440,7 @@ public class LivePlayActivity extends BaseActivity {
 
     private void exitFullscreenMode() {
         mIsPadFullscreen = false;
+        mIsPortraitFullscreen = false;
         // 恢复系统UI
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
         // 显示信息栏、频道列表外层容器和左侧/底部导航栏
@@ -2617,8 +2630,8 @@ public class LivePlayActivity extends BaseActivity {
         ivBackBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isLandscape()) {
-                    // 横屏时退出全屏回竖屏（直接调exitFullscreenMode，一步到位）
+                if (isLandscape() || mIsPortraitFullscreen) {
+                    // 全屏时（横屏或竖屏全屏）退出全屏
                     exitFullscreenMode();
                 } else {
                     finish();
@@ -2639,7 +2652,26 @@ public class LivePlayActivity extends BaseActivity {
         ivFullscreenBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (com.mobile.novabox.util.PadUiHelper.isPad(LivePlayActivity.this)) { enterFullscreenMode(); } else { setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE); }
+                if (com.mobile.novabox.util.PadUiHelper.isPad(LivePlayActivity.this)) {
+                    enterFullscreenMode();
+                } else {
+                    int _mode = com.mobile.novabox.util.OrientationHelper.getMode();
+                    if (_mode == com.mobile.novabox.util.OrientationHelper.MODE_PORT) {
+                        // 竖屏策略：不旋转，直接展开竖屏全屏UI
+                        mIsPortraitFullscreen = true;
+                        enterFullscreenMode();
+                    } else if (_mode == com.mobile.novabox.util.OrientationHelper.MODE_SENSOR) {
+                        // 传感器策略：先直接展开全屏UI，再解锁传感器
+                        // 手机竖拿时不会旋转，竖屏全屏；横拿时系统旋转，
+                        // onConfigurationChanged 触发 enterFullscreenMode（会清 mIsPortraitFullscreen）
+                        mIsPortraitFullscreen = true;
+                        enterFullscreenMode();
+                        setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+                    } else {
+                        // 横屏/自动策略：旋转横屏，等 onConfigurationChanged 触发 enterFullscreenMode
+                        setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                    }
+                }
                 hideControlOverlay();
             }
         });
@@ -2683,7 +2715,7 @@ public class LivePlayActivity extends BaseActivity {
         if (liveControlOverlay == null) return;
         // 竖屏小屏时隐藏返回按钮，横屏全屏时显示
         if (ivBackBtn != null) {
-            ivBackBtn.setVisibility(isLandscape() ? View.VISIBLE : View.GONE);
+            ivBackBtn.setVisibility((isLandscape() || mIsPortraitFullscreen) ? View.VISIBLE : View.GONE);
         }
         liveControlOverlay.setVisibility(View.VISIBLE);
         scheduleHideControlOverlay();
