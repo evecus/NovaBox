@@ -1381,7 +1381,8 @@ public class LivePlayActivity extends BaseActivity {
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         if (newConfig.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
-            // 旋转到横屏：进入全屏（同时清除竖屏全屏标记）
+            // 旋转到横屏：进入全屏，同时清除竖屏全屏标记（横屏全屏接管）
+            mIsPortraitFullscreen = false;
             enterFullscreenMode();
         } else {
             // 旋转到竖屏
@@ -1399,7 +1400,8 @@ public class LivePlayActivity extends BaseActivity {
 
     private void enterFullscreenMode() {
         mIsPadFullscreen = true;
-        mIsPortraitFullscreen = false;
+        // 注意：不在此处清除 mIsPortraitFullscreen，由调用方负责设置，
+        // 否则竖屏全屏点击全屏按钮后标记被错误清除，返回键无法退出全屏。
         // 沉浸式全屏（手机/Pad通用）
         getWindow().getDecorView().setSystemUiVisibility(
             View.SYSTEM_UI_FLAG_FULLSCREEN
@@ -1432,6 +1434,10 @@ public class LivePlayActivity extends BaseActivity {
         // VideoView 重新布局后刷新画面，避免黑屏
         if (mVideoView != null) {
             mVideoView.requestLayout();
+        }
+        // 切换全屏按钮图标为"退出全屏"
+        if (ivFullscreenBtn != null) {
+            ivFullscreenBtn.setImageResource(R.drawable.icon_exit_fullscreen);
         }
         // 确保控制浮层隐藏
         hideControlOverlay();
@@ -1468,15 +1474,24 @@ public class LivePlayActivity extends BaseActivity {
             playerContainer.setLayoutParams(lp);
             playerContainer.requestLayout();
         }
-        // 恢复主布局顶部(statusBar) padding
+        // 恢复主布局顶部(statusBar) padding，手机竖屏还需恢复底部 60dp 避免被底部导航栏遮挡
         View mainLayout = findViewById(R.id.live_main_content);
         if (mainLayout != null) {
             int statusBarPx = getStatusBarHeight();
-            mainLayout.setPadding(0, statusBarPx, 0, 0);
+            if (com.mobile.novabox.util.PadUiHelper.isPad(this)) {
+                mainLayout.setPadding(0, statusBarPx, 0, 0);
+            } else {
+                int bottomPad = (int)(60 * getResources().getDisplayMetrics().density);
+                mainLayout.setPadding(0, statusBarPx, 0, bottomPad);
+            }
         }
         // VideoView 重新布局后刷新画面，避免退出全屏后黑屏
         if (mVideoView != null) {
             mVideoView.requestLayout();
+        }
+        // 切换全屏按钮图标回"进入全屏"
+        if (ivFullscreenBtn != null) {
+            ivFullscreenBtn.setImageResource(R.drawable.icon_fullscreen);
         }
         // 退出全屏后恢复到设备默认方向（Pad=横屏，手机=竖屏）
         enforceOrientationForDevice();
