@@ -2676,14 +2676,20 @@ public class LivePlayActivity extends BaseActivity {
         ivFullscreenBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // 已在全屏（横屏 或 竖屏全屏）：点击退出全屏
-                if (isLandscape() || mIsPortraitFullscreen) {
+                boolean isPad = com.mobile.novabox.util.PadUiHelper.isPad(LivePlayActivity.this);
+                // 已在全屏：点击退出全屏
+                // 平板：需要 mIsPadFullscreen=true 才算全屏（平板常态就是横屏，不能单靠 isLandscape 判断）
+                // 手机：isLandscape 或 mIsPortraitFullscreen 即为全屏
+                boolean alreadyFullscreen = isPad
+                        ? mIsPadFullscreen
+                        : (isLandscape() || mIsPortraitFullscreen);
+                if (alreadyFullscreen) {
                     exitFullscreenMode();
                     hideControlOverlay();
                     return;
                 }
                 // 未全屏：进入全屏
-                if (com.mobile.novabox.util.PadUiHelper.isPad(LivePlayActivity.this)) {
+                if (isPad) {
                     enterFullscreenMode();
                 } else {
                     int _mode = com.mobile.novabox.util.OrientationHelper.getMode();
