@@ -1,7 +1,11 @@
 package com.mobile.novabox.player.danmu;
 
+import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.view.View;
+import android.widget.Toast;
 
 import com.mobile.novabox.api.DanmakuApi;
 import com.mobile.novabox.player.MyVideoView;
@@ -37,6 +41,7 @@ public class DanmuLoadController {
     private int startedSeq = -1;
     private boolean pendingPrepare;
     private LoadCallback loadCallback;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public DanmuLoadController(MyVideoView videoView, VodController controller, DanmakuView danmuView) {
         this.videoView = videoView;
@@ -47,6 +52,19 @@ public class DanmuLoadController {
             this.videoView.setDanmuView(this.danmuView);
         }
         applySettings(false);
+    }
+
+    /** 在主线程弹出 Toast（DanmuHelper.isOpen() 时才显示，避免关闭时刷屏） */
+    private void toast(String msg) {
+        if (!DanmuHelper.isOpen()) return;
+        Context ctx = danmuView != null ? danmuView.getContext() : null;
+        if (ctx == null && videoView != null) ctx = videoView.getContext();
+        if (ctx == null) return;
+        final Context finalCtx = ctx;
+        mainHandler.post(() -> {
+            LOG.i("echo-danmu-toast: " + msg);
+            Toast.makeText(finalCtx, "[弹幕] " + msg, Toast.LENGTH_SHORT).show();
+        });
     }
 
     public void applySettings(boolean reload) {
@@ -89,12 +107,23 @@ public class DanmuLoadController {
         releaseView();
         boolean hasDanmu = !TextUtils.isEmpty(danmuText);
         if (controller != null) controller.setHasDanmu(hasDanmu);
-        if (!hasDanmu || !DanmuHelper.isOpen()) {
+
+        if (!DanmuHelper.isOpen()) {
+            toast("弹幕已关闭");
             if (danmuView != null) danmuView.setVisibility(View.GONE);
             return;
         }
+
+        if (!hasDanmu) {
+            toast("暂无弹幕源，等待自动搜索...");
+            if (danmuView != null) danmuView.setVisibility(View.GONE);
+            return;
+        }
+
+        toast("找到弹幕源，开始加载...");
         if (danmuView != null) danmuView.setVisibility(View.VISIBLE);
         if (!isVideoReady()) {
+            toast("视频未就绪，等待视频准备...");
             pendingPrepare = true;
             return;
         }
@@ -104,6 +133,7 @@ public class DanmuLoadController {
     public void startIfReady() {
         if (pendingPrepare && !TextUtils.isEmpty(danmuText) && DanmuHelper.isOpen() && isVideoReady()) {
             pendingPrepare = false;
+            toast("视频已就绪，开始加载弹幕...");
             prepare(danmuText);
             return;
         }
@@ -153,6 +183,7 @@ public class DanmuLoadController {
                     if (videoView != null) videoView.setDanmuView(danmuView);
                     if (danmuCount <= 0) {
                         LOG.e("echo-danmu empty after parse");
+                        toast("弹幕解析为空（共0条），尝试搜索其他来源...");
                         danmuView.setVisibility(View.GONE);
                         notifyLoadFailed(seq);
                         return;
@@ -160,11 +191,13 @@ public class DanmuLoadController {
                     danmuView.prepare(parser, danmakuContext);
                     clearLoadCallback(seq);
                     danmuView.setVisibility(DanmuHelper.isOpen() ? View.VISIBLE : View.GONE);
+                    toast("弹幕加载成功，共 " + danmuCount + " 条，等待播放启动...");
                     startIfReady(seq);
                     danmuView.postDelayed(() -> startIfReady(seq), 300);
                     danmuView.postDelayed(() -> startIfReady(seq), 1000);
                 } catch (Throwable th) {
                     LOG.e("echo-danmu prepare error: " + th.getMessage());
+                    toast("弹幕准备失败: " + th.getMessage());
                     danmuView.setVisibility(View.GONE);
                     notifyLoadFailed(seq);
                 }
@@ -198,6 +231,7 @@ public class DanmuLoadController {
         danmuView.seekTo(position);
         danmuView.start(position);
         startedSeq = seq;
+        toast("弹幕已启动，位置: " + position + "ms");
         LOG.i("echo-danmu start at: " + position);
     }
 

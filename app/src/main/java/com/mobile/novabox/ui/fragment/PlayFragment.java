@@ -875,19 +875,27 @@ public class PlayFragment extends BaseLazyFragment {
     }
 
     private void searchDanmu(String danmaku) {
-        if (!TextUtils.isEmpty(danmaku) || !DanmakuApi.canSearch() || mVodInfo == null) return;
+        if (!TextUtils.isEmpty(danmaku) || !DanmakuApi.canSearch() || mVodInfo == null) {
+            if (TextUtils.isEmpty(danmaku) && !DanmakuApi.canSearch()) {
+                Toast.makeText(mContext, "[弹幕] 自动搜索条件不满足（弹幕已关闭或未配置API）", Toast.LENGTH_SHORT).show();
+            }
+            return;
+        }
         VodInfo.VodSeries series = getCurrentSeries(mVodInfo.playFlag, mVodInfo.playIndex);
+        Toast.makeText(mContext, "[弹幕] 正在自动搜索: " + mVodInfo.name + " " + (series == null ? "" : series.name), Toast.LENGTH_SHORT).show();
         String key = progressKey;
         DanmakuApi.search(mVodInfo.name, series == null ? "" : series.name, new DanmakuApi.SearchCallback() {
             @Override
             public void onFound(String url) {
                 if (!TextUtils.equals(key, progressKey)) return;
+                Toast.makeText(mContext, "[弹幕] 搜索成功，开始加载...", Toast.LENGTH_SHORT).show();
                 checkDanmu(url);
             }
 
             @Override
             public void onNotFound() {
                 if (!TextUtils.equals(key, progressKey)) return;
+                Toast.makeText(mContext, "[弹幕] 搜索无结果", Toast.LENGTH_SHORT).show();
                 checkDanmu("");
             }
         });
