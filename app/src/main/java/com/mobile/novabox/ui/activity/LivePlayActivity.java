@@ -1447,8 +1447,17 @@ public class LivePlayActivity extends BaseActivity {
     private void exitFullscreenMode() {
         mIsPadFullscreen = false;
         mIsPortraitFullscreen = false;
-        // 恢复系统UI
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+        // 恢复系统UI：用与 applyStatusBarPadding 一致的 flags，
+        // 而不是 SYSTEM_UI_FLAG_VISIBLE（VISIBLE=0 会清掉 LAYOUT_FULLSCREEN 等标志，
+        // 导致退出全屏后状态栏图标/时间消失或显示异常）
+        int uiFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            uiFlags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        }
+        getWindow().getDecorView().setSystemUiVisibility(uiFlags);
+        // 同时恢复 BaseActivity 在 android.R.id.content 上设置的顶部 padding
+        restoreStatusBarPadding();
         // 显示信息栏、频道列表外层容器和左侧/底部导航栏
         View infoBar = findViewById(R.id.live_info_bar);
         View channelAreaWrapper = findViewById(R.id.live_channel_area_wrapper);
@@ -2667,6 +2676,13 @@ public class LivePlayActivity extends BaseActivity {
         ivFullscreenBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // 已在全屏（横屏 或 竖屏全屏）：点击退出全屏
+                if (isLandscape() || mIsPortraitFullscreen) {
+                    exitFullscreenMode();
+                    hideControlOverlay();
+                    return;
+                }
+                // 未全屏：进入全屏
                 if (com.mobile.novabox.util.PadUiHelper.isPad(LivePlayActivity.this)) {
                     enterFullscreenMode();
                 } else {
@@ -2677,8 +2693,6 @@ public class LivePlayActivity extends BaseActivity {
                         enterFullscreenMode();
                     } else if (_mode == com.mobile.novabox.util.OrientationHelper.MODE_SENSOR) {
                         // 传感器策略：先直接展开全屏UI，再解锁传感器
-                        // 手机竖拿时不会旋转，竖屏全屏；横拿时系统旋转，
-                        // onConfigurationChanged 触发 enterFullscreenMode（会清 mIsPortraitFullscreen）
                         mIsPortraitFullscreen = true;
                         enterFullscreenMode();
                         setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR);
