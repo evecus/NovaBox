@@ -55,39 +55,12 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: List output APKs (arm64)
-        run: find app/build/outputs/apk -name "*.apk" | sort
-
-      - name: Upload arm64-v8a Release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: NovaBox-arm64-v8a-Release-${{ github.run_number }}
-          path: app/build/outputs/apk/java64/release/*.apk
-          retention-days: 30
-
-  # ── 创建 GitHub Release（两个 job 都成功后）──────────────────────
-  release:
-    name: Create GitHub Release
-    needs: [build-arm64]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download all APK artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: NovaBox-*
-          merge-multiple: true
-          path: release-apks/
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: test
           name: NovaBox test release
           prerelease: true
-          files: release-apks/*.apk
+          files: app/build/outputs/apk/java64/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
