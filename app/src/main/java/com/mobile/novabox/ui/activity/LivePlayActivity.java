@@ -1383,26 +1383,30 @@ public class LivePlayActivity extends BaseActivity {
         super.onConfigurationChanged(newConfig);
         boolean isPad = com.mobile.novabox.util.PadUiHelper.isPad(this);
         int mode = com.mobile.novabox.util.OrientationHelper.getMode();
-        if (!isPad) {
-            if (mode == com.mobile.novabox.util.OrientationHelper.MODE_PORT) {
-                // 竖屏策略：屏幕锁定竖屏，物理旋转无效，直接忽略
-                return;
-            }
-            if (newConfig.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) {
-                // 手机竖屏方向变化：
-                // 如果是传感器策略且当前处于"不旋转全屏"状态，说明用户竖拿手机，
-                // 传感器触发了竖屏回调，但我们已经在竖屏全屏了，不需要 exitFullscreenMode
-                if (mIsPortraitFullscreen) return;
-                // 其他情况（横屏策略/自动策略旋转回竖屏）：退出全屏
-                if (mIsPadFullscreen) exitFullscreenMode();
-                return;
-            }
-        }
-        // 横屏方向变化（手机横屏 or 平板任意方向）
+
         if (newConfig.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
+            // ── 旋转到横屏 ──────────────────────────────────────────────────
+            // 所有策略/平台：横屏时进入全屏模式（enterFullscreenMode 内部会清除 mIsPortraitFullscreen）
             enterFullscreenMode();
-        } else if (!isPad) {
-            if (mIsPadFullscreen) exitFullscreenMode();
+
+        } else {
+            // ── 旋转到竖屏 ──────────────────────────────────────────────────
+            if (isPad) return; // 平板端不处理竖屏回调
+
+            if (mode == com.mobile.novabox.util.OrientationHelper.MODE_PORT) {
+                // 竖屏策略：屏幕锁定竖屏，这个回调不是用户旋转触发的，忽略
+                return;
+            }
+            if (mIsPortraitFullscreen) {
+                // 竖屏全屏状态（竖屏策略/传感器竖拿）：用户竖拿手机触发此回调，
+                // 我们已经在竖屏全屏了，不需要退出
+                return;
+            }
+            // 横屏/自动策略：旋转回竖屏 = 退出全屏（exitFullscreenMode 内部清除两个标记，
+            // 最后调 enforceOrientationForDevice 设 PORTRAIT，此时已是 PORTRAIT 不会再触发旋转）
+            if (mIsPadFullscreen) {
+                exitFullscreenMode();
+            }
         }
     }
 
@@ -2722,9 +2726,9 @@ public class LivePlayActivity extends BaseActivity {
 
     private void showControlOverlay() {
         if (liveControlOverlay == null) return;
-        // 竖屏小屏时隐藏返回按钮，横屏全屏时显示
+        // 非全屏小屏时隐藏返回按钮，全屏（横屏或竖屏全屏）时显示
         if (ivBackBtn != null) {
-            ivBackBtn.setVisibility(isLandscape() ? View.VISIBLE : View.GONE);
+            ivBackBtn.setVisibility((isLandscape() || mIsPortraitFullscreen) ? View.VISIBLE : View.GONE);
         }
         liveControlOverlay.setVisibility(View.VISIBLE);
         scheduleHideControlOverlay();
