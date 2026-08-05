@@ -176,9 +176,13 @@ public class PlayFragment extends BaseLazyFragment {
     }
 
     private void checkDanmu(String danmu) {
+        checkDanmu(danmu, null);
+    }
+
+    private void checkDanmu(String danmu, DanmuLoadController.LoadCallback callback) {
         if (danmuLoadController != null) {
             VodInfo.VodSeries series = mVodInfo == null ? null : getCurrentSeries(mVodInfo.playFlag, mVodInfo.playIndex);
-            danmuLoadController.check(danmu, mVodInfo == null ? "" : mVodInfo.name, series == null ? "" : series.name);
+            danmuLoadController.check(danmu, mVodInfo == null ? "" : mVodInfo.name, series == null ? "" : series.name, callback);
         }
     }
 
@@ -848,8 +852,17 @@ public class PlayFragment extends BaseLazyFragment {
                             mController.showParse(false);
                             playUrl(playUrl + url, headers);
                         }
-                        checkDanmu(danmaku);
-                        searchDanmu(danmaku);
+                        final String danmuProgressKey = progressKey;
+                        if (TextUtils.isEmpty(danmaku)) {
+                            checkDanmu("");
+                            searchDanmu("");
+                        } else {
+                            checkDanmu(danmaku, () -> {
+                                if (TextUtils.equals(danmuProgressKey, progressKey)) {
+                                    searchDanmu("");
+                                }
+                            });
+                        }
                     } catch (Throwable th) {
                         handleResolvePlayUrlFailed("获取播放信息错误", true);
                     }
