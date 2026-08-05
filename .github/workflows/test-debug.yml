@@ -42,34 +42,7 @@ jobs:
       - name: Build arm64-v8a Debug APK
         run: ./gradlew assembleJava64Debug --no-daemon
         env:
-          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
-
-      - name: List output APKs (arm64)
-        run: find app/build/outputs/apk -name "*.apk" | sort
-
-      - name: Upload arm64-v8a Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: NovaBox-arm64-Debug-${{ github.run_number }}
-          path: app/build/outputs/apk/java64/debug/*.apk
-          retention-days: 30
-
-  # ── 创建 GitHub Release（build 成功后）──────────────────────
-  release:
-    name: Create GitHub Release
-    needs: [build-arm64]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download all APK artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: NovaBox-*
-          merge-multiple: true
-          path: release-apks/
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -77,6 +50,6 @@ jobs:
           tag_name: test-debug
           name: NovaBox debug test
           prerelease: true
-          files: release-apks/*.apk
+          files: app/build/outputs/apk/java64/debug/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
