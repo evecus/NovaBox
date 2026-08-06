@@ -37,9 +37,6 @@ public class DanmakuApi {
     private static final Handler handler = new Handler(Looper.getMainLooper());
     private static final AtomicInteger searchSeq = new AtomicInteger();
 
-    // 外部注入的Toast回调，由PlayActivity/PlayFragment设置
-    private static void    }
-
     public interface SearchCallback {
         void onFound(String url);
         default void onNotFound() {}
