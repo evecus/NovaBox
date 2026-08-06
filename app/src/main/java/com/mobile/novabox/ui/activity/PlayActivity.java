@@ -171,7 +171,6 @@ public class PlayActivity extends BaseActivity {
     private void initDanmuView() {
         mDanmuView = findViewById(R.id.danmaku);
         danmuLoadController = new DanmuLoadController(mVideoView, mController, mDanmuView);
-        DanmakuApi.setToastCallback(msg -> Toast.makeText(PlayActivity.this, msg, Toast.LENGTH_SHORT).show());
     }
 
     private void setDanmuViewSettings(boolean reload) {
@@ -828,29 +827,20 @@ public class PlayActivity extends BaseActivity {
     }
 
     private void searchDanmu(String danmaku) {
-        if (!TextUtils.isEmpty(danmaku) || !DanmakuApi.canSearch() || mVodInfo == null) {
-            if (!TextUtils.isEmpty(danmaku)) {
-                // 已有弹幕源，无需搜索
-            } else if (!DanmakuApi.canSearch()) {
-                Toast.makeText(this, "[弹幕] 自动搜索条件不满足（弹幕已关闭或未配置API）", Toast.LENGTH_SHORT).show();
-            }
-            return;
-        }
+        if (!TextUtils.isEmpty(danmaku) || !DanmakuApi.canSearch() || mVodInfo == null) return;
         VodInfo.VodSeries series = getCurrentSeries(mVodInfo.playFlag, mVodInfo.playIndex);
-        Toast.makeText(this, "[弹幕] 正在自动搜索: " + mVodInfo.name + " " + (series == null ? "" : series.name), Toast.LENGTH_SHORT).show();
         String key = progressKey;
         DanmakuApi.search(mVodInfo.name, series == null ? "" : series.name, new DanmakuApi.SearchCallback() {
             @Override
             public void onFound(String url) {
                 if (!TextUtils.equals(key, progressKey)) return;
-                Toast.makeText(PlayActivity.this, "[弹幕] 搜索成功，开始加载...", Toast.LENGTH_SHORT).show();
                 checkDanmu(url);
             }
 
             @Override
             public void onNotFound() {
                 if (!TextUtils.equals(key, progressKey)) return;
-                Toast.makeText(PlayActivity.this, "[弹幕] 搜索无结果", Toast.LENGTH_SHORT).show();
+                Toast.makeText(PlayActivity.this, "加载弹幕失败", Toast.LENGTH_SHORT).show();
                 checkDanmu("");
             }
         });

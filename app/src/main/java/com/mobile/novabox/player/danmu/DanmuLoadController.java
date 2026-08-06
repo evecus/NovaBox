@@ -109,21 +109,17 @@ public class DanmuLoadController {
         if (controller != null) controller.setHasDanmu(hasDanmu);
 
         if (!DanmuHelper.isOpen()) {
-            toast("弹幕已关闭");
             if (danmuView != null) danmuView.setVisibility(View.GONE);
             return;
         }
 
         if (!hasDanmu) {
-            toast("暂无弹幕源，等待自动搜索...");
             if (danmuView != null) danmuView.setVisibility(View.GONE);
             return;
         }
 
-        toast("找到弹幕源，开始加载...");
         if (danmuView != null) danmuView.setVisibility(View.VISIBLE);
         if (!isVideoReady()) {
-            toast("视频未就绪，等待视频准备...");
             pendingPrepare = true;
             return;
         }
@@ -133,7 +129,6 @@ public class DanmuLoadController {
     public void startIfReady() {
         if (pendingPrepare && !TextUtils.isEmpty(danmuText) && DanmuHelper.isOpen() && isVideoReady()) {
             pendingPrepare = false;
-            toast("视频已就绪，开始加载弹幕...");
             prepare(danmuText);
             return;
         }
@@ -183,7 +178,6 @@ public class DanmuLoadController {
                     if (videoView != null) videoView.setDanmuView(danmuView);
                     if (danmuCount <= 0) {
                         LOG.e("echo-danmu empty after parse");
-                        toast("弹幕解析为空（共0条），尝试搜索其他来源...");
                         danmuView.setVisibility(View.GONE);
                         notifyLoadFailed(seq);
                         return;
@@ -191,13 +185,12 @@ public class DanmuLoadController {
                     danmuView.prepare(parser, danmakuContext);
                     clearLoadCallback(seq);
                     danmuView.setVisibility(DanmuHelper.isOpen() ? View.VISIBLE : View.GONE);
-                    toast("弹幕加载成功，共 " + danmuCount + " 条，等待播放启动...");
                     startIfReady(seq);
                     danmuView.postDelayed(() -> startIfReady(seq), 300);
                     danmuView.postDelayed(() -> startIfReady(seq), 1000);
                 } catch (Throwable th) {
                     LOG.e("echo-danmu prepare error: " + th.getMessage());
-                    toast("弹幕准备失败: " + th.getMessage());
+                    toast("加载弹幕失败");
                     danmuView.setVisibility(View.GONE);
                     notifyLoadFailed(seq);
                 }
@@ -231,7 +224,7 @@ public class DanmuLoadController {
         danmuView.seekTo(position);
         danmuView.start(position);
         startedSeq = seq;
-        toast("弹幕已启动，位置: " + position + "ms");
+        toast("加载弹幕成功");
         LOG.i("echo-danmu start at: " + position);
     }
 
