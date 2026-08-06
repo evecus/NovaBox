@@ -37,11 +37,21 @@ public class DanmakuApi {
     private static final Handler handler = new Handler(Looper.getMainLooper());
     private static final AtomicInteger searchSeq = new AtomicInteger();
 
+    // 外部注入的Toast回调，由PlayActivity/PlayFragment设置
+    public interface ToastCallback {
+        void show(String msg);
+    }
+    private static volatile ToastCallback toastCallback;
+    public static void setToastCallback(ToastCallback cb) { toastCallback = cb; }
+    private static void toast(String msg) {
+        LOG.i("echo-danmaku-debug: " + msg);
+        ToastCallback cb = toastCallback;
+        if (cb != null) handler.post(() -> cb.show("[弹幕API] " + msg));
+    }
+
     public interface SearchCallback {
         void onFound(String url);
-
-        default void onNotFound() {
-        }
+        default void onNotFound() {}
     }
 
     public static boolean canSearch() {
@@ -72,12 +82,11 @@ public class DanmakuApi {
 
     public static void search(String name, String episode, SearchCallback callback) {
         String apiUrl = getApiUrl();
-//        LOG.i("echo-danmaku search apiUrl: " + apiUrl);
         if (TextUtils.isEmpty(apiUrl) || callback == null) return;
         try {
             OkHttp.cancel(TAG);
             int seq = searchSeq.incrementAndGet();
-//            LOG.i("echo-danmaku search title: " + safeLog(name) + ", episode: " + safeLog(episode));
+            toast("开始搜索: " + safeLog(name) + " / " + safeLog(episode) + "\nAPI: " + apiUrl);
             if (!hasPlaceholder(apiUrl)) {
                 searchBuiltin(apiUrl, name, episode, callback, 0, seq);
                 return;
@@ -86,6 +95,7 @@ public class DanmakuApi {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
                     if (!isCurrentSearch(seq)) return;
+                    toast("自定义API网络失败: " + e.getMessage());
                     LOG.e("echo-danmaku search error: " + e.getMessage());
                     notifyNotFound(callback, seq);
                 }
@@ -95,24 +105,25 @@ public class DanmakuApi {
                     if (!isCurrentSearch(seq)) return;
                     try {
                         String body = response.body() == null ? "" : response.body().string();
+                        toast("自定义API返回 HTTP " + response.code() + "，内容长度:" + body.length()
+                                + (body.length() > 0 ? "\n前100字符: " + body.substring(0, Math.min(100, body.length())) : ""));
                         String url = parseUrl(body);
                         if (!TextUtils.isEmpty(url) && isCurrentSearch(seq)) {
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (isCurrentSearch(seq)) callback.onFound(url);
-                                }
-                            });
+                            toast("自定义API找到弹幕URL: " + url.substring(0, Math.min(80, url.length())));
+                            handler.post(() -> { if (isCurrentSearch(seq)) callback.onFound(url); });
                         } else {
+                            toast("自定义API响应中未找到URL");
                             notifyNotFound(callback, seq);
                         }
                     } catch (Throwable th) {
+                        toast("自定义API解析异常: " + th.getMessage());
                         LOG.e("echo-danmaku search parse error: " + th.getMessage());
                         notifyNotFound(callback, seq);
                     }
                 }
             });
         } catch (Throwable th) {
+            toast("搜索启动异常: " + th.getMessage());
             LOG.e("echo-danmaku search start error: " + th.getMessage());
             notifyNotFound(callback, searchSeq.get());
         }
@@ -134,20 +145,19 @@ public class DanmakuApi {
         final String episodeQuery = getEpisodeQuery(simpleEpisode, queryMode);
         final String searchUrl = baseUrl + "/api/v2/search/episodes?anime=" + encode(simpleName)
                 + (TextUtils.isEmpty(episodeQuery) ? "" : "&episode=" + encode(episodeQuery));
-//        LOG.i("echo-danmaku builtin search episodes: " + searchUrl + ", retry=" + retry + ", mode=" + queryMode);
+        toast("内置API搜索剧集: anime=" + simpleName + " episode=" + episodeQuery + " retry=" + retry);
         OkHttp.newCall(OkHttp.client(BUILTIN_TIMEOUT), searchUrl, TAG).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (!isCurrentSearch(seq)) return;
                 if (retry < BUILTIN_MAX_RETRY) {
+                    toast("内置API网络失败，准备重试(" + (retry+1) + "): " + e.getMessage());
                     LOG.e("echo-danmaku builtin search error: " + e.getMessage() + ", retry later");
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (isCurrentSearch(seq)) searchBuiltin(apiUrl, name, episode, callback, retry + 1, seq, queryMode);
-                        }
+                    handler.postDelayed(() -> {
+                        if (isCurrentSearch(seq)) searchBuiltin(apiUrl, name, episode, callback, retry + 1, seq, queryMode);
                     }, 1500L * (retry + 1));
                 } else {
+                    toast("内置API网络失败，转搜索anime: " + e.getMessage());
                     LOG.e("echo-danmaku builtin search error: " + e.getMessage());
                     searchBuiltinAnime(baseUrl, simpleName, simpleEpisode, callback, seq, true);
                 }
@@ -158,20 +168,29 @@ public class DanmakuApi {
                 if (!isCurrentSearch(seq)) return;
                 try {
                     String body = response.body() == null ? "" : response.body().string();
+                    toast("内置API搜索剧集返回 HTTP " + response.code() + "，内容长度:" + body.length()
+                            + (body.length() > 0 ? "\n前120字符: " + body.substring(0, Math.min(120, body.length())) : ""));
                     EpisodeMatch episodeMatch = findEpisodeFromSearchEpisodes(body, simpleEpisode);
                     if (episodeMatch != null && !TextUtils.isEmpty(episodeMatch.id)) {
+                        toast("匹配到剧集: " + safeLog(episodeMatch.title) + " episodeId=" + episodeMatch.id);
                         loadBuiltinComment(baseUrl, simpleName, simpleEpisode, episodeMatch, callback, seq);
                         return;
                     }
                     if (isSearchEpisodesMovieResult(body)) {
+                        toast("返回的是电影类型但未匹配，停止搜索");
                         LOG.i("echo-danmaku builtin movie result not matched, skip anime fallback");
                         notifyNotFound(callback, seq);
                         return;
                     }
-                    if (tryNextEpisodeQuery(apiUrl, name, episode, callback, seq, queryMode)) return;
+                    if (tryNextEpisodeQuery(apiUrl, name, episode, callback, seq, queryMode)) {
+                        toast("切换episode查询模式重试...");
+                        return;
+                    }
+                    toast("剧集搜索未匹配，转搜索anime列表: " + simpleName);
                     LOG.i("echo-danmaku builtin episode not matched, title: " + safeLog(simpleName) + ", episode: " + safeLog(simpleEpisode));
                     searchBuiltinAnime(baseUrl, simpleName, simpleEpisode, callback, seq, true);
                 } catch (Throwable th) {
+                    toast("内置API剧集解析异常: " + th.getMessage());
                     LOG.e("echo-danmaku builtin episode parse error: " + th.getMessage());
                     if (tryNextEpisodeQuery(apiUrl, name, episode, callback, seq, queryMode)) return;
                     searchBuiltinAnime(baseUrl, simpleName, simpleEpisode, callback, seq, true);
@@ -183,18 +202,19 @@ public class DanmakuApi {
     private static boolean tryNextEpisodeQuery(String apiUrl, String name, String episode, SearchCallback callback, int seq, int queryMode) {
         int nextMode = getNextEpisodeQueryMode(Trans.t2s(episode == null ? "" : episode), queryMode);
         if (nextMode < 0) return false;
-//        LOG.i("echo-danmaku builtin retry episodes query mode: " + queryMode + " -> " + nextMode);
         searchBuiltin(apiUrl, name, episode, callback, 0, seq, nextMode);
         return true;
     }
 
     private static void searchBuiltinAnime(String baseUrl, String name, String episode, SearchCallback callback, int seq, boolean notifyOnEmpty) {
         final String searchUrl = baseUrl + "/api/v2/search/anime?keyword=" + encode(name);
+        toast("搜索anime列表: keyword=" + name);
         LOG.i("echo-danmaku builtin search anime: " + searchUrl);
         OkHttp.newCall(OkHttp.client(BUILTIN_TIMEOUT), searchUrl, TAG).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (!isCurrentSearch(seq)) return;
+                toast("anime列表网络失败: " + e.getMessage());
                 LOG.e("echo-danmaku builtin anime error: " + e.getMessage());
                 if (notifyOnEmpty) notifyNotFound(callback, seq);
             }
@@ -204,13 +224,18 @@ public class DanmakuApi {
                 if (!isCurrentSearch(seq)) return;
                 try {
                     String body = response.body() == null ? "" : response.body().string();
+                    toast("anime列表返回 HTTP " + response.code() + "，内容长度:" + body.length()
+                            + (body.length() > 0 ? "\n前120字符: " + body.substring(0, Math.min(120, body.length())) : ""));
                     String animeId = findAnimeId(body);
                     if (TextUtils.isEmpty(animeId)) {
+                        toast("anime列表中未找到匹配条目，搜索结束");
                         if (notifyOnEmpty) notifyNotFound(callback, seq);
                         return;
                     }
+                    toast("找到animeId=" + animeId + "，加载bangumi详情...");
                     loadBuiltinBangumi(baseUrl, animeId, episode, callback, seq);
                 } catch (Throwable th) {
+                    toast("anime列表解析异常: " + th.getMessage());
                     LOG.e("echo-danmaku builtin anime parse error: " + th.getMessage());
                     if (notifyOnEmpty) notifyNotFound(callback, seq);
                 }
@@ -220,11 +245,12 @@ public class DanmakuApi {
 
     private static void loadBuiltinBangumi(String baseUrl, String animeId, String episode, SearchCallback callback, int seq) {
         final String bangumiUrl = baseUrl + "/api/v2/bangumi/" + animeId;
-//        LOG.i("echo-danmaku builtin bangumi: " + bangumiUrl);
+        toast("加载bangumi: " + bangumiUrl);
         OkHttp.newCall(OkHttp.client(BUILTIN_TIMEOUT), bangumiUrl, TAG).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (!isCurrentSearch(seq)) return;
+                toast("bangumi网络失败: " + e.getMessage());
                 LOG.e("echo-danmaku builtin bangumi error: " + e.getMessage());
                 notifyNotFound(callback, seq);
             }
@@ -234,14 +260,17 @@ public class DanmakuApi {
                 if (!isCurrentSearch(seq)) return;
                 try {
                     String body = response.body() == null ? "" : response.body().string();
+                    toast("bangumi返回 HTTP " + response.code() + "，内容长度:" + body.length());
                     EpisodeMatch episodeMatch = findEpisode(body, episode);
                     if (episodeMatch != null && !TextUtils.isEmpty(episodeMatch.id)) {
+                        toast("bangumi匹配剧集: " + safeLog(episodeMatch.title) + " episodeId=" + episodeMatch.id);
                         loadBuiltinComment(baseUrl, "", episode, episodeMatch, callback, seq);
                     } else {
-//                        LOG.i("echo-danmaku builtin bangumi episode not matched, episode: " + safeLog(episode));
+                        toast("bangumi中未匹配到集数: " + safeLog(episode));
                         notifyNotFound(callback, seq);
                     }
                 } catch (Throwable th) {
+                    toast("bangumi解析异常: " + th.getMessage());
                     LOG.e("echo-danmaku builtin bangumi parse error: " + th.getMessage());
                     notifyNotFound(callback, seq);
                 }
@@ -251,6 +280,7 @@ public class DanmakuApi {
 
     private static void loadBuiltinComment(String baseUrl, String title, String episode, EpisodeMatch episodeMatch, SearchCallback callback, int seq) {
         final String commentUrl = baseUrl + "/api/v2/comment/" + episodeMatch.id + "?format=json";
+        toast("加载弹幕评论: episodeId=" + episodeMatch.id + " matched=" + safeLog(episodeMatch.title));
         LOG.i("echo-danmaku builtin load title: " + safeLog(title)
                 + ", request episode: " + safeLog(episode)
                 + ", matched episode: " + safeLog(episodeMatch.title)
@@ -261,6 +291,7 @@ public class DanmakuApi {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (!isCurrentSearch(seq)) return;
+                toast("评论API网络失败: " + e.getMessage());
                 LOG.e("echo-danmaku builtin comment error: " + e.getMessage());
                 notifyNotFound(callback, seq);
             }
@@ -270,18 +301,18 @@ public class DanmakuApi {
                 if (!isCurrentSearch(seq)) return;
                 try {
                     String body = response.body() == null ? "" : response.body().string();
+                    toast("评论API返回 HTTP " + response.code() + "，内容长度:" + body.length()
+                            + (body.length() > 0 ? "\n前120字符: " + body.substring(0, Math.min(120, body.length())) : ""));
                     final String xml = commentJsonToXml(body);
                     if (TextUtils.isEmpty(xml) || !isCurrentSearch(seq)) {
+                        toast("评论JSON转XML失败或内容为空");
                         notifyNotFound(callback, seq);
                         return;
                     }
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (isCurrentSearch(seq)) callback.onFound(xml);
-                        }
-                    });
+                    toast("弹幕XML生成成功，长度=" + xml.length() + "，传递给解析器");
+                    handler.post(() -> { if (isCurrentSearch(seq)) callback.onFound(xml); });
                 } catch (Throwable th) {
+                    toast("评论解析异常: " + th.getMessage());
                     LOG.e("echo-danmaku builtin comment parse error: " + th.getMessage());
                     notifyNotFound(callback, seq);
                 }
@@ -291,12 +322,7 @@ public class DanmakuApi {
 
     private static void notifyNotFound(SearchCallback callback, int seq) {
         if (callback == null || !isCurrentSearch(seq)) return;
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (isCurrentSearch(seq)) callback.onNotFound();
-            }
-        });
+        handler.post(() -> { if (isCurrentSearch(seq)) callback.onNotFound(); });
     }
 
     private static boolean isCurrentSearch(int seq) {
@@ -391,9 +417,7 @@ public class DanmakuApi {
             EpisodeMatch match = new EpisodeMatch(id, title, number);
             if (first == null) first = match;
             if (firstMandarin == null && isMandarinTitle(title)) firstMandarin = match;
-            if (!TextUtils.isEmpty(episode) && !TextUtils.isEmpty(title) && title.contains(episode)) {
-                return match;
-            }
+            if (!TextUtils.isEmpty(episode) && !TextUtils.isEmpty(title) && title.contains(episode)) return match;
             if (targetNumber > 0 && number == targetNumber) return match;
             if (targetNumber > 0 && extractNumber(title) == targetNumber) return match;
         }
@@ -410,11 +434,6 @@ public class DanmakuApi {
             LOG.i("echo-danmaku episodes movie fallback episode: " + safeLog(movieFallback.title) + ", episodeId: " + movieFallback.id);
         }
         return movieFallback;
-    }
-
-    private static JSONArray findEpisodes(JSONObject object) {
-        EpisodeList episodeList = findEpisodeList(object);
-        return episodeList == null ? null : episodeList.episodes;
     }
 
     private static EpisodeList findEpisodeList(JSONObject object) {
@@ -456,22 +475,14 @@ public class DanmakuApi {
         return false;
     }
 
-    private static boolean isMovieTypeText(String type) {
-        return "\u7535\u5f71".equals(type);
-    }
-
+    private static boolean isMovieTypeText(String type) { return "\u7535\u5f71".equals(type); }
     private static boolean isMandarinTitle(String title) {
         return !TextUtils.isEmpty(title) && (title.contains("\u56fd\u8bed") || title.contains("\u666e\u901a\u8bdd"));
     }
-
     private static boolean isCantoneseTitle(String title) {
         return !TextUtils.isEmpty(title) && title.contains("\u7ca4\u8bed");
     }
-
-    private static boolean prefersCantonese(String episode) {
-        return isCantoneseTitle(episode);
-    }
-
+    private static boolean prefersCantonese(String episode) { return isCantoneseTitle(episode); }
     private static boolean isPreferredLanguageTitle(String title, boolean preferCantonese) {
         return preferCantonese ? isCantoneseTitle(title) : isMandarinTitle(title);
     }
@@ -487,8 +498,7 @@ public class DanmakuApi {
                 JSONObject anime = animes.optJSONObject(i);
                 if (anime != null && isMovieType(anime) && anime.optJSONArray("episodes") != null) return true;
             }
-        } catch (Throwable ignored) {
-        }
+        } catch (Throwable ignored) {}
         return false;
     }
 
@@ -546,7 +556,18 @@ public class DanmakuApi {
         JSONObject object = new JSONObject(body);
         JSONArray comments = object.optJSONArray("comments");
         if (comments == null) comments = object.optJSONArray("data");
-        if (comments == null || comments.length() <= 0) return "";
+        if (comments == null || comments.length() <= 0) {
+            // 打印顶层key辅助诊断
+            StringBuilder keys = new StringBuilder();
+            java.util.Iterator<String> it = object.keys();
+            while (it.hasNext()) {
+                if (keys.length() > 0) keys.append(", ");
+                String k = it.next();
+                keys.append(k).append("(").append(object.opt(k) == null ? "null" : object.opt(k).getClass().getSimpleName()).append(")");
+            }
+            toast("评论JSON结构异常，顶层key: " + keys);
+            return "";
+        }
         StringBuilder builder = new StringBuilder();
         builder.append("<i>");
         for (int i = 0; i < comments.length(); i++) {
@@ -600,8 +621,7 @@ public class DanmakuApi {
         try {
             if (text.startsWith("#")) return String.valueOf(Long.parseLong(text.substring(1), 16));
             if (text.startsWith("0x") || text.startsWith("0X")) return String.valueOf(Long.parseLong(text.substring(2), 16));
-        } catch (Throwable ignored) {
-        }
+        } catch (Throwable ignored) {}
         return text;
     }
 
@@ -620,32 +640,19 @@ public class DanmakuApi {
     private static class EpisodeList {
         final JSONArray episodes;
         final boolean isMovie;
-
-        EpisodeList(JSONArray episodes, boolean isMovie) {
-            this.episodes = episodes;
-            this.isMovie = isMovie;
-        }
+        EpisodeList(JSONArray episodes, boolean isMovie) { this.episodes = episodes; this.isMovie = isMovie; }
     }
 
     private static class EpisodeMatch {
         final String id;
         final String title;
         final int number;
-
-        EpisodeMatch(String id, String title, int number) {
-            this.id = id;
-            this.title = title;
-            this.number = number;
-        }
+        EpisodeMatch(String id, String title, int number) { this.id = id; this.title = title; this.number = number; }
     }
 
     private static String escapeXml(String text) {
         if (TextUtils.isEmpty(text)) return "";
-        return text.replace("&", "&amp;")
-                .replace("\"", "&quot;")
-                .replace("'", "&apos;")
-                .replace(">", "&gt;")
-                .replace("<", "&lt;");
+        return text.replace("&", "&amp;").replace("\"", "&quot;").replace("'", "&apos;").replace(">", "&gt;").replace("<", "&lt;");
     }
 
     private static String parseUrl(String body) throws Exception {

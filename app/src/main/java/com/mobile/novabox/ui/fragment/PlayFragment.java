@@ -169,6 +169,7 @@ public class PlayFragment extends BaseLazyFragment {
     private void initDanmuView() {
         mDanmuView = findViewById(R.id.danmaku);
         danmuLoadController = new DanmuLoadController(mVideoView, mController, mDanmuView);
+        DanmakuApi.setToastCallback(msg -> Toast.makeText(mContext, msg, Toast.LENGTH_SHORT).show());
     }
 
     private void setDanmuViewSettings(boolean reload) {
