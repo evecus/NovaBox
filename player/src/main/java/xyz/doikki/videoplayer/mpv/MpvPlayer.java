@@ -2,6 +2,8 @@ package xyz.doikki.videoplayer.mpv;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
@@ -26,6 +28,9 @@ public class MpvPlayer extends AbstractPlayer {
     protected float mSpeed = 1f;
     protected int mVolume = 100;
 
+    /** mpv 事件回调运行在其事件线程，dkplayer 的监听器需要在主线程执行 */
+    protected final Handler mMainHandler = new Handler(Looper.getMainLooper());
+
     protected final MPV.EventObserver mObserver = new MPV.EventObserver() {
         @Override
         public void eventProperty(String property) {
@@ -38,10 +43,16 @@ public class MpvPlayer extends AbstractPlayer {
         @Override
         public void eventProperty(String property, boolean value) {
             if ("paused-for-cache".equals(property)) {
-                if (mPlayerEventListener != null) {
-                    mPlayerEventListener.onInfo(value ? AbstractPlayer.MEDIA_INFO_BUFFERING_START
-                            : AbstractPlayer.MEDIA_INFO_BUFFERING_END, 0);
-                }
+                final boolean buffering = value;
+                mMainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mPlayerEventListener != null) {
+                            mPlayerEventListener.onInfo(buffering ? AbstractPlayer.MEDIA_INFO_BUFFERING_START
+                                    : AbstractPlayer.MEDIA_INFO_BUFFERING_END, 0);
+                        }
+                    }
+                });
             }
         }
 
@@ -59,7 +70,12 @@ public class MpvPlayer extends AbstractPlayer {
 
         @Override
         public void event(int eventId, MPVNode data) {
-            handleEvent(eventId);
+            mMainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    handleEvent(eventId);
+                }
+            });
         }
     };
 

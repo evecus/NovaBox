@@ -40,10 +40,16 @@ public class MpvMediaPlayer extends MpvPlayer {
 
             @Override
             public void eventProperty(String property, String value) {
-                if ("sub-text".equals(property) && mTimedTextListener != null) {
-                    if (!TextUtils.isEmpty(value)) {
-                        mTimedTextListener.onTimedText(value);
-                    }
+                if ("sub-text".equals(property) && mTimedTextListener != null && !TextUtils.isEmpty(value)) {
+                    final String text = value;
+                    mMainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mTimedTextListener != null) {
+                                mTimedTextListener.onTimedText(text);
+                            }
+                        }
+                    });
                 }
             }
 
