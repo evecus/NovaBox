@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pad 端弹幕设置对话框（sw600dp）
+    改动：宽度从 360dp 增大到 580dp
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="580dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="@drawable/shape_danmu_setting_bg"
+        android:orientation="vertical"
+        android:paddingLeft="36dp"
+        android:paddingTop="28dp"
+        android:paddingRight="36dp"
+        android:paddingBottom="28dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="20dp"
+            android:singleLine="true"
+            android:text="弹幕设置"
+            android:textColor="@color/dialog_text_primary"
+            android:textSize="@dimen/ts_26"
+            android:textStyle="bold" />
+
+        <!-- 弹幕开关 -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp" android:orientation="horizontal" android:paddingTop="6dp" android:paddingBottom="6dp">
+            <TextView android:layout_width="@dimen/vs_120" android:layout_height="@dimen/vs_50" android:gravity="center_vertical|right" android:text="弹幕开关" android:textColor="@color/dialog_text_primary" android:textSize="@dimen/ts_20" />
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/trv_onoff" android:layout_width="0dp" android:layout_height="@dimen/vs_50" android:layout_marginStart="24dp" android:layout_weight="1" android:orientation="horizontal" />
+        </LinearLayout>
+
+        <!-- 弹幕颜色 -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp" android:orientation="horizontal" android:paddingTop="6dp" android:paddingBottom="6dp">
+            <TextView android:layout_width="@dimen/vs_120" android:layout_height="@dimen/vs_50" android:gravity="center_vertical|right" android:text="弹幕颜色" android:textColor="@color/dialog_text_primary" android:textSize="@dimen/ts_20" />
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/trv_color" android:layout_width="0dp" android:layout_height="@dimen/vs_50" android:layout_marginStart="24dp" android:layout_weight="1" android:orientation="horizontal" />
+        </LinearLayout>
+
+        <!-- 弹幕位置 -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp" android:orientation="horizontal" android:paddingTop="6dp" android:paddingBottom="6dp">
+            <TextView android:layout_width="@dimen/vs_120" android:layout_height="@dimen/vs_50" android:gravity="center_vertical|right" android:text="弹幕位置" android:textColor="@color/dialog_text_primary" android:textSize="@dimen/ts_20" />
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/trv_position" android:layout_width="0dp" android:layout_height="@dimen/vs_50" android:layout_marginStart="24dp" android:layout_weight="1" android:orientation="horizontal" />
+        </LinearLayout>
+
+        <!-- 弹幕大小 -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp" android:orientation="horizontal" android:paddingTop="6dp" android:paddingBottom="6dp">
+            <TextView android:layout_width="@dimen/vs_120" android:layout_height="@dimen/vs_50" android:gravity="center_vertical|right" android:text="弹幕大小" android:textColor="@color/dialog_text_primary" android:textSize="@dimen/ts_20" />
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/trv_size" android:layout_width="0dp" android:layout_height="@dimen/vs_50" android:layout_marginStart="24dp" android:layout_weight="1" android:orientation="horizontal" />
+        </LinearLayout>
+
+        <!-- 弹幕速度 -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp" android:orientation="horizontal" android:paddingTop="6dp" android:paddingBottom="6dp">
+            <TextView android:layout_width="@dimen/vs_120" android:layout_height="@dimen/vs_50" android:gravity="center_vertical|right" android:text="弹幕速度" android:textColor="@color/dialog_text_primary" android:textSize="@dimen/ts_20" />
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/trv_speed" android:layout_width="0dp" android:layout_height="@dimen/vs_50" android:layout_marginStart="24dp" android:layout_weight="1" android:orientation="horizontal" />
+        </LinearLayout>
+
+        <!-- 弹幕透明 -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp" android:orientation="horizontal" android:paddingTop="6dp" android:paddingBottom="6dp">
+            <TextView android:layout_width="@dimen/vs_120" android:layout_height="@dimen/vs_50" android:gravity="center_vertical|right" android:text="弹幕透明" android:textColor="@color/dialog_text_primary" android:textSize="@dimen/ts_20" />
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/trv_alpha" android:layout_width="0dp" android:layout_height="@dimen/vs_50" android:layout_marginStart="24dp" android:layout_weight="1" android:orientation="horizontal" />
+        </LinearLayout>
+
+        <!-- 弹幕描边 -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="6dp" android:paddingBottom="6dp">
+            <TextView android:layout_width="@dimen/vs_120" android:layout_height="@dimen/vs_50" android:gravity="center_vertical|right" android:text="弹幕描边" android:textColor="@color/dialog_text_primary" android:textSize="@dimen/ts_20" />
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/trv_stroke" android:layout_width="0dp" android:layout_height="@dimen/vs_50" android:layout_marginStart="24dp" android:layout_weight="1" android:orientation="horizontal" />
+        </LinearLayout>
+
+    </LinearLayout>
+</FrameLayout>

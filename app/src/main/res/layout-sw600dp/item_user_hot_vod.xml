@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/shape_grid_item_bg"
+    android:padding="@dimen/vs_1">
+
+    <FrameLayout
+        android:id="@+id/mItemFrame"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- 固定 2:3 海报比例 -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/ivThumb"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:scaleType="centerCrop"
+                android:padding="@dimen/vs_1"
+                app:layout_constraintDimensionRatio="H,2:3"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- 左上角：评分标签 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/vs_5"
+            android:layout_marginTop="@dimen/vs_5"
+            android:layout_marginRight="@dimen/vs_5"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvRate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/vs_5"
+                android:layout_marginRight="@dimen/vs_5"
+                android:background="@drawable/shape_thumb_bottom_name"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:paddingLeft="@dimen/vs_5"
+                android:paddingRight="@dimen/vs_5"
+                android:singleLine="true"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/ts_16" />
+        </LinearLayout>
+
+        <!-- 底部：备注 + 片名（叠加在图片上） -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="vertical"
+            android:padding="@dimen/vs_1">
+
+            <TextView
+                android:id="@+id/tvNote"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginLeft="@dimen/vs_2"
+                android:layout_marginRight="@dimen/vs_2"
+                android:layout_marginBottom="@dimen/vs_5"
+                android:background="@drawable/shape_thumb_note"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:paddingLeft="@dimen/vs_5"
+                android:paddingRight="@dimen/vs_5"
+                android:singleLine="true"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/ts_16" />
+
+            <TextView
+                android:id="@+id/tvName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/shape_thumb_bottom_name"
+                android:ellipsize="marquee"
+                android:gravity="center"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:padding="@dimen/vs_5"
+                android:singleLine="true"
+                android:text="Title"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/ts_22" />
+        </LinearLayout>
+
+        <!-- 删除遮罩 -->
+        <FrameLayout
+            android:id="@+id/delFrameLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:background="@drawable/shape_user_delete"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="@dimen/vs_80"
+                android:layout_height="@dimen/vs_80"
+                android:layout_gravity="center"
+                android:layout_marginBottom="@dimen/vs_20"
+                android:src="@drawable/icon_delete" />
+
+        </FrameLayout>
+
+    </FrameLayout>
+</FrameLayout>
