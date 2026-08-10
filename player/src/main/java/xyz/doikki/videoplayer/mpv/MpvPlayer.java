@@ -71,9 +71,11 @@ public class MpvPlayer extends AbstractPlayer {
     public void initPlayer() {
         try {
             Context context = mAppContext;
-            String configDir = context.getFilesDir().getAbsolutePath() + "/mpv";
-            String cacheDir = context.getCacheDir().getAbsolutePath() + "/mpv";
-            mpv = new MPV(context, configDir, cacheDir);
+            mpv = new MPV();
+            mpv.create(context);
+            mpv.init();
+            mpv.setOptionString("config", "no");
+            mpv.setOptionString("gpu-shader-cache-dir", context.getCacheDir().getAbsolutePath() + "/mpv");
             mpv.setOptionString("vo", "gpu");
             mpv.setOptionString("hwdec", "auto-safe");
             mpv.setOptionString("demuxer-max-bytes", "50MiB");
@@ -241,7 +243,7 @@ public class MpvPlayer extends AbstractPlayer {
                     mSurfaceAttached = false;
                 }
                 mpv.removeObserver(mObserver);
-                mpv.close();
+                mpv.destroy();
             } catch (Throwable th) {
                 th.printStackTrace();
             }
