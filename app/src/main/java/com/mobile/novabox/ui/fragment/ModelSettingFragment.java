@@ -19,7 +19,6 @@ import androidx.recyclerview.widget.DiffUtil;
 
 import com.mobile.novabox.R;
 import com.mobile.novabox.api.ApiConfig;
-import com.mobile.novabox.api.DanmakuApi;
 import com.mobile.novabox.base.BaseActivity;
 import com.mobile.novabox.base.BaseLazyFragment;
 import com.mobile.novabox.bean.IJKCode;
@@ -35,7 +34,6 @@ import com.mobile.novabox.ui.adapter.SelectDialogAdapter;
 import com.mobile.novabox.ui.dialog.AboutDialog;
 import com.mobile.novabox.ui.dialog.ApiDialog;
 import com.mobile.novabox.ui.dialog.BackupDialog;
-import com.mobile.novabox.ui.dialog.DanmuApiDialog;
 import com.mobile.novabox.ui.dialog.DanmuFullSettingDialog;
 import com.mobile.novabox.ui.dialog.SearchRemoteTvDialog;
 import com.mobile.novabox.ui.dialog.SelectDialog;
@@ -95,7 +93,6 @@ public class ModelSettingFragment extends BaseLazyFragment {
     private ApiDialog apiDialog;
     private boolean selectLocalLive;
     private TextView tvDanmuOpenText;
-    private TextView tvDanmuApiText;
 
     public static ModelSettingFragment newInstance() {
         return new ModelSettingFragment().setArguments();
@@ -123,8 +120,6 @@ public class ModelSettingFragment extends BaseLazyFragment {
         Hawk.put(HawkConfig.SHOW_PREVIEW, true);             // 窗口预览: 开启
         tvDanmuOpenText = findViewById(R.id.danmuOpenText);
         tvDanmuOpenText.setText(DanmuHelper.isOpen() ? "开启" : "关闭");
-        tvDanmuApiText = findViewById(R.id.danmuApiText);
-        refreshDanmuApiText();
         tvAutoSwitchLineText = findViewById(R.id.autoSwitchLineText);
         tvAutoSwitchLineText.setText(Hawk.get(HawkConfig.AUTO_SWITCH_LINE, true) ? "开启" : "关闭");
         tvDebugOpen = findViewById(R.id.tvDebugOpen);
@@ -480,20 +475,6 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 tvDanmuOpenText.setText(open ? "开启" : "关闭");
             }
         });
-        findViewById(R.id.danmuApi).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                FastClickCheckUtil.check(v);
-                DanmuApiDialog dialog = new DanmuApiDialog(mActivity);
-                dialog.setOnListener(new DanmuApiDialog.OnListener() {
-                    @Override
-                    public void onChange(String api) {
-                        refreshDanmuApiText();
-                    }
-                });
-                dialog.show();
-            }
-        });
         findViewById(R.id.danmuFullSetting).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -785,21 +766,6 @@ public class ModelSettingFragment extends BaseLazyFragment {
             android.widget.TextView tv;
             VH(android.widget.TextView v) { super(v); tv = v; }
         }
-    }
-
-    private void refreshDanmuApiText() {
-        if (tvDanmuApiText == null) return;
-        if (DanmakuApi.isUseDefault()) {
-            tvDanmuApiText.setText("默认");
-            return;
-        }
-        String custom = Hawk.get(HawkConfig.DANMU_API, "");
-        if (!custom.isEmpty()) {
-            tvDanmuApiText.setText("自定义");
-            return;
-        }
-        String config = ApiConfig.get().getDanmaku();
-        tvDanmuApiText.setText(config.isEmpty() ? "默认" : "接口");
     }
 
     private void updateApiRowWeight(boolean showLine) {
