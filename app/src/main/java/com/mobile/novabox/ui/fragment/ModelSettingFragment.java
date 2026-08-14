@@ -36,7 +36,7 @@ import com.mobile.novabox.ui.dialog.AboutDialog;
 import com.mobile.novabox.ui.dialog.ApiDialog;
 import com.mobile.novabox.ui.dialog.BackupDialog;
 import com.mobile.novabox.ui.dialog.DanmuApiDialog;
-import com.mobile.novabox.ui.dialog.DanmuSettingDialog;
+import com.mobile.novabox.ui.dialog.DanmuFullSettingDialog;
 import com.mobile.novabox.ui.dialog.SearchRemoteTvDialog;
 import com.mobile.novabox.ui.dialog.SelectDialog;
 import com.mobile.novabox.ui.dialog.XWalkInitDialog;
@@ -499,7 +499,7 @@ public class ModelSettingFragment extends BaseLazyFragment {
             public void onClick(View v) {
                 FastClickCheckUtil.check(v);
                 // 设置页没有弹幕 View，传 null 即可（弹幕开关只做持久化 + 事件广播）
-                DanmuSettingDialog dialog = new DanmuSettingDialog(mActivity, null);
+                DanmuFullSettingDialog dialog = new DanmuFullSettingDialog(mActivity);
                 dialog.show();
             }
         });

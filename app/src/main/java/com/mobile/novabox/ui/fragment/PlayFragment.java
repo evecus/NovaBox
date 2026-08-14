@@ -60,7 +60,7 @@ import com.mobile.novabox.player.controller.VodController;
 import com.mobile.novabox.player.danmu.DanmuLoadController;
 import com.mobile.novabox.server.ControlManager;
 import com.mobile.novabox.ui.adapter.SelectDialogAdapter;
-import com.mobile.novabox.ui.dialog.DanmuSettingDialog;
+import com.mobile.novabox.ui.dialog.DanmuFullSettingDialog;
 import com.mobile.novabox.ui.dialog.SearchSubtitleDialog;
 import com.mobile.novabox.ui.dialog.SelectDialog;
 import com.mobile.novabox.ui.dialog.SubtitleDialog;
@@ -278,7 +278,7 @@ public class PlayFragment extends BaseLazyFragment {
         mController.setListener(new VodController.VodControlListener() {
             @Override
             public void showDanmuSetting() {
-                DanmuSettingDialog dialog = new DanmuSettingDialog(requireContext(), mDanmuView);
+                DanmuFullSettingDialog dialog = new DanmuFullSettingDialog(requireContext());
                 dialog.show();
             }
 
