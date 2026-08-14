@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- 顶部导航栏 -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp">
+
+        <ImageView
+            android:id="@+id/ivBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_centerVertical="true"
+            android:layout_alignParentStart="true"
+            android:padding="8dp"
+            android:src="@drawable/icon_back"
+            android:tint="@android:color/black"
+            android:scaleType="fitCenter"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="我的"
+            android:textColor="@android:color/black"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+    </RelativeLayout>
+
+    <!-- 功能入口列表 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingTop="16dp">
+
+        <!-- OpenList 网盘入口 -->
+        <LinearLayout
+            android:id="@+id/btnOpenList"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@drawable/shape_my_item_bg"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="16dp"
+            android:paddingRight="12dp">
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:src="@drawable/icon_openlist_cloud"
+                android:tint="@android:color/black"/>
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="14dp"
+                android:text="OpenList 网盘"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"/>
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/icon_back"
+                android:tint="@android:color/black"
+                android:rotation="180"/>
+        </LinearLayout>
+
+        <!-- 本地视频入口 -->
+        <LinearLayout
+            android:id="@+id/btnLocalVideo"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/shape_my_item_bg"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="16dp"
+            android:paddingRight="12dp">
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:src="@drawable/icon_local_video"
+                android:tint="@android:color/black"/>
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="14dp"
+                android:text="本地视频"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"/>
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/icon_back"
+                android:tint="@android:color/black"
+                android:rotation="180"/>
+        </LinearLayout>
+
+        <!-- 本地音乐入口 -->
+        <LinearLayout
+            android:id="@+id/btnLocalAudio"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/shape_my_item_bg"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="16dp"
+            android:paddingRight="12dp">
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:src="@drawable/ic_music_note"
+                android:tint="@android:color/black"/>
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="14dp"
+                android:text="本地音乐"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"/>
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/icon_back"
+                android:tint="@android:color/black"
+                android:rotation="180"/>
+        </LinearLayout>
+
+        <!-- 设置入口 -->
+        <LinearLayout
+            android:id="@+id/btnSetting"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/shape_my_item_bg"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="16dp"
+            android:paddingRight="12dp">
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:src="@drawable/icon_setting"
+                android:tint="@android:color/black"/>
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="14dp"
+                android:text="设置"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"/>
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/icon_back"
+                android:tint="@android:color/black"
+                android:rotation="180"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>
