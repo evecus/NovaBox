@@ -2915,10 +2915,35 @@ public class LivePlayActivity extends BaseActivity {
                 }
                 liveSettingItemAdapter.selectItem(position, select, false);
                 break;
-            case 5://多源切换（只来自直播地址列表）
+            case 5://多源切换（直播地址列表在上 + 线路选择 lives 数组在下）
                 List<LiveSettingItem> multiItems = liveSettingGroupList.get(5).getLiveSettingItems();
                 if (position < 0 || position >= multiItems.size()) break;
                 LiveSettingItem multiItem = multiItems.get(position);
+                if (multiItem.getItemGroup() == 1) {
+                    // 线路选择来源：加载点播 JSON 内嵌 lives 数组中的该项
+                    JsonArray liveGroups = Hawk.get(HawkConfig.LIVE_GROUP_LIST, new JsonArray());
+                    int livesIndex = multiItem.getItemSourceIndex();
+                    if (liveGroups == null || livesIndex < 0 || livesIndex >= liveGroups.size()) break;
+                    if (livesIndex == ApiConfig.getLiveGroupIndex()) {
+                        liveSettingItemAdapter.selectItem(position, true, true);
+                        break;
+                    }
+                    String currentChannelNameL = getPreferredLiveRefreshChannelName();
+                    int currentSourceIndexL = getPreferredLiveRefreshSourceIndex();
+                    liveSettingItemAdapter.selectItem(position, true, true);
+                    ApiConfig.setLiveGroupIndex(livesIndex);
+                    JsonObject livesOBJ = liveGroups.get(livesIndex).getAsJsonObject();
+                    ApiConfig.get().loadLiveApi(livesOBJ);
+                    if (ApiConfig.get().getChannelGroupList().isEmpty()) {
+                        if (mVideoView != null) mVideoView.release();
+                        setEmptyLiveChannelList(false);
+                    } else {
+                        refreshLiveChannelListAndPlay(currentChannelNameL, currentSourceIndexL);
+                    }
+                    hideMobileSettingsDialog();
+                    break;
+                }
+                // 直播地址来源：切换为独立直播源
                 String liveUrl = multiItem.getItemUrl();
                 if (liveUrl.isEmpty()) break;
                 String oldLiveApiM = Hawk.get(HawkConfig.LIVE_API_URL, "");
@@ -3343,12 +3368,21 @@ public class LivePlayActivity extends BaseActivity {
         liveSettingGroupList.get(4).getLiveSettingItems().get(2).setItemSelected(Hawk.get(HawkConfig.LIVE_SHOW_RESOLUTION, false));
         liveSettingGroupList.get(4).getLiveSettingItems().get(3).setItemSelected(Hawk.get(HawkConfig.LIVE_CHANNEL_REVERSE, false));
         liveSettingGroupList.get(4).getLiveSettingItems().get(4).setItemSelected(Hawk.get(HawkConfig.LIVE_CROSS_GROUP, false));
-        // 多源切换（group[5]）：根据当前 LIVE_API_URL 标记选中项
+        // 多源切换（group[5]）：直播地址来源按 LIVE_API_URL 标记；线路选择来源按 live_group_index 标记
         String currentLiveApiUrl = Hawk.get(HawkConfig.LIVE_API_URL, "");
+        boolean usingVodConfigLives = currentLiveApiUrl.isEmpty();
+        int currentLiveGroupIndex = ApiConfig.getLiveGroupIndex();
         List<LiveSettingItem> multiSettingItems = liveSettingGroupList.get(5).getLiveSettingItems();
         for (int i = 0; i < multiSettingItems.size(); i++) {
-            String itemUrl = multiSettingItems.get(i).getItemUrl();
-            multiSettingItems.get(i).setItemSelected(!currentLiveApiUrl.isEmpty() && currentLiveApiUrl.equals(itemUrl));
+            LiveSettingItem item = multiSettingItems.get(i);
+            if (item.getItemGroup() == 1) {
+                // 线路选择(lives)来源：仅在未启用独立直播源时按 live_group_index 标记
+                item.setItemSelected(usingVodConfigLives && currentLiveGroupIndex == item.getItemSourceIndex());
+            } else {
+                // 直播地址来源：按 LIVE_API_URL 标记
+                String itemUrl = item.getItemUrl();
+                item.setItemSelected(!currentLiveApiUrl.isEmpty() && currentLiveApiUrl.equals(itemUrl));
+            }
         }
     }
 

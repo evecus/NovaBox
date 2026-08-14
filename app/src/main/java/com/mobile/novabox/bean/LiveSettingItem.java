@@ -11,6 +11,7 @@ public class LiveSettingItem {
     private boolean itemSelected = false;
     private String itemUrl = ""; // 用于配置切换：存储实际URL
     private int itemGroup = -1; // 0=直播地址来源, 1=线路选择来源, -1=其他
+    private int itemSourceIndex = -1; // 来源内的下标：直播地址来源无意义；线路选择来源=lives 数组下标
 
     public int getItemIndex() {
         return itemIndex;
@@ -50,5 +51,13 @@ public class LiveSettingItem {
 
     public void setItemGroup(int itemGroup) {
         this.itemGroup = itemGroup;
+    }
+
+    public int getItemSourceIndex() {
+        return itemSourceIndex;
+    }
+
+    public void setItemSourceIndex(int itemSourceIndex) {
+        this.itemSourceIndex = itemSourceIndex;
     }
 }

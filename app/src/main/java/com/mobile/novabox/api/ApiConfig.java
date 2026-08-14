@@ -899,7 +899,7 @@ public class ApiConfig {
                 int live_group_index=getLiveGroupIndex();
                 if(live_group_index>lives_groups.size()-1)live_group_index=0;
                 Hawk.put(HawkConfig.LIVE_GROUP_LIST,lives_groups);
-                // 多源切换列表：只来自直播地址（LIVE_SOURCE_LIST）
+                // 多源切换列表：直播地址列表在上 + 点播 JSON 内嵌 lives 数组在下
                 refreshLiveApiHistoryItems();
 
                 JsonObject livesOBJ = lives_groups.get(live_group_index).getAsJsonObject();
@@ -1076,7 +1076,7 @@ public class ApiConfig {
             int live_group_index=getLiveGroupIndex();
             if(live_group_index>lives_groups.size()-1)live_group_index=0;
             Hawk.put(HawkConfig.LIVE_GROUP_LIST,lives_groups);
-            //加载多源配置：只来自直播地址（LIVE_SOURCE_LIST）
+            //加载多源配置：直播地址列表在上 + 点播 JSON 内嵌 lives 数组在下
             refreshLiveApiHistoryItems();
 
             JsonObject livesOBJ = lives_groups.get(live_group_index).getAsJsonObject();
@@ -1142,7 +1142,7 @@ public class ApiConfig {
         ArrayList<LiveSettingItem> liveSettingItemList = new ArrayList<>();
         int itemIdx = 0;
 
-        // 只从直播地址列表（LIVE_SOURCE_LIST）加载
+        // 第一部分：直播地址里配置的直播列表（LIVE_SOURCE_LIST），在上
         ArrayList<String> liveSourceList = Hawk.get(HawkConfig.LIVE_SOURCE_LIST, new ArrayList<String>());
         for (String entry : liveSourceList) {
             String name;
@@ -1159,7 +1159,20 @@ public class ApiConfig {
             item.setItemIndex(itemIdx++);
             item.setItemName(name);
             item.setItemUrl(url);
-            item.setItemGroup(0); // group=0 表示来自直播地址
+            item.setItemGroup(0); // group=0 直播地址来源
+            liveSettingItemList.add(item);
+        }
+
+        // 第二部分：线路选择里的点播 JSON 内嵌 lives 数组（LIVE_GROUP_LIST），在下
+        JsonArray livesGroups = Hawk.get(HawkConfig.LIVE_GROUP_LIST, new JsonArray());
+        for (int i = 0; i < livesGroups.size(); i++) {
+            JsonObject livesObj = livesGroups.get(i).getAsJsonObject();
+            String name = livesObj.has("name") ? livesObj.get("name").getAsString() : ("线路" + (i + 1));
+            LiveSettingItem item = new LiveSettingItem();
+            item.setItemIndex(itemIdx++);
+            item.setItemName(name);
+            item.setItemGroup(1); // group=1 线路选择(lives)来源
+            item.setItemSourceIndex(i); // 记录在 lives 数组中的下标
             liveSettingItemList.add(item);
         }
 
