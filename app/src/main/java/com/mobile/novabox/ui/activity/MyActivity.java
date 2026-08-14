@@ -23,12 +23,6 @@ public class MyActivity extends BaseActivity {
     }
 
     private void initView() {
-        // 返回
-        View ivBack = findViewById(R.id.ivBack);
-        if (ivBack != null) {
-            ivBack.setOnClickListener(v -> onBackPressed());
-        }
-
         // OpenList 网盘入口
         View btnOpenList = findViewById(R.id.btnOpenList);
         if (btnOpenList != null) {

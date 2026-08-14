@@ -38,7 +38,6 @@ import com.mobile.novabox.ui.dialog.DanmuFullSettingDialog;
 import com.mobile.novabox.ui.dialog.SearchRemoteTvDialog;
 import com.mobile.novabox.ui.dialog.SelectDialog;
 import com.mobile.novabox.ui.dialog.XWalkInitDialog;
-import com.mobile.novabox.util.DanmuHelper;
 import com.mobile.novabox.util.FastClickCheckUtil;
 import com.mobile.novabox.util.FileUtils;
 import com.mobile.novabox.util.HawkConfig;
@@ -92,7 +91,6 @@ public class ModelSettingFragment extends BaseLazyFragment {
     private TextView tvFullscreenOrientation;
     private ApiDialog apiDialog;
     private boolean selectLocalLive;
-    private TextView tvDanmuOpenText;
 
     public static ModelSettingFragment newInstance() {
         return new ModelSettingFragment().setArguments();
@@ -118,8 +116,6 @@ public class ModelSettingFragment extends BaseLazyFragment {
         Hawk.put(HawkConfig.HISTORY_NUM, 0);                 // 历史记录: 无上限
         Hawk.put(HawkConfig.PLAY_SCALE, 0);                  // 画面缩放: 默认
         Hawk.put(HawkConfig.SHOW_PREVIEW, true);             // 窗口预览: 开启
-        tvDanmuOpenText = findViewById(R.id.danmuOpenText);
-        tvDanmuOpenText.setText(DanmuHelper.isOpen() ? "开启" : "关闭");
         tvAutoSwitchLineText = findViewById(R.id.autoSwitchLineText);
         tvAutoSwitchLineText.setText(Hawk.get(HawkConfig.AUTO_SWITCH_LINE, true) ? "开启" : "关闭");
         tvDebugOpen = findViewById(R.id.tvDebugOpen);
@@ -464,15 +460,6 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 boolean is_purify=Hawk.get(HawkConfig.M3U8_PURIFY, false);
                 Hawk.put(HawkConfig.M3U8_PURIFY, !is_purify);
                 tvm3u8AdText.setText(!is_purify ? "开启" : "关闭");
-            }
-        });
-        findViewById(R.id.danmuOpen).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                FastClickCheckUtil.check(v);
-                boolean open = !DanmuHelper.isOpen();
-                DanmuHelper.setOpen(open);
-                tvDanmuOpenText.setText(open ? "开启" : "关闭");
             }
         });
         findViewById(R.id.danmuFullSetting).setOnClickListener(new View.OnClickListener() {

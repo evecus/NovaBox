@@ -48,6 +48,8 @@ public class SettingActivity extends BaseActivity {
     private void initView() {
         mViewPager = findViewById(R.id.mViewPager);
         // 设置页不再显示底部/左侧导航栏，纯设置内容界面
+        // 顶部栏返回按钮
+        findViewById(R.id.ivBack).setOnClickListener(v -> onBackPressed());
     }
 
     private void initData() {
