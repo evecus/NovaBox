@@ -3021,13 +3021,22 @@ public class LivePlayActivity extends BaseActivity {
     }
 
     private int getCurrentLiveApiHistoryIndex() {
+        if (liveSettingGroupList.size() < 6) return -1;
         String current = Hawk.get(HawkConfig.LIVE_API_URL, "");
-        if (current.isEmpty() || liveSettingGroupList.size() < 6) return -1;
+        boolean usingVodConfigLives = current.isEmpty();
+        int currentLiveGroupIndex = ApiConfig.getLiveGroupIndex();
         List<LiveSettingItem> items = liveSettingGroupList.get(5).getLiveSettingItems();
         for (int i = 0; i < items.size(); i++) {
-            String url = items.get(i).getItemUrl();
-            if (url.isEmpty()) url = items.get(i).getItemName();
-            if (current.equals(url)) return i;
+            LiveSettingItem item = items.get(i);
+            if (item.getItemGroup() == 1) {
+                // 线路选择(lives)来源：仅在未启用独立直播源时按 live_group_index 匹配
+                if (usingVodConfigLives && currentLiveGroupIndex == item.getItemSourceIndex()) return i;
+            } else {
+                // 直播地址来源：按 LIVE_API_URL 匹配
+                String url = item.getItemUrl();
+                if (url.isEmpty()) url = item.getItemName();
+                if (!current.isEmpty() && current.equals(url)) return i;
+            }
         }
         return -1;
     }
