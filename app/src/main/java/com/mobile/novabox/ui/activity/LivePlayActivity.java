@@ -2313,7 +2313,7 @@ public class LivePlayActivity extends BaseActivity {
                     case VideoView.STATE_PREPARING:
                     case VideoView.STATE_BUFFERING:
                         // 正在准备或缓冲状态：表示当前源正在加载中
-                        mHandler.postDelayed(mConnectTimeoutChangeSourceRun, (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 1) + 1) * 5000L);
+                        mHandler.postDelayed(mConnectTimeoutChangeSourceRun, (ApiConfig.getLiveConnectTimeoutIndex() + 1) * 5000L);
                         break;
                     default:
                         LOG.i("echo-Unexpected live_play state: " + playState);
@@ -3044,12 +3044,21 @@ public class LivePlayActivity extends BaseActivity {
     private void initLiveChannelList() {
         // 检查是否配置了直播源
         String liveApiUrl = Hawk.get(HawkConfig.LIVE_API_URL, "");
-        if (liveApiUrl.isEmpty()) {
-            // 未配置直播源，友好提示用户
-            showNoLiveSourceTip();
-            return;
-        }
         List<LiveChannelGroup> list = ApiConfig.get().getChannelGroupList();
+        if (liveApiUrl.isEmpty() && list.isEmpty()) {
+            // 未配置独立直播源：优先使用点播 JSON 内嵌 lives 数组
+            JsonArray livesGroups = Hawk.get(HawkConfig.LIVE_GROUP_LIST, new JsonArray());
+            if (livesGroups == null || livesGroups.size() == 0) {
+                // 点播 JSON 也未提供 lives 数组，友好提示用户
+                showNoLiveSourceTip();
+                return;
+            }
+            int liveGroupIndex = ApiConfig.getLiveGroupIndex();
+            if (liveGroupIndex < 0 || liveGroupIndex >= livesGroups.size()) liveGroupIndex = 0;
+            JsonObject livesOBJ = livesGroups.get(liveGroupIndex).getAsJsonObject();
+            ApiConfig.get().loadLiveApi(livesOBJ);
+            list = ApiConfig.get().getChannelGroupList();
+        }
         if (list.isEmpty()) {
             // 有配置但频道列表为空（首次进入或未加载）：主动请求直播源
             if (!refreshingLiveChannelList) showLoading();
@@ -3371,7 +3380,7 @@ public class LivePlayActivity extends BaseActivity {
     private void initLiveSettingGroupList() {
         liveSettingGroupList=ApiConfig.get().getLiveSettingGroupList();
         if (liveSettingGroupList.size() < 6) return;
-        liveSettingGroupList.get(3).getLiveSettingItems().get(Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 1)).setItemSelected(true);
+        liveSettingGroupList.get(3).getLiveSettingItems().get(ApiConfig.getLiveConnectTimeoutIndex()).setItemSelected(true);
         liveSettingGroupList.get(4).getLiveSettingItems().get(0).setItemSelected(Hawk.get(HawkConfig.LIVE_SHOW_TIME, false));
         liveSettingGroupList.get(4).getLiveSettingItems().get(1).setItemSelected(Hawk.get(HawkConfig.LIVE_SHOW_NET_SPEED, false));
         liveSettingGroupList.get(4).getLiveSettingItems().get(2).setItemSelected(Hawk.get(HawkConfig.LIVE_SHOW_RESOLUTION, false));

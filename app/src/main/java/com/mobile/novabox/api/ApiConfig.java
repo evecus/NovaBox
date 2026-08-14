@@ -503,8 +503,20 @@ public class ApiConfig {
         return HawkConfig.LIVE_GROUP_INDEX + "_" + liveApiUrl;
     }
 
+    /** 安全读取线路选择下标：兼容历史遗留的 String 类型脏数据，避免 ClassCastException */
     public static int getLiveGroupIndex() {
-        return Hawk.get(getLiveGroupIndexKey(), 0);
+        int index = 0;
+        try {
+            Object value = Hawk.get(getLiveGroupIndexKey(), (Object) 0);
+            if (value instanceof Number) {
+                index = ((Number) value).intValue();
+            } else if (value instanceof String) {
+                index = Integer.parseInt(((String) value).trim());
+            }
+        } catch (Throwable ignored) {
+        }
+        if (index < 0) index = 0;
+        return index;
     }
 
     public static void setLiveGroupIndex(int index) {
@@ -891,17 +903,20 @@ public class ApiConfig {
 
         // 直播源
         String live_api_url=Hawk.get(HawkConfig.LIVE_API_URL,"");
-        if(live_api_url.isEmpty() || apiUrl.equals(live_api_url)){
+        boolean vodIsLiveConfig = live_api_url.isEmpty() || apiUrl.equals(live_api_url);
+        if (vodIsLiveConfig) {
             LOG.i("echo-load-config_live");
             initLiveSettings();
-            if(infoJson.has("lives")){
-                JsonArray lives_groups=infoJson.get("lives").getAsJsonArray();
-                int live_group_index=getLiveGroupIndex();
-                if(live_group_index>lives_groups.size()-1)live_group_index=0;
-                Hawk.put(HawkConfig.LIVE_GROUP_LIST,lives_groups);
-                // 多源切换列表：直播地址列表在上 + 点播 JSON 内嵌 lives 数组在下
-                refreshLiveApiHistoryItems();
-
+        }
+        // 点播 JSON 内嵌 lives 数组：无论是否配置独立直播源，都保存进多源切换列表
+        if(infoJson.has("lives")){
+            JsonArray lives_groups=infoJson.get("lives").getAsJsonArray();
+            int live_group_index=getLiveGroupIndex();
+            if(live_group_index>lives_groups.size()-1)live_group_index=0;
+            Hawk.put(HawkConfig.LIVE_GROUP_LIST,lives_groups);
+            // 多源切换列表：直播地址列表在上 + 点播 JSON 内嵌 lives 数组在下
+            refreshLiveApiHistoryItems();
+            if (vodIsLiveConfig) {
                 JsonObject livesOBJ = lives_groups.get(live_group_index).getAsJsonObject();
                 loadLiveApi(livesOBJ);
             }
@@ -1075,7 +1090,11 @@ public class ApiConfig {
 
             int live_group_index=getLiveGroupIndex();
             if(live_group_index>lives_groups.size()-1)live_group_index=0;
-            Hawk.put(HawkConfig.LIVE_GROUP_LIST,lives_groups);
+            // 点播 JSON 内嵌 lives 数组优先：仅当为空时才用直播源自身 lives 填充多源切换
+            JsonArray existingLives = Hawk.get(HawkConfig.LIVE_GROUP_LIST, new JsonArray());
+            if (existingLives == null || existingLives.size() == 0) {
+                Hawk.put(HawkConfig.LIVE_GROUP_LIST, lives_groups);
+            }
             //加载多源配置：直播地址列表在上 + 点播 JSON 内嵌 lives 数组在下
             refreshLiveApiHistoryItems();
 
@@ -1551,8 +1570,24 @@ public class ApiConfig {
         return jarLoader.hasDanmuSearchUi();
     }
 
+    /** 安全读取超时换源索引：兼容历史遗留的 String 类型脏数据，避免 ClassCastException */
+    public static int getLiveConnectTimeoutIndex() {
+        int index = 1;
+        try {
+            Object value = Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, (Object) 1);
+            if (value instanceof Number) {
+                index = ((Number) value).intValue();
+            } else if (value instanceof String) {
+                index = Integer.parseInt(((String) value).trim());
+            }
+        } catch (Throwable ignored) {
+        }
+        if (index < 0 || index > 5) index = 1;
+        return index;
+    }
+
     public int getLiveConnectTimeoutSeconds() {
-        return (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 1) + 1) * 5;
+        return (getLiveConnectTimeoutIndex() + 1) * 5;
     }
 
     private boolean isLiveSpiderApi(String api) {
