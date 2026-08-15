@@ -1,4 +1,4 @@
-name: Build APK
+name: release
 
 on:
   workflow_dispatch:        # 允许手动触发
@@ -148,8 +148,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
-          name: NovaBox v1.0.0
+          tag_name: v1.0.1
+          name: NovaBox v1.0.1
           files: release-apks/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
