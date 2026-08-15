@@ -75,6 +75,27 @@ public class App extends MultiDexApplication {
         return instance;
     }
 
+    /**
+     * 完全重启应用(杀掉进程):配置切换、缓存清理等需要重新加载全局状态时使用。
+     * 与只 startActivity(FLAG_ACTIVITY_CLEAR_TASK) 不同,这里会调 System.exit(0),
+     * 强制清空 ApplicationContext 单例(ApiConfig/Hawk/PlayerHelper 等),保证新配置生效。
+     * delayMs 默认 2500,期间会显示 toast,让用户感知到"正在重启"。
+     */
+    public static void restartApp(int delayMs) {
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (instance == null) return;
+                android.content.Intent intent = instance.getPackageManager().getLaunchIntentForPackage(instance.getPackageName());
+                if (intent != null) {
+                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    instance.startActivity(intent);
+                    System.exit(0);
+                }
+            }
+        }, delayMs);
+    }
+
     @Override
     public void onTerminate() {
         super.onTerminate();

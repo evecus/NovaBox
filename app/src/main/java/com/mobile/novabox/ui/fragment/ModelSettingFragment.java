@@ -456,24 +456,10 @@ public class ModelSettingFragment extends BaseLazyFragment {
         findViewById(R.id.llClearCache).setOnClickListener((view -> onClickClearCache(view)));
     }
 
-    private void restartAppAfterConfigChanged() {
-        Toast.makeText(mContext, "配置已切换,即将自动重启应用!", Toast.LENGTH_SHORT).show();
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                restartApp();
-            }
-        }, 2500);
-    }
 
     private void restartAppAfterCacheCleared() {
         Toast.makeText(mContext, "缓存已清空,即将重启到主页!", Toast.LENGTH_LONG).show();
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                restartApp();
-            }
-        }, 2500);
+        com.mobile.novabox.base.App.restartApp(2500);
     }
 
     private void refreshApiUrlLabel() {
@@ -535,7 +521,10 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 refreshApiUrlLabel();
                 findAndRefreshApiLineLabel();
                 if (!oldApi.equals(url)) {
-                    restartAppAfterConfigChanged();
+                    // 统一调用 App.restartApp:杀进程 + 重新启动,保证 ApiConfig/PlayerHelper/Hawk 等
+                    // ApplicationContext 单例全部重新初始化,新配置立即生效。
+                    Toast.makeText(mContext, "配置已切换,即将自动重启应用!", Toast.LENGTH_SHORT).show();
+                    com.mobile.novabox.base.App.restartApp(2500);
                 }
             }
             @Override
@@ -545,16 +534,6 @@ public class ModelSettingFragment extends BaseLazyFragment {
 
     private void updateApiRowWeight(boolean showLine) {
         // 手机版单列布局，无需调整weight
-    }
-
-    private void restartApp() {
-        if (mContext == null) return;
-        Intent intent = mContext.getPackageManager().getLaunchIntentForPackage(mContext.getPackageName());
-        if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(intent);
-            System.exit(0);
-        }
     }
 
     private void onClickIjkCachePlay(View v) {

@@ -678,7 +678,9 @@ public class HomeActivity extends BaseActivity {
 
     private void showRouteSelect() {
         // 复用设置页的线路选择弹窗,与用户在设置里看到的一致。
-        // 选完后切换 API_URL,保存历史,并重启 HomeActivity 让所有 fragment/player 重新加载。
+        // 选完后切换 API_URL,保存历史,并杀进程重启 App 让 ApiConfig/PlayerHelper/Hawk 等单例重新加载。
+        // (不能只 startActivity(FLAG_ACTIVITY_CLEAR_TASK),否则 ApplicationContext 单例还是旧的,
+        //  加载的还是缓存的旧源 — 这就是之前切换不生效必须杀掉 app 才生效的根因。)
         com.mobile.novabox.ui.dialog.RouteSelectDialog.show(this, new com.mobile.novabox.ui.dialog.RouteSelectDialog.OnRouteSelectedListener() {
             @Override
             public void onSelected(String url) {
@@ -686,8 +688,8 @@ public class HomeActivity extends BaseActivity {
                 Hawk.put(HawkConfig.API_URL, url);
                 com.mobile.novabox.util.HistoryHelper.setApiHistory(url);
                 if (!oldApi.equals(url)) {
-                    // 切换线路后重启当前页面让所有 fragment 重新加载
-                    refreshHome();
+                    android.widget.Toast.makeText(HomeActivity.this, "配置已切换,即将自动重启应用!", android.widget.Toast.LENGTH_SHORT).show();
+                    com.mobile.novabox.base.App.restartApp(2500);
                 }
             }
             @Override
