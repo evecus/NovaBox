@@ -71,7 +71,7 @@ public class DanmuHelper {
      * 默认 0(向后兼容,老用户视觉不变),可调 0~200px(≈0~200dp on xhdpi)。
      */
     public static int getTopMarginPx() {
-        return Hawk.get(HawkConfig.DANMU_TOP_MARGIN_PX, 0);
+        return Hawk.get(HawkConfig.DANMU_TOP_MARGIN_PX, 40);
     }
 
     public static void setTopMarginPx(int px) {

@@ -46,8 +46,8 @@ public class DanmuFullSettingDialog extends BaseDialog {
     private static final int IDX_LINE_SPACING = 7;
     private static final int IDX_TOP_MARGIN = 8;
 
-    /** 顶部边距档位(px):与字号、行间距的 px 风格一致,默认 0(向后兼容,贴合顶部) */
-    private static final List<Integer> TOP_MARGINS = Arrays.asList(0, 10, 20, 30, 50, 80, 120);
+    /** 顶部边距档位(px):粗粒度,与字号、行间距的 px 风格一致,默认 40(电视顶部留一点呼吸空间) */
+    private static final List<Integer> TOP_MARGINS = Arrays.asList(0, 40, 80, 120, 160, 200);
 
     private static final List<Boolean> ONOFF_VALUES = Arrays.asList(true, false);
     private static final String[] ONOFF_NAMES = {"开", "关"};
