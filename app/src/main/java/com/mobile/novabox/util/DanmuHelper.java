@@ -64,6 +64,20 @@ public class DanmuHelper {
         Hawk.put(HawkConfig.DANMU_LINE_SPACING_PX, clamp(px, 0, 32));
     }
 
+    /**
+     * 弹幕顶部边距(像素):弹幕 view 顶端距离播放器顶部的偏移量,
+     * 用 FrameLayout.LayoutParams.topMargin 实现(view 实际绘制区整体下移,
+     * 弹幕轨道范围自动跟着变,不影响库内部轨道分配)。
+     * 默认 0(向后兼容,老用户视觉不变),可调 0~200px(≈0~200dp on xhdpi)。
+     */
+    public static int getTopMarginPx() {
+        return Hawk.get(HawkConfig.DANMU_TOP_MARGIN_PX, 0);
+    }
+
+    public static void setTopMarginPx(int px) {
+        Hawk.put(HawkConfig.DANMU_TOP_MARGIN_PX, clamp(px, 0, 200));
+    }
+
     public static boolean useRandomColor() {
         return Hawk.get(HawkConfig.DANMU_RANDOM_COLOR, false);
     }

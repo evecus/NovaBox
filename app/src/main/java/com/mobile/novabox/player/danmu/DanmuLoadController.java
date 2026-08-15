@@ -169,6 +169,9 @@ public class DanmuLoadController {
         FrameLayout.LayoutParams flp = (FrameLayout.LayoutParams) lp;
         int ratio = DanmuHelper.getScreenRatio();
         flp.gravity = Gravity.TOP;
+        // 顶部边距(view 顶端距离播放器顶部的偏移),与 height/gravity 独立,
+        // 横竖屏切换、屏占比变更时通过本方法自动生效。
+        flp.topMargin = DanmuHelper.getTopMarginPx();
 
         int targetHeight;
         if (ratio >= 100) {

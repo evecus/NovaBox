@@ -35,7 +35,7 @@ import java.util.List;
  */
 public class DanmuFullSettingDialog extends BaseDialog {
 
-    private static final String[] ITEM_NAMES = {"地址", "开关", "颜色", "字号", "屏占比", "滚动速度", "透明", "行间距"};
+    private static final String[] ITEM_NAMES = {"地址", "开关", "颜色", "字号", "屏占比", "滚动速度", "透明", "行间距", "顶部边距"};
     private static final int IDX_API = 0;
     private static final int IDX_ONOFF = 1;
     private static final int IDX_COLOR = 2;
@@ -44,6 +44,10 @@ public class DanmuFullSettingDialog extends BaseDialog {
     private static final int IDX_SPEED = 5;
     private static final int IDX_ALPHA = 6;
     private static final int IDX_LINE_SPACING = 7;
+    private static final int IDX_TOP_MARGIN = 8;
+
+    /** 顶部边距档位(px):与字号、行间距的 px 风格一致,默认 0(向后兼容,贴合顶部) */
+    private static final List<Integer> TOP_MARGINS = Arrays.asList(0, 10, 20, 30, 50, 80, 120);
 
     private static final List<Boolean> ONOFF_VALUES = Arrays.asList(true, false);
     private static final String[] ONOFF_NAMES = {"开", "关"};
@@ -59,9 +63,9 @@ public class DanmuFullSettingDialog extends BaseDialog {
 
     private LinearLayout llItemList;
     private TextView tvPanelTitle;
-    private View panelApi, panelOnOff, panelColor, panelSize, panelRatio, panelSpeed, panelAlpha, panelLineSpacing;
+    private View panelApi, panelOnOff, panelColor, panelSize, panelRatio, panelSpeed, panelAlpha, panelLineSpacing, panelTopMargin;
     private EditText inputApi;
-    private LinearLayout llOnOffOptions, llColorOptions, llSizeOptions, llRatioOptions, llSpeedOptions, llAlphaOptions, llLineSpacingOptions;
+    private LinearLayout llOnOffOptions, llColorOptions, llSizeOptions, llRatioOptions, llSpeedOptions, llAlphaOptions, llLineSpacingOptions, llTopMarginOptions;
 
     private int selectedItem = IDX_API;
     private OnListener listener;
@@ -89,6 +93,7 @@ public class DanmuFullSettingDialog extends BaseDialog {
         panelSpeed = findViewById(R.id.panelSpeed);
         panelAlpha = findViewById(R.id.panelAlpha);
         panelLineSpacing = findViewById(R.id.panelLineSpacing);
+        panelTopMargin = findViewById(R.id.panelTopMargin);
         inputApi = findViewById(R.id.inputApi);
         llOnOffOptions = findViewById(R.id.llOnOffOptions);
         llColorOptions = findViewById(R.id.llColorOptions);
@@ -97,6 +102,7 @@ public class DanmuFullSettingDialog extends BaseDialog {
         llSpeedOptions = findViewById(R.id.llSpeedOptions);
         llAlphaOptions = findViewById(R.id.llAlphaOptions);
         llLineSpacingOptions = findViewById(R.id.llLineSpacingOptions);
+        llTopMarginOptions = findViewById(R.id.llTopMarginOptions);
 
         // 右上角 × 关闭按钮
         TextView btnClose = findViewById(R.id.btnDanmuClose);
@@ -111,6 +117,7 @@ public class DanmuFullSettingDialog extends BaseDialog {
         initSpeedPanel();
         initAlphaPanel();
         initLineSpacingPanel();
+        initTopMarginPanel();
 
         selectItem(IDX_API);
     }
@@ -162,6 +169,7 @@ public class DanmuFullSettingDialog extends BaseDialog {
         panelSpeed.setVisibility(pos == IDX_SPEED ? View.VISIBLE : View.GONE);
         panelAlpha.setVisibility(pos == IDX_ALPHA ? View.VISIBLE : View.GONE);
         panelLineSpacing.setVisibility(pos == IDX_LINE_SPACING ? View.VISIBLE : View.GONE);
+        panelTopMargin.setVisibility(pos == IDX_TOP_MARGIN ? View.VISIBLE : View.GONE);
         tvPanelTitle.setText("弹幕" + ITEM_NAMES[pos]);
     }
 
@@ -327,6 +335,28 @@ public class DanmuFullSettingDialog extends BaseDialog {
                 highlightChipsInt(chips, LINE_SPACINGS, value);
                 // 行间距变了会影响实际行距和最大行数,需要 reload 让弹幕库重新准备
                 notifyChanged(true);
+            });
+        }
+    }
+
+    private void initTopMarginPanel() {
+        // 顶部边距(像素):与行间距同样直接显示 px 数字档位
+        int current = DanmuHelper.getTopMarginPx();
+        List<View> chips = new ArrayList<>();
+        for (Integer px : TOP_MARGINS) {
+            TextView chip = createChip(px + "px");
+            chips.add(chip);
+            llTopMarginOptions.addView(chip);
+        }
+        highlightChipsInt(chips, TOP_MARGINS, current);
+        for (int i = 0; i < TOP_MARGINS.size(); i++) {
+            final int value = TOP_MARGINS.get(i);
+            chips.get(i).setOnClickListener(v -> {
+                DanmuHelper.setTopMarginPx(value);
+                highlightChipsInt(chips, TOP_MARGINS, value);
+                // 顶部边距变更 → FrameLayout.LayoutParams.topMargin 重设 + 重算屏占比,
+                // 不需要重新 prepare 弹幕(轨道范围由 view 实际位置自动决定)。
+                notifyChanged(false);
             });
         }
     }

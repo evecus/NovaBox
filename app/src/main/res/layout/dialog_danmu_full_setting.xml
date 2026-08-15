@@ -296,6 +296,27 @@
                             android:orientation="vertical" />
                     </ScrollView>
                 </LinearLayout>
+
+                <!-- 顶部边距：弹幕 view 顶端距离播放器顶部的偏移量 -->
+                <LinearLayout
+                    android:id="@+id/panelTopMargin"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/vs_360"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/llTopMarginOptions"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+                    </ScrollView>
+                </LinearLayout>
             </FrameLayout>
         </LinearLayout>
     </LinearLayout>

@@ -63,6 +63,7 @@ public class HawkConfig {
     public static final String DANMU_SCREEN_RATIO = "danmu_screen_ratio";
     public static final String DANMU_API = "danmu_api";
     public static final String DANMU_LINE_SPACING_PX = "danmu_line_spacing_px";
+    public static final String DANMU_TOP_MARGIN_PX = "danmu_top_margin_px";
     public static boolean hotVodDelete;
 
     // 多配置管理（点播仓库/线路列表，每条格式: name\turl\troutes_json）
