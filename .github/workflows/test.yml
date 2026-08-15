@@ -57,7 +57,7 @@ jobs:
 
       - run: |
           mkdir -p apk
-          cp app/build/outputs/apk/java64/debug/*.apk apk/release.apk
+          cp app/build/outputs/apk/java64/release/*.apk apk/release.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
