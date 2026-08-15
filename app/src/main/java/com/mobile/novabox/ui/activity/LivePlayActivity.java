@@ -2795,14 +2795,15 @@ public class LivePlayActivity extends BaseActivity {
                 if (isLandscape()) {
                     lp.width = (int) (480 * density);
                 } else {
-                    lp.width = (int) (300 * density);
+                    lp.width = (int) (320 * density);
                 }
                 dialogContent.setLayoutParams(lp);
-                // 调整列表区高度
+                // 调整列表区高度:必须够容纳 6 个分组(画面比例/播放解码/超时换源/偏好设置/多源切换 等)。
+                // XML 默认 540dp 在这里也会被覆盖,所以 XML 与代码需保持一致,否则代码生效。
                 View listArea = dialogContent.getChildAt(2); // 分割线下方的列表LinearLayout
                 if (listArea != null) {
                     android.view.ViewGroup.LayoutParams llp = listArea.getLayoutParams();
-                    llp.height = (int) ((isLandscape() ? 180 : 260) * density);
+                    llp.height = (int) ((isLandscape() ? 380 : 540) * density);
                     listArea.setLayoutParams(llp);
                 }
             }

@@ -450,7 +450,6 @@
             android:layout_width="320dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:maxHeight="560dp"
             android:background="@drawable/bg_channel_list_light"
             android:orientation="vertical"
             android:padding="12dp">
@@ -484,9 +483,14 @@
             <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#FFE0E0E0" android:layout_marginBottom="8dp" />
 
             <!-- 设置列表：分组 + 选项 -->
+            <!--
+                高度:实际由代码 (showMobileSettingsDialog) 在打开时按横/竖屏动态设置
+                (竖屏 540dp,横屏 380dp)。XML 这里写 wrap_content 作默认值,
+                任何时候代码未运行也能撑开。
+            -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="480dp"
+                android:layout_height="540dp"
                 android:orientation="horizontal">
 
                 <androidx.recyclerview.widget.RecyclerView
