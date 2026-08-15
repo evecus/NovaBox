@@ -382,7 +382,8 @@ public class PlayFragment extends BaseLazyFragment {
     void selectMySubtitle() throws Exception {
         SubtitleDialog subtitleDialog = new SubtitleDialog(getActivity());
         int playerType = mVodPlayerCfg.getInt("pl");
-        if (mController.mSubtitleView.hasInternal && playerType == 1) {
+        // 内部字幕仅 IJK 播放器支持(4 档编码:2=IJK硬解,3=IJK软解)
+        if (mController.mSubtitleView.hasInternal && (playerType == 2 || playerType == 3)) {
             subtitleDialog.selectInternal.setVisibility(View.VISIBLE);
         } else {
             subtitleDialog.selectInternal.setVisibility(View.GONE);
@@ -934,7 +935,7 @@ public class PlayFragment extends BaseLazyFragment {
         }
         try {
             if (!mVodPlayerCfg.has("pl")) {
-                mVodPlayerCfg.put("pl", (sourceBean.getPlayerType() == -1) ? (int)Hawk.get(HawkConfig.PLAY_TYPE, 1) : sourceBean.getPlayerType());
+                mVodPlayerCfg.put("pl", (sourceBean.getPlayerType() == -1) ? (int)Hawk.get(HawkConfig.PLAY_TYPE, 2) : sourceBean.getPlayerType());
             }
             if (!mVodPlayerCfg.has("pr")) {
                 mVodPlayerCfg.put("pr", Hawk.get(HawkConfig.PLAY_RENDER, 0));
@@ -968,7 +969,6 @@ public class PlayFragment extends BaseLazyFragment {
                 || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)
                 && com.mobile.novabox.util.OrientationHelper.getMode() != com.mobile.novabox.util.OrientationHelper.MODE_PORT) {
             requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-            mController.mLandscapePortraitBtn.setText("竖屏");
         }
         if (mController.onBackPressed()) {
             return true;

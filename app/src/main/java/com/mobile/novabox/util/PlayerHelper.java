@@ -23,18 +23,23 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import tv.danmaku.ijk.media.player.IjkLibLoader;
-import xyz.doikki.videoplayer.player.AndroidMediaPlayerFactory;
 import xyz.doikki.videoplayer.player.PlayerFactory;
 import xyz.doikki.videoplayer.player.VideoView;
 import xyz.doikki.videoplayer.render.RenderViewFactory;
 import xyz.doikki.videoplayer.render.TextureRenderViewFactory;
 
 public class PlayerHelper {
+    /** 播放器类型:0=EXO硬解,1=EXO软解,2=IJK硬解,3=IJK软解,10+=外部播放器 */
+    public static final int PLAY_TYPE_EXO_HW = 0;
+    public static final int PLAY_TYPE_EXO_SW = 1;
+    public static final int PLAY_TYPE_IJK_HW = 2;
+    public static final int PLAY_TYPE_IJK_SW = 3;
+
     public static void updateCfg(VideoView videoView, JSONObject playerCfg) {
         updateCfg(videoView,playerCfg,-1);
     }
     public static void updateCfg(VideoView videoView, JSONObject playerCfg,int forcePlayerType) {
-        int playerType = Hawk.get(HawkConfig.PLAY_TYPE, 0);
+        int playerType = Hawk.get(HawkConfig.PLAY_TYPE, PLAY_TYPE_IJK_HW);
         int renderType = Hawk.get(HawkConfig.PLAY_RENDER, 0);
         String ijkCode = Hawk.get(HawkConfig.IJK_CODEC, "硬解码");
         int scale = Hawk.get(HawkConfig.PLAY_SCALE, 0);
@@ -47,34 +52,14 @@ public class PlayerHelper {
             e.printStackTrace();
         }
         if(forcePlayerType>=0)playerType = forcePlayerType;
+        // 兼容历史 PLAY_TYPE(老编码:1=IJK,2=EXO;0=系统播放器)。
+        // 注意:新编码 0=EXO硬解 与老 0=系统播放器冲突。老 0 历史配置直接保留为 EXO硬解,
+        // 满足"所有播放不使用系统播放器";新 0(EXO硬解)也不受影响,故不再映射 0。
+        if (playerType == 1) playerType = PLAY_TYPE_IJK_HW;        // 老 IJK -> IJK硬解
+        else if (playerType == 2) playerType = PLAY_TYPE_EXO_HW;   // 老 EXO -> EXO硬解
+
         IJKCode codec = ApiConfig.get().getIJKCodec(ijkCode);
-        PlayerFactory playerFactory;
-        if (playerType == 1) {
-            playerFactory = new PlayerFactory<IjkMediaPlayer>() {
-                @Override
-                public IjkMediaPlayer createPlayer(Context context) {
-                    return new IjkMediaPlayer(context, codec);
-                }
-            };
-            try {
-                tv.danmaku.ijk.media.player.IjkMediaPlayer.loadLibrariesOnce(new IjkLibLoader() {
-                    @Override
-                    public void loadLibrary(String s) throws UnsatisfiedLinkError, SecurityException {
-                        try {
-                            System.loadLibrary(s);
-                        } catch (Throwable th) {
-                            th.printStackTrace();
-                        }
-                    }
-                });
-            } catch (Throwable th) {
-                th.printStackTrace();
-            }
-        } else if (playerType == 2) {
-            playerFactory = ExoMediaPlayerFactory.create();
-        } else {
-            playerFactory = AndroidMediaPlayerFactory.create();
-        }
+        PlayerFactory playerFactory = buildPlayerFactory(playerType, codec);
         RenderViewFactory renderViewFactory = null;
         switch (renderType) {
             case 0:
@@ -93,34 +78,13 @@ public class PlayerHelper {
     }
 
     public static void updateCfg(VideoView videoView) {
-        int playType = Hawk.get(HawkConfig.PLAY_TYPE, 0);
-        PlayerFactory playerFactory;
-        if (playType == 1) {
-            playerFactory = new PlayerFactory<IjkMediaPlayer>() {
-                @Override
-                public IjkMediaPlayer createPlayer(Context context) {
-                    return new IjkMediaPlayer(context, null);
-                }
-            };
-            try {
-                tv.danmaku.ijk.media.player.IjkMediaPlayer.loadLibrariesOnce(new IjkLibLoader() {
-                    @Override
-                    public void loadLibrary(String s) throws UnsatisfiedLinkError, SecurityException {
-                        try {
-                            System.loadLibrary(s);
-                        } catch (Throwable th) {
-                            th.printStackTrace();
-                        }
-                    }
-                });
-            } catch (Throwable th) {
-                th.printStackTrace();
-            }
-        } else if (playType == 2) {
-            playerFactory = ExoMediaPlayerFactory.create();
-        } else {
-            playerFactory = AndroidMediaPlayerFactory.create();
-        }
+        int playType = Hawk.get(HawkConfig.PLAY_TYPE, PLAY_TYPE_IJK_HW);
+        // 兼容历史 PLAY_TYPE(1=IJK,2=EXO),0 保留为 EXO硬解
+        if (playType == 1) playType = PLAY_TYPE_IJK_HW;
+        else if (playType == 2) playType = PLAY_TYPE_EXO_HW;
+
+        IJKCode codec = ApiConfig.get().getIJKCodec("硬解码");
+        PlayerFactory playerFactory = buildPlayerFactory(playType, codec);
         int renderType = Hawk.get(HawkConfig.PLAY_RENDER, 0);
         RenderViewFactory renderViewFactory = null;
         switch (renderType) {
@@ -134,6 +98,30 @@ public class PlayerHelper {
         }
         videoView.setPlayerFactory(playerFactory);
         videoView.setRenderViewFactory(renderViewFactory);
+    }
+
+    /**
+     * 根据 PLAY_TYPE(4 档)+ IJKCodec 构建 PlayerFactory。
+     * 调用方需要自行确保 IJK 类的 codec 参数(只在 IJK 路径下生效)。
+     */
+    private static PlayerFactory buildPlayerFactory(int playerType, IJKCode codec) {
+        switch (playerType) {
+            case PLAY_TYPE_EXO_HW:
+                return ExoMediaPlayerFactory.create();
+            case PLAY_TYPE_EXO_SW:
+                return ExoMediaPlayerFactory.createSoftwareDecode();
+            case PLAY_TYPE_IJK_HW:
+            case PLAY_TYPE_IJK_SW:
+            default:
+                // IJK 路径:玩家类型本身已经决定软硬解;
+                // 仍把 codec 传给 IjkMediaPlayer 兼容老接口(默认会用 mediacodec=1/0)
+                return new PlayerFactory<IjkMediaPlayer>() {
+                    @Override
+                    public IjkMediaPlayer createPlayer(Context context) {
+                        return new IjkMediaPlayer(context, codec);
+                    }
+                };
+        }
     }
 
 
@@ -159,7 +147,7 @@ public class PlayerHelper {
         if (playersInfo.containsKey(playType)) {
             return playersInfo.get(playType);
         } else {
-            return "系统播放器";
+            return "未知播放器";
         }
     }
 
@@ -167,9 +155,12 @@ public class PlayerHelper {
     public static HashMap<Integer, String> getPlayersInfo() {
         if (mPlayersInfo == null) {
             HashMap<Integer, String> playersInfo = new HashMap<>();
-            playersInfo.put(0, "系统播放器");
-            playersInfo.put(1, "IJK播放器");
-            playersInfo.put(2, "EXO播放器");
+            // 4 档内置播放器:EXO硬解 / EXO软解 / IJK硬解 / IJK软解(已移除系统播放器)
+            playersInfo.put(PLAY_TYPE_EXO_HW, "EXO硬解");
+            playersInfo.put(PLAY_TYPE_EXO_SW, "EXO软解");
+            playersInfo.put(PLAY_TYPE_IJK_HW, "IJK硬解");
+            playersInfo.put(PLAY_TYPE_IJK_SW, "IJK软解");
+            // 第三方外部播放器保持不变
             playersInfo.put(10, "MX播放器");
             playersInfo.put(11, "Reex播放器");
             playersInfo.put(12, "Kodi播放器");
@@ -184,9 +175,10 @@ public class PlayerHelper {
     public static HashMap<Integer, Boolean> getPlayersExistInfo() {
         if (mPlayersExistInfo == null) {
             HashMap<Integer, Boolean> playersExist = new HashMap<>();
-            playersExist.put(0, true);
-            playersExist.put(1, true);
-            playersExist.put(2, true);
+            playersExist.put(PLAY_TYPE_EXO_HW, true);
+            playersExist.put(PLAY_TYPE_EXO_SW, true);
+            playersExist.put(PLAY_TYPE_IJK_HW, true);
+            playersExist.put(PLAY_TYPE_IJK_SW, true);
             playersExist.put(10, MXPlayer.getPackageInfo() != null);
             playersExist.put(11, ReexPlayer.getPackageInfo() != null);
             playersExist.put(12, Kodi.getPackageInfo() != null);

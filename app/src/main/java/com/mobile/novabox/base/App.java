@@ -66,7 +66,8 @@ public class App extends MultiDexApplication {
         Hawk.init(this).build();
         Hawk.put(HawkConfig.DEBUG_OPEN, false);
         if (!Hawk.contains(HawkConfig.PLAY_TYPE)) {
-            Hawk.put(HawkConfig.PLAY_TYPE, 1);
+            // 首次安装默认 4 档中的 IJK硬解(2):0=EXO硬解 1=EXO软解 2=IJK硬解 3=IJK软解
+            Hawk.put(HawkConfig.PLAY_TYPE, 2);
         }
     }
 

@@ -6,7 +6,9 @@ import android.util.Pair;
 import com.mobile.novabox.util.AudioTrackMemory;
 import com.mobile.novabox.util.LOG;
 import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.RenderersFactory;
 import com.google.android.exoplayer2.Tracks;
 import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.TrackGroupArray;
@@ -21,10 +23,46 @@ import xyz.doikki.videoplayer.exo.ExoMediaPlayer;
 public class ExoPlayer extends ExoMediaPlayer {
 
     private static AudioTrackMemory memory;
+    /** 是否启用 ffmpeg 软解(EXTENSION_RENDERER_MODE_PREFER)。false=纯硬解,优先 MediaCodec。 */
+    private final boolean softwareDecode;
 
     public ExoPlayer(Context context) {
+        this(context, false);
+    }
+
+    public ExoPlayer(Context context, boolean softwareDecode) {
         super(context);
+        this.softwareDecode = softwareDecode;
         memory = AudioTrackMemory.getInstance(context);
+    }
+
+    @Override
+    public void initPlayer() {
+        // 软解模式:设置 RenderersFactory 走 FFmpeg 扩展渲染器(需 exoplayer-ffmpeg-extension 依赖)
+        if (softwareDecode) {
+            setRenderersFactory(buildSoftDecodeRenderersFactory());
+        }
+        super.initPlayer();
+        LOG.i("echo-exo-init: softwareDecode=" + softwareDecode);
+    }
+
+    /**
+     * 软解 RenderersFactory:优先使用 FFmpeg 扩展渲染器(extensionRendererMode=PREFER),
+     * 并允许 MediaCodec 硬解失败时自动回退到软解。
+     */
+    private RenderersFactory buildSoftDecodeRenderersFactory() {
+        DefaultRenderersFactory factory = new DefaultRenderersFactory(mAppContext)
+                .setEnableDecoderFallback(true)
+                .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER);
+        try {
+            // 部分 ExoPlayer 版本提供,禁用 MediaCodec 异步队列优化,避免与软解兼容性问题
+            java.lang.reflect.Method method = DefaultRenderersFactory.class.getMethod("forceDisableMediaCodecAsynchronousQueueing");
+            method.invoke(factory);
+            LOG.i("echo-exo-disable-async-codec-queue");
+        } catch (Throwable th) {
+            LOG.i("echo-exo-disable-async-codec-queue-skip:" + th.getClass().getSimpleName());
+        }
+        return factory;
     }
 
     public TrackInfo getTrackInfo() {

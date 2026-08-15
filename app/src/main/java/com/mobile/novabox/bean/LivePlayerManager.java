@@ -20,7 +20,14 @@ public class LivePlayerManager {
     public void init(VideoView videoView) {
         try {
             currentApi=Hawk.get(HawkConfig.LIVE_API_URL,"");
-            defaultPlayerConfig.put("pl", Hawk.get(HawkConfig.LIVE_PLAY_TYPE, Hawk.get(HawkConfig.PLAY_TYPE, 0)));
+            // 4 档 PLAY_TYPE:0=EXO硬解,1=EXO软解,2=IJK硬解,3=IJK软解;默认 IJK硬解
+            // 兼容历史 PLAY_TYPE(老编码:1=IJK,2=EXO)。老 0(系统播放器)保留为 0=EXO硬解,
+            // 满足"所有播放不使用系统播放器";新 0=EXO硬解 不受影响。
+            int playType = Hawk.get(HawkConfig.LIVE_PLAY_TYPE, Hawk.get(HawkConfig.PLAY_TYPE, 2));
+            if (playType == 1) playType = 2;        // 老 IJK -> IJK硬解
+            else if (playType == 2) playType = 0;    // 老 EXO -> EXO硬解
+            if (playType < 0 || playType > 3) playType = 2;
+            defaultPlayerConfig.put("pl", playType);
             defaultPlayerConfig.put("ijk", Hawk.get(HawkConfig.IJK_CODEC, "硬解码"));
             defaultPlayerConfig.put("pr", Hawk.get(HawkConfig.PLAY_RENDER, 0));
             defaultPlayerConfig.put("sc", Hawk.get(HawkConfig.LIVE_PLAY_SCALE, 0));
@@ -81,20 +88,17 @@ public class LivePlayerManager {
         int playerTypeIndex = 0;
         try {
             int playerType = currentPlayerConfig.getInt("pl");
-            String ijkCodec = currentPlayerConfig.getString("ijk");
-            switch (playerType) {
-                case 0:
-                    playerTypeIndex = 0;
-                    break;
-                case 1:
-                    if (ijkCodec.equals("硬解码"))
-                        playerTypeIndex = 1;
-                    else
-                        playerTypeIndex = 2;
-                    break;
-                case 2:
-                    playerTypeIndex = 3;
-                    break;
+            // 4 档直接对应 position(EXO硬解=0, EXO软解=1, IJK硬解=2, IJK软解=3)
+            // 兼容历史 PLAY_TYPE:0=系统 -> IJK硬解(2),1=IJK -> IJK硬解(2),2=EXO -> EXO硬解(0)
+            if (playerType == 0 || playerType > 3) {
+                // 历史 0=系统播放器,新 0=EXO硬解;历史配置已归一化,这里按 EXO硬解(0)显示
+                playerTypeIndex = 0;
+            } else if (playerType == 1) {
+                playerTypeIndex = 1; // EXO软解
+            } else if (playerType == 2) {
+                playerTypeIndex = 2; // IJK硬解
+            } else {
+                playerTypeIndex = 3; // IJK软解
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -115,21 +119,22 @@ public class LivePlayerManager {
         channelName=currentCfgKey(channelName);
         JSONObject playerConfig = currentPlayerConfig;
         try {
+            // 4 档位置直接映射到 PLAY_TYPE(0=EXO硬解,1=EXO软解,2=IJK硬解,3=IJK软解)
             switch (playerType) {
                 case 0:
-                    playerConfig.put("pl", 0);
-                    playerConfig.put("ijk", "软解码");
+                    playerConfig.put("pl", 0); // EXO硬解
+                    playerConfig.put("ijk", "硬解码");
                     break;
                 case 1:
-                    playerConfig.put("pl", 1);
+                    playerConfig.put("pl", 1); // EXO软解
                     playerConfig.put("ijk", "硬解码");
                     break;
                 case 2:
-                    playerConfig.put("pl", 1);
-                    playerConfig.put("ijk", "软解码");
+                    playerConfig.put("pl", 2); // IJK硬解
+                    playerConfig.put("ijk", "硬解码");
                     break;
                 case 3:
-                    playerConfig.put("pl", 2);
+                    playerConfig.put("pl", 3); // IJK软解
                     playerConfig.put("ijk", "软解码");
                     break;
             }
@@ -155,7 +160,15 @@ public class LivePlayerManager {
         }
         try {
             int playerType = playerConfig.getInt("pl");
-            int switchPlayerType = (playerType == 1) ? 2 : (playerType == 2) ? 1 : playerType;
+            // 4 档内同内核切换:EXO硬解(0)<->EXO软解(1),IJK硬解(2)<->IJK软解(3)
+            int switchPlayerType;
+            switch (playerType) {
+                case 0: switchPlayerType = 1; break; // EXO硬解 -> EXO软解
+                case 1: switchPlayerType = 0; break; // EXO软解 -> EXO硬解
+                case 2: switchPlayerType = 3; break; // IJK硬解 -> IJK软解
+                case 3: switchPlayerType = 2; break; // IJK软解 -> IJK硬解
+                default: switchPlayerType = 0; break;
+            }
             if (switchPlayerType == playerType) {
                 LOG.i("echo-liveSwitchPlayer: skip unsupported playerType=" + playerType);
                 return false;

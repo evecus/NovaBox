@@ -21,7 +21,6 @@ import com.mobile.novabox.R;
 import com.mobile.novabox.api.ApiConfig;
 import com.mobile.novabox.base.BaseActivity;
 import com.mobile.novabox.base.BaseLazyFragment;
-import com.mobile.novabox.bean.IJKCode;
 import com.mobile.novabox.bean.SourceBean;
 import com.mobile.novabox.event.RefreshEvent;
 import com.mobile.novabox.player.thirdparty.RemoteTVBox;
@@ -73,7 +72,6 @@ public class ModelSettingFragment extends BaseLazyFragment {
     private static final int REQUEST_LOCAL_CONFIG = 1001;
     private static final int REQUEST_PICK_WALLPAPER = 1002;
     private TextView tvDebugOpen;
-    private TextView tvMediaCodec;
     private TextView tvParseWebView;
     private TextView tvPlay;
     private TextView tvRender;
@@ -118,7 +116,6 @@ public class ModelSettingFragment extends BaseLazyFragment {
         tvAutoSwitchLineText.setText(Hawk.get(HawkConfig.AUTO_SWITCH_LINE, true) ? "开启" : "关闭");
         tvDebugOpen = findViewById(R.id.tvDebugOpen);
         tvParseWebView = findViewById(R.id.tvParseWebView);
-        tvMediaCodec = findViewById(R.id.tvMediaCodec);
         tvPlay = findViewById(R.id.tvPlay);
         tvRender = findViewById(R.id.tvRenderType);
         llApi = findViewById(R.id.llApi);
@@ -129,7 +126,6 @@ public class ModelSettingFragment extends BaseLazyFragment {
         tvHomeRec = findViewById(R.id.tvHomeRec);
         tvIjkCachePlay = findViewById(R.id.tvIjkCachePlay);
         tvFullscreenOrientation = findViewById(R.id.tvFullscreenOrientation);
-        tvMediaCodec.setText(Hawk.get(HawkConfig.IJK_CODEC, "硬解码"));
         tvDebugOpen.setText(Hawk.get(HawkConfig.DEBUG_OPEN, false) ? "已打开" : "已关闭");
         tvParseWebView.setText(Hawk.get(HawkConfig.PARSE_WEBVIEW, true) ? "系统自带" : "XWalkView");
         refreshApiUrlLabel();
@@ -137,7 +133,7 @@ public class ModelSettingFragment extends BaseLazyFragment {
 
         tvDns.setText(OkGoHelper.dnsHttpsList.get(Hawk.get(HawkConfig.DOH_URL, 0)));
         tvHomeRec.setText(getHomeRecName(Hawk.get(HawkConfig.HOME_REC, 0)));
-        tvPlay.setText(PlayerHelper.getPlayerName(Hawk.get(HawkConfig.PLAY_TYPE, 0)));
+        tvPlay.setText(PlayerHelper.getPlayerName(Hawk.get(HawkConfig.PLAY_TYPE, 2)));
         tvRender.setText(PlayerHelper.getRenderName(Hawk.get(HawkConfig.PLAY_RENDER, 0)));
         tvIjkCachePlay.setText(Hawk.get(HawkConfig.IJK_CACHE_PLAY, false) ? "开启" : "关闭");
         // 全屏播放方向：仅手机端显示，平板端隐藏
@@ -268,55 +264,11 @@ public class ModelSettingFragment extends BaseLazyFragment {
         });
 
 
-        findViewById(R.id.llMediaCodec).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                List<IJKCode> ijkCodes = ApiConfig.get().getIjkCodes();
-                if (ijkCodes == null || ijkCodes.size() == 0)
-                    return;
-                FastClickCheckUtil.check(v);
-
-                int defaultPos = 0;
-                String ijkSel = Hawk.get(HawkConfig.IJK_CODEC, "硬解码");
-                for (int j = 0; j < ijkCodes.size(); j++) {
-                    if (ijkSel.equals(ijkCodes.get(j).getName())) {
-                        defaultPos = j;
-                        break;
-                    }
-                }
-
-                SelectDialog<IJKCode> dialog = new SelectDialog<>(mActivity);
-                dialog.setTip("请选择IJK解码");
-                dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<IJKCode>() {
-                    @Override
-                    public void click(IJKCode value, int pos) {
-                        value.selected(true);
-                        tvMediaCodec.setText(value.getName());
-                    }
-
-                    @Override
-                    public String getDisplay(IJKCode val) {
-                        return val.getName();
-                    }
-                }, new DiffUtil.ItemCallback<IJKCode>() {
-                    @Override
-                    public boolean areItemsTheSame(@NonNull @NotNull IJKCode oldItem, @NonNull @NotNull IJKCode newItem) {
-                        return oldItem == newItem;
-                    }
-
-                    @Override
-                    public boolean areContentsTheSame(@NonNull @NotNull IJKCode oldItem, @NonNull @NotNull IJKCode newItem) {
-                        return oldItem.getName().equals(newItem.getName());
-                    }
-                }, ijkCodes, defaultPos);
-                dialog.show();
-            }
-        });
         findViewById(R.id.llPlay).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 FastClickCheckUtil.check(v);
-                int playerType = Hawk.get(HawkConfig.PLAY_TYPE, 0);
+                int playerType = Hawk.get(HawkConfig.PLAY_TYPE, 2);
                 int defaultPos = 0;
                 ArrayList<Integer> players = PlayerHelper.getExistPlayerTypes();
                 ArrayList<Integer> renders = new ArrayList<>();
