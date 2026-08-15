@@ -522,171 +522,25 @@ public class ModelSettingFragment extends BaseLazyFragment {
         tvApiLine.setText(label);
     }
 
+
+    // 线路选择弹窗已抽到 com.mobile.novabox.ui.dialog.RouteSelectDialog,与首页顶部栏"线路"按钮共用。
     private void showRouteSelectDialog() {
-        ArrayList<String> vodConfigs = Hawk.get(HawkConfig.VOD_CONFIG_LIST, new ArrayList<String>());
-        if (vodConfigs.isEmpty()) {
-            Toast.makeText(mContext, "请先在\"配置地址\"中添加配置", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // 使用与 BaseDialog 相同的透明样式，避免白边
-        android.app.Dialog dialog = new android.app.Dialog(mActivity, R.style.CustomDialogStyle);
-        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.dialog_route_select);
-        dialog.setCanceledOnTouchOutside(true);
-
-        android.view.Window window = dialog.getWindow();
-        if (window != null) {
-            // MATCH_PARENT 让 FrameLayout 铺满，内层 LinearLayout 自行居中 / 固定宽
-            window.setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,
-                    android.view.WindowManager.LayoutParams.MATCH_PARENT);
-            window.setGravity(android.view.Gravity.CENTER);
-            window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
-        }
-
-        androidx.recyclerview.widget.RecyclerView rvConfigs = dialog.findViewById(R.id.rvConfigs);
-        androidx.recyclerview.widget.RecyclerView rvRoutes = dialog.findViewById(R.id.rvRoutes);
-        rvConfigs.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(mActivity));
-        rvRoutes.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(mActivity));
-
-        // State
-        int[] selectedConfig = {0};
-        String[] selectedRouteUrl = {""};
-
-        // Route adapter
-        RouteAdapter routeAdapter = new RouteAdapter(new ArrayList<>(), selectedRouteUrl);
-        rvRoutes.setAdapter(routeAdapter);
-
-        Runnable refreshRoutes = () -> {
-            if (selectedConfig[0] < vodConfigs.size()) {
-                List<String[]> routes = ConfigManagerActivity.getRoutes(vodConfigs.get(selectedConfig[0]));
-                routeAdapter.updateData(routes);
+        com.mobile.novabox.ui.dialog.RouteSelectDialog.show(mActivity, new com.mobile.novabox.ui.dialog.RouteSelectDialog.OnRouteSelectedListener() {
+            @Override
+            public void onSelected(String url) {
+                String oldApi = Hawk.get(HawkConfig.API_URL, "");
+                Hawk.put(HawkConfig.API_URL, url);
+                HistoryHelper.setApiHistory(url);
+                tvApi.setText(url);
+                refreshApiUrlLabel();
+                findAndRefreshApiLineLabel();
+                if (!oldApi.equals(url)) {
+                    restartAppAfterConfigChanged();
+                }
             }
-        };
-
-        // Config adapter
-        ConfigLeftAdapter configLeftAdapter = new ConfigLeftAdapter(vodConfigs, selectedConfig, () -> {
-            refreshRoutes.run();
+            @Override
+            public void onCancel() { /* no-op */ }
         });
-        rvConfigs.setAdapter(configLeftAdapter);
-        refreshRoutes.run();
-
-        dialog.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
-        dialog.findViewById(R.id.btnConfirm).setOnClickListener(v -> {
-            String url = selectedRouteUrl[0];
-            if (url.isEmpty()) {
-                Toast.makeText(mContext, "请选择一条线路", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            String oldApi = Hawk.get(HawkConfig.API_URL, "");
-            Hawk.put(HawkConfig.API_URL, url);
-            HistoryHelper.setApiHistory(url);
-            tvApi.setText(url);
-            refreshApiUrlLabel();
-            findAndRefreshApiLineLabel();
-            dialog.dismiss();
-            if (!oldApi.equals(url)) {
-                restartAppAfterConfigChanged();
-            }
-        });
-
-        dialog.show();
-    }
-
-    // ── Inner adapters for route select dialog ──
-
-    class ConfigLeftAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<ConfigLeftAdapter.VH> {
-        private final List<String> data;
-        private final int[] selectedConfig;
-        private final Runnable onSelected;
-
-        ConfigLeftAdapter(List<String> data, int[] selectedConfig, Runnable onSelected) {
-            this.data = data;
-            this.selectedConfig = selectedConfig;
-            this.onSelected = onSelected;
-        }
-
-        @Override
-        public VH onCreateViewHolder(android.view.ViewGroup parent, int viewType) {
-            android.widget.TextView tv = new android.widget.TextView(parent.getContext());
-            tv.setPadding(20, 28, 20, 28);
-            tv.setTextSize(13);
-            tv.setTextColor(0xFF000000);
-            tv.setLayoutParams(new androidx.recyclerview.widget.RecyclerView.LayoutParams(
-                    androidx.recyclerview.widget.RecyclerView.LayoutParams.MATCH_PARENT,
-                    androidx.recyclerview.widget.RecyclerView.LayoutParams.WRAP_CONTENT));
-            return new VH(tv);
-        }
-
-        @Override
-        public void onBindViewHolder(VH holder, int position) {
-            String name = ConfigManagerActivity.getEntryName(data.get(position));
-            holder.tv.setText(name);
-            boolean sel = selectedConfig[0] == position;
-            holder.tv.setBackgroundColor(sel ? 0x1A1890FF : 0x00000000);
-            holder.tv.setTextColor(sel ? 0xFF1890FF : 0xFF333333);
-            holder.tv.setOnClickListener(v -> {
-                selectedConfig[0] = position;
-                notifyDataSetChanged();
-                onSelected.run();
-            });
-        }
-
-        @Override
-        public int getItemCount() { return data.size(); }
-
-        class VH extends androidx.recyclerview.widget.RecyclerView.ViewHolder {
-            android.widget.TextView tv;
-            VH(android.widget.TextView v) { super(v); tv = v; }
-        }
-    }
-
-    class RouteAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<RouteAdapter.VH> {
-        private List<String[]> data;
-        private final String[] selectedUrl;
-
-        RouteAdapter(List<String[]> data, String[] selectedUrl) {
-            this.data = data;
-            this.selectedUrl = selectedUrl;
-        }
-
-        void updateData(List<String[]> newData) {
-            this.data = newData;
-            notifyDataSetChanged();
-        }
-
-        @Override
-        public VH onCreateViewHolder(android.view.ViewGroup parent, int viewType) {
-            android.widget.TextView tv = new android.widget.TextView(parent.getContext());
-            tv.setPadding(24, 28, 24, 28);
-            tv.setTextSize(13);
-            tv.setTextColor(0xFF333333);
-            tv.setLayoutParams(new androidx.recyclerview.widget.RecyclerView.LayoutParams(
-                    androidx.recyclerview.widget.RecyclerView.LayoutParams.MATCH_PARENT,
-                    androidx.recyclerview.widget.RecyclerView.LayoutParams.WRAP_CONTENT));
-            return new VH(tv);
-        }
-
-        @Override
-        public void onBindViewHolder(VH holder, int position) {
-            String[] route = data.get(position);
-            holder.tv.setText(route[0]);
-            boolean sel = route[1].equals(selectedUrl[0]);
-            holder.tv.setBackgroundColor(sel ? 0x22F5C518 : 0x00000000);
-            holder.tv.setTextColor(sel ? 0xFFB8860B : 0xFF333333);
-            holder.tv.setOnClickListener(v -> {
-                selectedUrl[0] = route[1];
-                notifyDataSetChanged();
-            });
-        }
-
-        @Override
-        public int getItemCount() { return data == null ? 0 : data.size(); }
-
-        class VH extends androidx.recyclerview.widget.RecyclerView.ViewHolder {
-            android.widget.TextView tv;
-            VH(android.widget.TextView v) { super(v); tv = v; }
-        }
     }
 
     private void updateApiRowWeight(boolean showLine) {

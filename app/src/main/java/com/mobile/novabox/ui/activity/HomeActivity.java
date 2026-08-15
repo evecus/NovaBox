@@ -159,6 +159,12 @@ public class HomeActivity extends BaseActivity {
             showSiteSwitch();
         });
 
+        // 线路选择按钮(复用设置界面的线路选择弹窗)
+        findViewById(R.id.btnRoute).setOnClickListener(v -> {
+            FastClickCheckUtil.check(v);
+            showRouteSelect();
+        });
+
         // 搜索框
         findViewById(R.id.btnSearch).setOnClickListener(v -> {
             FastClickCheckUtil.check(v);
@@ -668,6 +674,25 @@ public class HomeActivity extends BaseActivity {
         rv.post(() -> rv.scrollToPosition(Math.max(0, selectedIdx[0] - 2)));
         mSiteSwitchDialog = dialog;
         dialog.show();
+    }
+
+    private void showRouteSelect() {
+        // 复用设置页的线路选择弹窗,与用户在设置里看到的一致。
+        // 选完后切换 API_URL,保存历史,并重启 HomeActivity 让所有 fragment/player 重新加载。
+        com.mobile.novabox.ui.dialog.RouteSelectDialog.show(this, new com.mobile.novabox.ui.dialog.RouteSelectDialog.OnRouteSelectedListener() {
+            @Override
+            public void onSelected(String url) {
+                String oldApi = Hawk.get(HawkConfig.API_URL, "");
+                Hawk.put(HawkConfig.API_URL, url);
+                com.mobile.novabox.util.HistoryHelper.setApiHistory(url);
+                if (!oldApi.equals(url)) {
+                    // 切换线路后重启当前页面让所有 fragment 重新加载
+                    refreshHome();
+                }
+            }
+            @Override
+            public void onCancel() { /* no-op */ }
+        });
     }
 
     private void refreshHome()

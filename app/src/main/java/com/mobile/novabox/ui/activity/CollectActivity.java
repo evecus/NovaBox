@@ -80,7 +80,10 @@ public class CollectActivity extends BaseActivity {
         TextView tvTitle = findViewById(R.id.tvTitle);
         if (tvTitle != null) tvTitle.setTextColor(Color.BLACK);
         // 提示文字常驻显示
-        if (tvDelTip != null) tvDelTip.setVisibility(View.VISIBLE);
+        if (tvDelTip != null) {
+            tvDelTip.setTextColor(Color.BLACK);   // 强制黑色,覆盖 DayNight 主题反转
+            tvDelTip.setVisibility(View.VISIBLE);
+        }
         tvClear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

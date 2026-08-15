@@ -116,7 +116,7 @@
         app:layout_constraintLeft_toRightOf="@+id/bottomNavLayout"
         app:layout_constraintRight_toRightOf="parent">
 
-        <!-- 顶部栏：站源切换 + 搜索框 + 收藏 + 历史 -->
+        <!-- 顶部栏：线路 + 站源切换 + 搜索框 + 收藏 + 历史 -->
         <LinearLayout
             android:id="@+id/topLayout"
             android:layout_width="0dp"
@@ -131,11 +131,41 @@
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
+            <!-- 线路选择按钮 -->
+            <LinearLayout
+                android:id="@+id/btnRoute"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:background="@drawable/shape_source_btn_bg">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="线路"
+                    android:textColor="@android:color/black"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"/>
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginLeft="4dp"
+                    android:alpha="0.7"
+                    android:src="@drawable/icon_back"
+                    android:tint="@android:color/black"
+                    android:rotation="-90"/>
+            </LinearLayout>
+
             <!-- 站源切换按钮 -->
             <LinearLayout
                 android:id="@+id/btnSiteSwitch"
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
+                android:layout_marginLeft="8dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingLeft="10dp"
@@ -161,7 +191,7 @@
                     android:rotation="-90"/>
             </LinearLayout>
 
-            <!-- 搜索框（占满剩余空间） -->
+            <!-- 搜索框(占满剩余空间,加宽) -->
             <LinearLayout
                 android:id="@+id/btnSearch"
                 android:layout_width="0dp"
@@ -171,22 +201,22 @@
                 android:layout_marginRight="8dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingLeft="16dp"
-                android:paddingRight="16dp"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp"
                 android:background="@drawable/shape_search_bar_bg">
                 <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
                     android:alpha="0.7"
                     android:tint="@android:color/black"
                     android:src="@drawable/icon_search"/>
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="10dp"
+                    android:layout_marginLeft="8dp"
                     android:text="搜索影视..."
                     android:textColor="#AA000000"
-                    android:textSize="15sp"/>
+                    android:textSize="14sp"/>
             </LinearLayout>
 
             <!-- 收藏图标 -->
@@ -204,7 +234,7 @@
                 android:id="@+id/btnHistory"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:layout_marginLeft="6dp"
+                android:layout_marginLeft="4dp"
                 android:padding="8dp"
                 android:src="@drawable/icon_history"
                 android:tint="@android:color/black"

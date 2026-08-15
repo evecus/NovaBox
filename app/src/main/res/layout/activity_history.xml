@@ -58,7 +58,7 @@
         android:layout_height="32dp"
         android:gravity="center"
         android:text="长按记录逐条删除"
-        android:textColor="#99000000"
+        android:textColor="@android:color/black"
         android:textSize="13sp"
         android:visibility="visible"/>
 
