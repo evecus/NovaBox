@@ -15,8 +15,12 @@ import android.widget.Toast;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.mobile.novabox.R;
+import com.mobile.novabox.api.ApiConfig;
 import com.mobile.novabox.base.BaseActivity;
+import com.mobile.novabox.bean.LiveSourceEntry;
 import com.mobile.novabox.util.HawkConfig;
 import com.orhanobut.hawk.Hawk;
 
@@ -25,8 +29,9 @@ import java.util.List;
 
 /**
  * 直播地址管理页面
- * 每条 entry 格式: "name\turl"
- * 支持选中一条作为当前直播源（写入 LIVE_API_URL）
+ * 用户配置的每条 entry 格式: "name\turl"
+ * 除用户配置外，还会展示点播 JSON 内嵌的 lives 直播源（带"点播"标记，仅可选中，不可编辑、删除）
+ * 支持选中一条作为当前直播源：用户配置写入 LIVE_API_URL；点播来源写入 live_group_index 并清空 LIVE_API_URL
  */
 public class LiveSourceActivity extends BaseActivity {
 
@@ -34,7 +39,7 @@ public class LiveSourceActivity extends BaseActivity {
 
     private RecyclerView recyclerView;
     private LiveAdapter adapter;
-    private List<String> sourceList = new ArrayList<>();
+    private List<LiveSourceEntry> sourceList = new ArrayList<>();
     private TextView tvEmpty;
     /** 当前选中的条目索引，-1 表示无 */
     private int selectedIndex = -1;
@@ -57,17 +62,7 @@ public class LiveSourceActivity extends BaseActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         loadList();
-        // 根据已保存的 LIVE_API_URL 还原 selectedIndex
-        String currentUrl = Hawk.get(HawkConfig.LIVE_API_URL, "");
-        selectedIndex = -1;
-        if (!currentUrl.isEmpty()) {
-            for (int i = 0; i < sourceList.size(); i++) {
-                if (currentUrl.equals(getEntryUrl(sourceList.get(i)))) {
-                    selectedIndex = i;
-                    break;
-                }
-            }
-        }
+        restoreSelectedIndex();
         adapter = new LiveAdapter(sourceList);
         recyclerView.setAdapter(adapter);
         updateEmpty();
@@ -75,12 +70,62 @@ public class LiveSourceActivity extends BaseActivity {
 
     private void loadList() {
         sourceList.clear();
+        // 第一部分：用户配置的直播地址
         ArrayList<String> saved = Hawk.get(HawkConfig.LIVE_SOURCE_LIST, new ArrayList<String>());
-        sourceList.addAll(saved);
+        for (String entry : saved) {
+            String[] parts = splitEntry(entry);
+            sourceList.add(new LiveSourceEntry(false, parts[0], parts[1], -1));
+        }
+        // 第二部分：点播 JSON 内嵌 lives 直播源（仅可选中）
+        JsonArray livesGroups = Hawk.get(HawkConfig.LIVE_GROUP_LIST, new JsonArray());
+        for (int i = 0; i < livesGroups.size(); i++) {
+            JsonObject livesObj = livesGroups.get(i).getAsJsonObject();
+            String name = livesObj.has("name") ? livesObj.get("name").getAsString() : ("线路" + (i + 1));
+            sourceList.add(new LiveSourceEntry(true, name, "", i));
+        }
     }
 
+    /** 仅保存用户配置部分，点播来源不持久化 */
     private void saveList() {
-        Hawk.put(HawkConfig.LIVE_SOURCE_LIST, new ArrayList<>(sourceList));
+        ArrayList<String> userList = new ArrayList<>();
+        for (LiveSourceEntry e : sourceList) {
+            if (e.isFromVod()) continue;
+            if (e.getName().isEmpty() && !e.getUrl().isEmpty()) {
+                userList.add(e.getUrl()); // 兼容历史遗留的纯 URL 条目
+            } else {
+                userList.add(e.getName() + SEP + e.getUrl());
+            }
+        }
+        Hawk.put(HawkConfig.LIVE_SOURCE_LIST, userList);
+    }
+
+    private void restoreSelectedIndex() {
+        selectedIndex = -1;
+        String currentUrl = Hawk.get(HawkConfig.LIVE_API_URL, "");
+        if (!TextUtils.isEmpty(currentUrl)) {
+            // 当前在使用用户配置的直播地址
+            for (int i = 0; i < sourceList.size(); i++) {
+                LiveSourceEntry e = sourceList.get(i);
+                if (!e.isFromVod() && currentUrl.equals(e.getUrl())) {
+                    selectedIndex = i;
+                    return;
+                }
+            }
+            return;
+        }
+        // LIVE_API_URL 为空：当前在使用点播 lives 源（live_group_index 命中）
+        JsonArray livesGroups = Hawk.get(HawkConfig.LIVE_GROUP_LIST, new JsonArray());
+        int liveGroupIndex = ApiConfig.getLiveGroupIndex();
+        if (livesGroups != null && livesGroups.size() > 0
+                && liveGroupIndex >= 0 && liveGroupIndex < livesGroups.size()) {
+            for (int i = 0; i < sourceList.size(); i++) {
+                LiveSourceEntry e = sourceList.get(i);
+                if (e.isFromVod() && e.getSourceIndex() == liveGroupIndex) {
+                    selectedIndex = i;
+                    return;
+                }
+            }
+        }
     }
 
     private void updateEmpty() {
@@ -115,8 +160,7 @@ public class LiveSourceActivity extends BaseActivity {
                 return;
             }
             dialog.dismiss();
-            String entry = name + SEP + url;
-            sourceList.add(entry);
+            sourceList.add(new LiveSourceEntry(false, name, url, -1));
             saveList();
             adapter.notifyDataSetChanged();
             updateEmpty();
@@ -128,30 +172,56 @@ public class LiveSourceActivity extends BaseActivity {
     }
 
     /**
-     * 若当前尚未选中任何直播源（LIVE_API_URL 为空），
-     * 则自动选中列表中最早添加的那条直播源（下标0）。
+     * 若当前尚未选中任何直播源，则自动选中列表中最早添加的那条用户直播源（下标0）。
+     * 若当前正在使用点播 lives 源，则不做改动。
      */
     private void autoApplyFirstSourceIfNone() {
         String current = Hawk.get(HawkConfig.LIVE_API_URL, "");
         if (!TextUtils.isEmpty(current)) {
-            return; // 已有选中的直播源，不做改动
+            return; // 已有选中的直播地址，不做改动
+        }
+        // LIVE_API_URL 为空：若当前正在使用点播 lives 源则不动
+        JsonArray livesGroups = Hawk.get(HawkConfig.LIVE_GROUP_LIST, new JsonArray());
+        int liveGroupIndex = ApiConfig.getLiveGroupIndex();
+        if (livesGroups != null && livesGroups.size() > 0
+                && liveGroupIndex >= 0 && liveGroupIndex < livesGroups.size()) {
+            return;
         }
         if (sourceList.isEmpty()) {
             return;
         }
-        selectedIndex = 0;
-        String firstUrl = getEntryUrl(sourceList.get(0));
-        if (TextUtils.isEmpty(firstUrl)) {
+        LiveSourceEntry first = sourceList.get(0);
+        if (first.isFromVod() || TextUtils.isEmpty(first.getUrl())) {
             return;
         }
-        Hawk.put(HawkConfig.LIVE_API_URL, firstUrl);
+        selectedIndex = 0;
+        Hawk.put(HawkConfig.LIVE_API_URL, first.getUrl());
         adapter.notifyItemChanged(0);
     }
 
-    /** 选中某条目作为当前直播源，更新 LIVE_API_URL */
+    /** 选中某条目作为当前直播源 */
     private void selectSource(int position) {
         if (position < 0 || position >= sourceList.size()) return;
+        LiveSourceEntry entry = sourceList.get(position);
         int oldSelected = selectedIndex;
+        if (entry.isFromVod()) {
+            // 点播 lives 来源：仅可选中，不可取消
+            if (oldSelected == position) {
+                Toast.makeText(this, "当前正在使用点播线路：" + entry.getName(), Toast.LENGTH_SHORT).show();
+                return;
+            }
+            JsonArray livesGroups = Hawk.get(HawkConfig.LIVE_GROUP_LIST, new JsonArray());
+            int vodIndex = entry.getSourceIndex();
+            if (livesGroups == null || vodIndex < 0 || vodIndex >= livesGroups.size()) return;
+            selectedIndex = position;
+            Hawk.put(HawkConfig.LIVE_API_URL, ""); // 使用点播 lives，清空独立直播地址
+            ApiConfig.setLiveGroupIndex(vodIndex);
+            if (oldSelected >= 0 && oldSelected < sourceList.size()) adapter.notifyItemChanged(oldSelected);
+            adapter.notifyItemChanged(position);
+            Toast.makeText(this, "已选中点播线路：" + entry.getName(), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        // 用户配置来源
         if (oldSelected == position) {
             // 再次点击取消选中
             selectedIndex = -1;
@@ -161,34 +231,29 @@ public class LiveSourceActivity extends BaseActivity {
             return;
         }
         selectedIndex = position;
-        String url = getEntryUrl(sourceList.get(position));
-        String name = getEntryName(sourceList.get(position));
-        Hawk.put(HawkConfig.LIVE_API_URL, url);
-        // 刷新旧选中项和新选中项
-        if (oldSelected >= 0 && oldSelected < sourceList.size()) {
-            adapter.notifyItemChanged(oldSelected);
-        }
+        Hawk.put(HawkConfig.LIVE_API_URL, entry.getUrl());
+        Hawk.put(ApiConfig.getLiveGroupIndexKey(), 0); // 重置该直播地址对应的线路选择下标
+        if (oldSelected >= 0 && oldSelected < sourceList.size()) adapter.notifyItemChanged(oldSelected);
         adapter.notifyItemChanged(position);
-        Toast.makeText(this, "已选中直播源：" + name, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "已选中直播源：" + entry.getName(), Toast.LENGTH_SHORT).show();
     }
 
-    public static String getEntryName(String entry) {
-        if (entry == null) return "";
-        String[] parts = entry.split("\t", 2);
-        return parts.length > 0 ? parts[0] : "";
-    }
-
-    public static String getEntryUrl(String entry) {
-        if (entry == null) return "";
-        String[] parts = entry.split("\t", 2);
-        return parts.length > 1 ? parts[1] : "";
+    /** 解析 entry 字符串为 {name, url}；纯 URL 条目返回 {"", url} */
+    private static String[] splitEntry(String entry) {
+        if (entry == null) return new String[]{"", ""};
+        if (entry.contains("\t")) {
+            String[] parts = entry.split("\t", 2);
+            return new String[]{parts[0], parts.length > 1 ? parts[1] : ""};
+        }
+        return new String[]{"", entry};
     }
 
     private void showEditDialog(int position) {
         if (position < 0 || position >= sourceList.size()) return;
-        String entry = sourceList.get(position);
-        String oldName = getEntryName(entry);
-        String oldUrl = getEntryUrl(entry);
+        LiveSourceEntry entry = sourceList.get(position);
+        if (entry.isFromVod()) return; // 点播来源不可编辑
+        String oldName = entry.getName();
+        String oldUrl = entry.getUrl();
 
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -221,8 +286,7 @@ public class LiveSourceActivity extends BaseActivity {
                 return;
             }
             dialog.dismiss();
-            String newEntry = name + SEP + url;
-            sourceList.set(position, newEntry);
+            sourceList.set(position, new LiveSourceEntry(false, name, url, -1));
             saveList();
             // 若修改的是当前选中项，同步更新 LIVE_API_URL
             if (position == selectedIndex) {
@@ -238,9 +302,9 @@ public class LiveSourceActivity extends BaseActivity {
     // ───── Adapter ─────
 
     class LiveAdapter extends RecyclerView.Adapter<LiveAdapter.VH> {
-        List<String> data;
+        List<LiveSourceEntry> data;
 
-        LiveAdapter(List<String> data) {
+        LiveAdapter(List<LiveSourceEntry> data) {
             this.data = data;
         }
 
@@ -252,13 +316,35 @@ public class LiveSourceActivity extends BaseActivity {
 
         @Override
         public void onBindViewHolder(VH holder, int position) {
-            String entry = data.get(position);
-            holder.tvName.setText(getEntryName(entry));
-            holder.tvUrl.setText(getEntryUrl(entry));
-
+            LiveSourceEntry entry = data.get(position);
+            boolean isVod = entry.isFromVod();
             boolean isSelected = (position == selectedIndex);
-            // 选中时高亮名称和显示选中图标
-            holder.tvName.setTextColor(isSelected ? Color.parseColor("#4FC3F7") : Color.BLACK);
+
+            // 名称显示：点播来源用紫色区分，选中时统一高亮
+            String displayName = entry.getName();
+            if (TextUtils.isEmpty(displayName)) displayName = entry.getUrl();
+            holder.tvName.setText(displayName);
+            if (isSelected) {
+                holder.tvName.setTextColor(Color.parseColor("#4FC3F7"));
+            } else if (isVod) {
+                holder.tvName.setTextColor(Color.parseColor("#7B1FA2"));
+            } else {
+                holder.tvName.setTextColor(Color.BLACK);
+            }
+
+            if (isVod) {
+                // 点播来源：显示标记，不可编辑、不可删除
+                holder.tvUrl.setText("点播JSON内嵌线路");
+                holder.tvTag.setVisibility(View.VISIBLE);
+                holder.btnEdit.setVisibility(View.GONE);
+                holder.btnDelete.setVisibility(View.GONE);
+            } else {
+                holder.tvUrl.setText(entry.getUrl());
+                holder.tvTag.setVisibility(View.GONE);
+                holder.btnEdit.setVisibility(View.VISIBLE);
+                holder.btnDelete.setVisibility(View.VISIBLE);
+            }
+
             if (holder.ivSelected != null) {
                 holder.ivSelected.setVisibility(isSelected ? View.VISIBLE : View.GONE);
             }
@@ -274,6 +360,8 @@ public class LiveSourceActivity extends BaseActivity {
 
             holder.btnDelete.setOnClickListener(v -> {
                 int pos = holder.getAdapterPosition();
+                if (pos < 0 || pos >= data.size()) return;
+                if (data.get(pos).isFromVod()) return; // 点播来源不可删除
                 // 若删除的是已选中项，清除 LIVE_API_URL
                 if (pos == selectedIndex) {
                     selectedIndex = -1;
@@ -281,10 +369,10 @@ public class LiveSourceActivity extends BaseActivity {
                 } else if (pos < selectedIndex) {
                     selectedIndex--;
                 }
-                sourceList.remove(pos);
+                data.remove(pos);
                 saveList();
                 notifyItemRemoved(pos);
-                notifyItemRangeChanged(pos, sourceList.size());
+                notifyItemRangeChanged(pos, data.size() - pos);
                 updateEmpty();
             });
         }
@@ -295,7 +383,7 @@ public class LiveSourceActivity extends BaseActivity {
         }
 
         class VH extends RecyclerView.ViewHolder {
-            TextView tvName, tvUrl;
+            TextView tvName, tvUrl, tvTag;
             ImageView btnDelete, btnEdit;
             ImageView ivSelected;
 
@@ -303,6 +391,7 @@ public class LiveSourceActivity extends BaseActivity {
                 super(itemView);
                 tvName = itemView.findViewById(R.id.tvName);
                 tvUrl = itemView.findViewById(R.id.tvUrl);
+                tvTag = itemView.findViewById(R.id.tvTag);
                 btnDelete = itemView.findViewById(R.id.btnDelete);
                 btnEdit = itemView.findViewById(R.id.btnEdit);
                 ivSelected = itemView.findViewById(R.id.ivSelected);

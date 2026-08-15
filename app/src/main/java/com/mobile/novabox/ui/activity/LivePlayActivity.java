@@ -2924,13 +2924,16 @@ public class LivePlayActivity extends BaseActivity {
                     JsonArray liveGroups = Hawk.get(HawkConfig.LIVE_GROUP_LIST, new JsonArray());
                     int livesIndex = multiItem.getItemSourceIndex();
                     if (liveGroups == null || livesIndex < 0 || livesIndex >= liveGroups.size()) break;
-                    if (livesIndex == ApiConfig.getLiveGroupIndex()) {
+                    String currentLiveApiUrlL = Hawk.get(HawkConfig.LIVE_API_URL, "");
+                    if (currentLiveApiUrlL.isEmpty() && livesIndex == ApiConfig.getLiveGroupIndex()) {
                         liveSettingItemAdapter.selectItem(position, true, true);
                         break;
                     }
                     String currentChannelNameL = getPreferredLiveRefreshChannelName();
                     int currentSourceIndexL = getPreferredLiveRefreshSourceIndex();
                     liveSettingItemAdapter.selectItem(position, true, true);
+                    // 切换到点播 lives 源：清空独立直播地址，保证高亮与回切正确
+                    Hawk.put(HawkConfig.LIVE_API_URL, "");
                     ApiConfig.setLiveGroupIndex(livesIndex);
                     JsonObject livesOBJ = liveGroups.get(livesIndex).getAsJsonObject();
                     ApiConfig.get().loadLiveApi(livesOBJ);
