@@ -56,12 +56,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import java.util.Date;
 import java.util.Map;
 
 import xyz.doikki.videoplayer.player.VideoView;
@@ -88,13 +85,7 @@ public class VodController extends BaseController {
                     case 1002: { // 显示底部菜单
                         mBottomRoot.setVisibility(VISIBLE);
                         mTopRoot1.setVisibility(VISIBLE);
-                        mTopRoot2.setVisibility(VISIBLE);
-                        mPlayLoadNetSpeedRightTop.setVisibility(VISIBLE);
-                        if(Hawk.get(HawkConfig.SCREEN_DISPLAY,GONE)==GONE){
-                            mPlayPauseTime.setVisibility(VISIBLE);
-                        }else {
-                            net_play_speed.setVisibility(GONE);
-                        }
+                        // tv_top_r_container 已被删除(右上角网速/时间/系统时间不在控制栏显示)
                         mPlayTitle.setVisibility(GONE);
                         backBtn.setVisibility(ScreenUtils.isTv(context) ? INVISIBLE : VISIBLE);
                         showLockView();
@@ -103,12 +94,7 @@ public class VodController extends BaseController {
                     case 1003: { // 隐藏底部菜单
                         mBottomRoot.setVisibility(GONE);
                         mTopRoot1.setVisibility(GONE);
-                        mPlayLoadNetSpeedRightTop.setVisibility(GONE);
-                        if(Hawk.get(HawkConfig.SCREEN_DISPLAY,GONE)==GONE){
-                            mPlayPauseTime.setVisibility(GONE);
-                        }else {
-                            net_play_speed.setVisibility(VISIBLE);
-                        }
+                        // tv_top_r_container 已被删除(右上角网速/时间/系统时间不在控制栏显示)
                         backBtn.setVisibility(INVISIBLE);
                         break;
                     }
@@ -141,20 +127,15 @@ public class VodController extends BaseController {
     private ImageView mBtnExitFullscreen;
     LinearLayout mBottomRoot;
     LinearLayout mTopRoot1;
-    LinearLayout mTopRoot2;
     LinearLayout mParseRoot;
     RecyclerView mGridParseView;
     TextView mPlayTitle;
     TextView mPlayTitle1;
-    TextView mPlayLoadNetSpeedRightTop;
-    TextView mPlayPauseTime;
     TextView mPlayLoadNetSpeed;
     TextView mVideoSize;
     public SimpleSubtitleView mSubtitleView;
     private View backBtn;//返回键
     private boolean isClickBackBtn;
-    TextView seekTime; //右上角进度时间显示
-    TextView net_play_speed;
     private boolean hasDanmu = false;
 
     LockRunnable lockRunnable = new LockRunnable();
@@ -169,19 +150,15 @@ public class VodController extends BaseController {
         @SuppressLint("SetTextI18n")
         @Override
         public void run() {
-            Date date = new Date();
-            @SuppressLint("SimpleDateFormat") SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
-            mPlayPauseTime.setText(timeFormat.format(date));
+            // 系统时间 / 右上角网速已删除(tv_top_r_container 整块移除),
+            // 此处仅保留 tv_play_load_net_speed(中部 loading 指示器) 和视频分辨率。
             long mSpeed = mControlWrapper.getTcpSpeed();
-            String speed = PlayerHelper.getDisplaySpeed(mSpeed,false);
-            String speedBps = PlayerHelper.getDisplaySpeedBps(mSpeed,true);
-            mPlayLoadNetSpeedRightTop.setText(speedBps);
+            String speed = PlayerHelper.getDisplaySpeed(mSpeed, false);
             mPlayLoadNetSpeed.setText(speed);
-            net_play_speed.setText(speedBps);
             int[] mVideoSizes = mControlWrapper.getVideoSize();
             String width = Integer.toString(mVideoSizes[0]);
             String height = Integer.toString(mVideoSizes[1]);
-            mVideoSize.setText("[ " + width + " X " + height +" ]");
+            mVideoSize.setText("[ " + width + " X " + height + " ]");
 
             mHandler.postDelayed(this, 1000);
         }
@@ -200,25 +177,20 @@ public class VodController extends BaseController {
         mTotalTime = findViewById(R.id.total_time);
         mPlayTitle = findViewById(R.id.tv_info_name);
         mPlayTitle1 = findViewById(R.id.tv_info_name1);
-        mPlayLoadNetSpeedRightTop = findViewById(R.id.tv_play_load_net_speed_right_top);
         mSeekBar = findViewById(R.id.seekBar);
         mProgressRoot = findViewById(R.id.tv_progress_container);
         mProgressIcon = findViewById(R.id.tv_progress_icon);
         mProgressText = findViewById(R.id.tv_progress_text);
         mBottomRoot = findViewById(R.id.bottom_container);
         mTopRoot1 = findViewById(R.id.tv_top_l_container);
-        mTopRoot2 = findViewById(R.id.tv_top_r_container);
-        net_play_speed = findViewById(R.id.net_play_speed);
         mParseRoot = findViewById(R.id.parse_root);
         mGridParseView = findViewById(R.id.mGridParseView);
-        mPlayPauseTime = findViewById(R.id.tv_sys_time);
         mPlayLoadNetSpeed = findViewById(R.id.tv_play_load_net_speed);
         mVideoSize = findViewById(R.id.tv_videosize);
         mSubtitleView = findViewById(R.id.subtitle_view);
         backBtn = findViewById(R.id.tv_back);
         mBtnPlayPause = findViewById(R.id.btn_play_pause);
         mBtnExitFullscreen = findViewById(R.id.btn_exit_fullscreen);
-        seekTime = findViewById(R.id.tv_seek_time);
         if (mBtnPlayPause != null) {
             mBtnPlayPause.setOnClickListener(new OnClickListener() {
                 @Override
@@ -290,12 +262,8 @@ public class VodController extends BaseController {
             }
         };
 
-        mPlayPauseTime.post(new Runnable() {
-            @Override
-            public void run() {
-                mHandler.post(myRunnable2);
-            }
-        });
+        // myRunnable2 启动:mPlayPauseTime 已被删除,改成主线程直接 post 即可
+        mHandler.post(myRunnable2);
 
         mGridParseView.setLayoutManager(new LinearLayoutManager(getContext(), 0, false));
         ParseAdapter parseAdapter = new ParseAdapter();
@@ -460,7 +428,7 @@ public class VodController extends BaseController {
         }
         mCurrentTime.setText(stringForTime(position));
         mTotalTime.setText(stringForTime(duration));
-        seekTime.setText((seconds2Time(position)) + " | " + (seconds2Time(duration))); //右上角进度条时间显示
+        // seekTime(右上角进度时间)已被删除
         if (duration > 0) {
             mSeekBar.setEnabled(true);
             int pos = (int) (position * 1.0 / duration * mSeekBar.getMax());
@@ -548,8 +516,7 @@ public class VodController extends BaseController {
             case VideoView.STATE_PAUSED:
                 if (mBtnPlayPause != null) mBtnPlayPause.setImageResource(R.drawable.icon_play_mini);
                 mTopRoot1.setVisibility(GONE);
-//                mTopRoot2.setVisibility(GONE);
-                mPlayLoadNetSpeedRightTop.setVisibility(GONE);
+                // tv_top_r_container 已删除
                 mPlayTitle.setVisibility(VISIBLE);
                 break;
             case VideoView.STATE_ERROR:
