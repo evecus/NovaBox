@@ -262,8 +262,10 @@ public class VodController extends BaseController {
             }
         };
 
-        // myRunnable2 启动:mPlayPauseTime 已被删除,改成主线程直接 post 即可
-        mHandler.post(myRunnable2);
+        // myRunnable2 启动:注意不能用 mHandler——initView 是在 BaseVideoController 构造链里被调用的,
+        // 此时父类的 mHandler 字段还没初始化(null),直接 mHandler.post 会 NPE(闪退)。
+        // 用本类在 initView 内新建的 myHandle(本行之前已创建,非 null)替代。
+        myHandle.post(myRunnable2);
 
         mGridParseView.setLayoutManager(new LinearLayoutManager(getContext(), 0, false));
         ParseAdapter parseAdapter = new ParseAdapter();
