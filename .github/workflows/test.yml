@@ -55,12 +55,16 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
+      - run: |
+          mkdir -p apk
+          cp app/build/outputs/apk/java64/release/*.apk apk/mpv-test.apk
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: test
-          name: NovaBox test release
+          name: NovaBox test
           prerelease: true
-          files: app/build/outputs/apk/java64/release/*.apk
+          files: apk/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
