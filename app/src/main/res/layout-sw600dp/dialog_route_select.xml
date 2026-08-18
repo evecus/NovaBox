@@ -12,7 +12,81 @@
         android:background="@drawable/shape_danmu_setting_bg"
         android:orientation="vertical">
 
-        <!-- 两栏内容区(左右等分,与手机端一致) -->
+        <!-- 标题栏:左"配置" / 右"线路",两段宽度严格对应下方两栏,✕ 固定在标题栏右上角 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="@dimen/vs_10"
+            android:paddingBottom="@dimen/vs_10">
+
+            <!-- 左标题格 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="配置"
+                    android:textColor="@color/dialog_text_primary"
+                    android:textSize="@dimen/ts_24"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- 右标题格:含 ✕ 关闭按钮 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="线路"
+                        android:textColor="@color/dialog_text_primary"
+                        android:textSize="@dimen/ts_24"
+                        android:textStyle="bold" />
+
+                    <!-- ✕ 关闭按钮:固定在标题栏右上角 -->
+                    <TextView
+                        android:id="@+id/btnRouteClose"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|end"
+                        android:layout_marginEnd="@dimen/vs_4"
+                        android:background="@drawable/button_danmu_close"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:paddingStart="@dimen/vs_10"
+                        android:paddingTop="@dimen/vs_4"
+                        android:paddingEnd="@dimen/vs_10"
+                        android:paddingBottom="@dimen/vs_4"
+                        android:text="✕"
+                        android:textColor="@color/dialog_text_primary"
+                        android:textSize="@dimen/ts_26" />
+                </FrameLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 标题与列表分隔线 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/dialog_panel_stroke" />
+
+        <!-- 两栏内容区(左右等分) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="460dp"
@@ -40,23 +114,4 @@
                 android:layout_weight="1" />
         </LinearLayout>
     </LinearLayout>
-
-    <!-- 右上角 ✕ 关闭按钮:白底黑字 -->
-    <TextView
-        android:id="@+id/btnRouteClose"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
-        android:layout_marginTop="@dimen/vs_8"
-        android:layout_marginEnd="@dimen/vs_8"
-        android:background="@drawable/button_danmu_close"
-        android:focusable="true"
-        android:gravity="center"
-        android:paddingStart="@dimen/vs_12"
-        android:paddingTop="@dimen/vs_6"
-        android:paddingEnd="@dimen/vs_12"
-        android:paddingBottom="@dimen/vs_6"
-        android:text="✕"
-        android:textColor="@color/dialog_text_primary"
-        android:textSize="@dimen/ts_28" />
 </FrameLayout>
