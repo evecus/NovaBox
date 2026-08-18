@@ -508,7 +508,7 @@ public class PlayActivity extends BaseActivity {
         SelectDialog<TrackInfoBean> dialog = new SelectDialog<>(PlayActivity.this);
         dialog.setTip("切换音轨");
         dialog.setShowFooter(false);
-        dialog.setInstantApply(true);
+        dialog.setInstantApply(true); // 点选即切换,不自动关闭(由 ✕ 关闭)
         dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<TrackInfoBean>() {
             @Override
             public void click(TrackInfoBean value, int pos) {
@@ -567,7 +567,7 @@ public class PlayActivity extends BaseActivity {
         SelectDialog<TrackInfoBean> dialog = new SelectDialog<>(PlayActivity.this);
         dialog.setTip("切换内置字幕");
         dialog.setShowFooter(false);
-        dialog.setInstantApply(true);
+        dialog.setInstantApply(true); // 点选即切换,不自动关闭(由 ✕ 关闭)
         dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<TrackInfoBean>() {
             @Override
             public void click(TrackInfoBean value, int pos) {

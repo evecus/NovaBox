@@ -54,12 +54,13 @@ public class SelectDialog<T> extends BaseDialog {
 
     /**
      * 是否点选即生效。
-     * 默认 false(走"选-确认")。设为 true 时点击 item 直接调点击回调并自动 dismiss,
-     * 适用设置页这类选中马上要生效的场景。
+     * 默认 false(走"选-确认")。设为 true 时点击 item 立即触发回调并同步已选状态,
+     * 但**不关闭弹窗** —— 关闭交给右上角 ✕(始终可见)。适用设置页/播放切换等
+     * 选了马上要生效但允许用户继续浏览/调整的场景。
      */
     public void setInstantApply(boolean instant) {
         this.mInstantApply = instant;
-        if (adapter != null) applyInstantToAdapter();
+        if (adapter != null) adapter.setInstantApply(instant);
     }
 
     private boolean mInstantApply;
@@ -70,7 +71,7 @@ public class SelectDialog<T> extends BaseDialog {
                            List<T> data, int select) {
         adapter = new SelectDialogAdapter<>(sourceBeanSelectDialogInterface, sourceBeanItemCallback);
         adapter.setData(data, select);
-        applyInstantToAdapter();
+        if (mInstantApply) adapter.setInstantApply(true);
 
         RecyclerView rvList = findViewById(R.id.list);
         rvList.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -114,15 +115,6 @@ public class SelectDialog<T> extends BaseDialog {
         TextView btnClose = findViewById(R.id.btnSelectClose);
         if (btnClose != null) {
             btnClose.setOnClickListener(v -> dismiss());
-        }
-    }
-
-    private void applyInstantToAdapter() {
-        if (adapter == null) return;
-        if (mInstantApply) {
-            adapter.setInstantApply(this::dismiss);
-        } else {
-            adapter.setInstantApply(null);
         }
     }
 }

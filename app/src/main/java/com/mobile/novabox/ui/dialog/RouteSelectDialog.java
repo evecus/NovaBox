@@ -50,9 +50,11 @@ public class RouteSelectDialog {
 
         Window window = dialog.getWindow();
         if (window != null) {
-            // MATCH_PARENT 让 FrameLayout 铺满,内层 LinearLayout 自行居中
+            // 高度 WRAP_CONTENT:让 FrameLayout 高度跟随弹窗卡片 LinearLayout,
+            // 这样 ✕(top|end)紧贴弹窗卡片右上角,不再被弹窗留白甩到屏幕顶角
+            // (否则会和 SettingActivity 的 ActionBar 关闭按钮视觉重叠,用户看不见)
             window.setLayout(WindowManager.LayoutParams.MATCH_PARENT,
-                    WindowManager.LayoutParams.MATCH_PARENT);
+                    WindowManager.LayoutParams.WRAP_CONTENT);
             window.setGravity(Gravity.CENTER);
             window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         }
@@ -67,11 +69,11 @@ public class RouteSelectDialog {
 
         RouteAdapter routeAdapter = new RouteAdapter(new ArrayList<>(), selectedRouteUrl);
         rvRoutes.setAdapter(routeAdapter);
-        // 点选即生效:点击某条线路 → 关闭弹窗 + 通知监听者
+        // 点选即生效:点击某条线路 → 通知监听者;**不关闭弹窗**,让用户继续浏览/调整,
+// 由右上角 ✕ 或点击外部(CancelListener)关闭 → 触发 onCancel(可视为"放弃本次选择")
         routeAdapter.setOnPicked(() -> {
             String url = selectedRouteUrl[0];
             if (url.isEmpty()) return;
-            dialog.dismiss();
             if (listener != null) listener.onSelected(url);
         });
 
