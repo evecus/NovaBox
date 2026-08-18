@@ -8,7 +8,6 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -104,9 +103,13 @@ public class DanmuFullSettingDialog extends BaseDialog {
         llLineSpacingOptions = findViewById(R.id.llLineSpacingOptions);
         llTopMarginOptions = findViewById(R.id.llTopMarginOptions);
 
-        // 右上角 × 关闭按钮
+        // 右上角 ✕ 关闭按钮
         TextView btnClose = findViewById(R.id.btnDanmuClose);
         if (btnClose != null) btnClose.setOnClickListener(v -> dismiss());
+
+        // 底部"关闭"按钮
+        TextView btnCloseBottom = findViewById(R.id.btnDanmuCloseBottom);
+        if (btnCloseBottom != null) btnCloseBottom.setOnClickListener(v -> dismiss());
 
         initItemList();
         initApiPanel();
@@ -125,7 +128,9 @@ public class DanmuFullSettingDialog extends BaseDialog {
     @Override
     public void show() {
         super.show();
-        // 左右分栏弹窗需要更宽的显示区域：手机窄屏下尽量铺满窗口，平板限制在舒适宽度内
+        // 左右分栏弹窗需要更宽的显示区域：手机窄屏下尽量铺满窗口，平板限制在舒适宽度内；
+        // 高度限制为屏幕高度的 85%：手机横屏可用高度很低，若按 WRAP_CONTENT 撑高会把
+        // 下方设置项挤出屏幕且无法滚动，改为固定最大高度 + 外层 NestedScrollView 滚动。
         Context context = getContext();
         while (context instanceof ContextWrapper && !(context instanceof Activity)) {
             context = ((ContextWrapper) context).getBaseContext();
@@ -135,7 +140,8 @@ public class DanmuFullSettingDialog extends BaseDialog {
             ((Activity) context).getWindowManager().getDefaultDisplay().getMetrics(dm);
             int maxWidthPx = (int) (dm.density * 640);
             int widthPx = Math.min(dm.widthPixels, maxWidthPx);
-            getWindow().setLayout(widthPx, WindowManager.LayoutParams.WRAP_CONTENT);
+            int heightPx = (int) (dm.heightPixels * 0.85f);
+            getWindow().setLayout(widthPx, heightPx);
         }
     }
 
