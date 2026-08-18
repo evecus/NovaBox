@@ -2,6 +2,7 @@ package com.mobile.novabox.ui.dialog;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
@@ -39,11 +40,37 @@ public class SelectDialog<T> extends BaseDialog {
         if (title != null) title.setText(tip);
     }
 
+    /**
+     * 是否显示底部按钮行(取消/确认)。
+     * 默认 true:走"选-确认"两步流程(兼容播放字幕/音轨等不想即时生效的场景)。
+     * 设置页等"点选即生效"场景调 false 把底部按钮隐藏,只留右上角 ✕ 关闭。
+     */
+    public void setShowFooter(boolean show) {
+        View footer = findViewById(R.id.llSelectFooter);
+        View divider = findViewById(R.id.viewSelectDivider);
+        if (footer != null) footer.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (divider != null) divider.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    /**
+     * 是否点选即生效。
+     * 默认 false(走"选-确认")。设为 true 时点击 item 直接调点击回调并自动 dismiss,
+     * 适用设置页这类选中马上要生效的场景。
+     */
+    public void setInstantApply(boolean instant) {
+        this.mInstantApply = instant;
+        if (adapter != null) applyInstantToAdapter();
+    }
+
+    private boolean mInstantApply;
+    private SelectDialogAdapter<T> adapter;
+
     public void setAdapter(SelectDialogAdapter.SelectDialogInterface<T> sourceBeanSelectDialogInterface,
                            DiffUtil.ItemCallback<T> sourceBeanItemCallback,
                            List<T> data, int select) {
-        SelectDialogAdapter<T> adapter = new SelectDialogAdapter<>(sourceBeanSelectDialogInterface, sourceBeanItemCallback);
+        adapter = new SelectDialogAdapter<>(sourceBeanSelectDialogInterface, sourceBeanItemCallback);
         adapter.setData(data, select);
+        applyInstantToAdapter();
 
         RecyclerView rvList = findViewById(R.id.list);
         rvList.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -81,6 +108,21 @@ public class SelectDialog<T> extends BaseDialog {
                 adapter.confirmSelection();
                 dismiss();
             });
+        }
+
+        // 右上角 ✕ 关闭按钮:任何模式都可用,点选即生效模式下尤其重要
+        TextView btnClose = findViewById(R.id.btnSelectClose);
+        if (btnClose != null) {
+            btnClose.setOnClickListener(v -> dismiss());
+        }
+    }
+
+    private void applyInstantToAdapter() {
+        if (adapter == null) return;
+        if (mInstantApply) {
+            adapter.setInstantApply(this::dismiss);
+        } else {
+            adapter.setInstantApply(null);
         }
     }
 }

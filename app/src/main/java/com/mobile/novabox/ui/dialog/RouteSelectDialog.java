@@ -67,6 +67,13 @@ public class RouteSelectDialog {
 
         RouteAdapter routeAdapter = new RouteAdapter(new ArrayList<>(), selectedRouteUrl);
         rvRoutes.setAdapter(routeAdapter);
+        // 点选即生效:点击某条线路 → 关闭弹窗 + 通知监听者
+        routeAdapter.setOnPicked(() -> {
+            String url = selectedRouteUrl[0];
+            if (url.isEmpty()) return;
+            dialog.dismiss();
+            if (listener != null) listener.onSelected(url);
+        });
 
         Runnable refreshRoutes = () -> {
             if (selectedConfig[0] < vodConfigs.size()) {
@@ -89,18 +96,9 @@ public class RouteSelectDialog {
         rvConfigs.setAdapter(configLeftAdapter);
         refreshRoutes.run();
 
-        dialog.findViewById(R.id.btnCancel).setOnClickListener(v -> {
+        dialog.findViewById(R.id.btnRouteClose).setOnClickListener(v -> {
             dialog.dismiss();
             if (listener != null) listener.onCancel();
-        });
-        dialog.findViewById(R.id.btnConfirm).setOnClickListener(v -> {
-            String url = selectedRouteUrl[0];
-            if (url.isEmpty()) {
-                android.widget.Toast.makeText(activity, "请选择一条线路", android.widget.Toast.LENGTH_SHORT).show();
-                return;
-            }
-            dialog.dismiss();
-            if (listener != null) listener.onSelected(url);
         });
 
         dialog.setOnCancelListener(d -> {
@@ -164,6 +162,9 @@ public class RouteSelectDialog {
         private List<String[]> data;
         private final String[] selectedUrl;
 
+        /** 点击 item 后的回调(由外部 RouteSelectDialog 注入,通常用于 dismiss + notify listener) */
+        private Runnable onPicked;
+
         public RouteAdapter(List<String[]> data, String[] selectedUrl) {
             this.data = data;
             this.selectedUrl = selectedUrl;
@@ -172,6 +173,10 @@ public class RouteSelectDialog {
         public void updateData(List<String[]> newData) {
             this.data = newData;
             notifyDataSetChanged();
+        }
+
+        public void setOnPicked(Runnable onPicked) {
+            this.onPicked = onPicked;
         }
 
         @Override
@@ -196,6 +201,8 @@ public class RouteSelectDialog {
             holder.tv.setOnClickListener(v -> {
                 selectedUrl[0] = route[1];
                 notifyDataSetChanged();
+                // 点选即生效:由外部 RouteSelectDialog 注入的 dismiss + 通知监听者逻辑
+                if (onPicked != null) onPicked.run();
             });
         }
 

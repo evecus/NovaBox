@@ -54,8 +54,19 @@ public class SelectDialogAdapter<T> extends RecyclerView.Adapter<SelectDialogAda
 
     private SelectDialogInterface dialogInterface;
 
+    /**
+     * 点选即生效回调(instantApply=true 时由 SelectDialog 注入,通常用于 dismiss() 弹窗)。
+     * null 时仍走 "选-确认" 两步模式(用于播放字幕/音轨等场景)。
+     */
+    private Runnable onInstantSelected;
+
     public SelectDialogAdapter(SelectDialogInterface dialogInterface, DiffUtil.ItemCallback diffCallback) {
         this.dialogInterface = dialogInterface;
+    }
+
+    /** 设置"点选即生效"模式:点击 item 立刻触发回调 + onInstantSelected.run() */
+    public void setInstantApply(Runnable onInstantSelected) {
+        this.onInstantSelected = onInstantSelected;
     }
 
     public void setData(List<T> newData, int defaultSelect) {
@@ -126,7 +137,18 @@ public class SelectDialogAdapter<T> extends RecyclerView.Adapter<SelectDialogAda
             pendingSelect = position;
             notifyItemChanged(old);
             notifyItemChanged(pendingSelect);
-            // 注意：不在此处触发 dialogInterface.click()，由确认按钮负责
+            // 注意：不在此处触发 dialogInterface.click()，由确认按钮负责;
+            // instantApply 模式例外:选择立刻生效 + 弹 dismiss
+            if (onInstantSelected != null) {
+                int oldSel = select;
+                select = position;
+                dialogInterface.click(value, position);
+                if (oldSel != position) {
+                    notifyItemChanged(oldSel);
+                    notifyItemChanged(position);
+                }
+                onInstantSelected.run();
+            }
         });
     }
 }

@@ -33,15 +33,17 @@
             android:paddingLeft="36dp"
             android:paddingRight="36dp" />
 
-        <!-- 分隔线 -->
+        <!-- 底部按钮分隔线(SelectDialog.setShowFooter(false) 隐藏) -->
         <View
+            android:id="@+id/viewSelectDivider"
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginTop="8dp"
             android:background="@color/dialog_panel_stroke" />
 
-        <!-- 取消 / 确认按钮行 -->
+        <!-- 取消 / 确认按钮行(SelectDialog.setShowFooter(false) 隐藏) -->
         <LinearLayout
+            android:id="@+id/llSelectFooter"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:orientation="horizontal">
@@ -74,4 +76,23 @@
         </LinearLayout>
 
     </LinearLayout>
+
+    <!-- 右上角 ✕ 关闭按钮:白底黑字,固定悬浮 -->
+    <TextView
+        android:id="@+id/btnSelectClose"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="@dimen/vs_8"
+        android:layout_marginEnd="@dimen/vs_8"
+        android:background="@drawable/button_danmu_close"
+        android:focusable="true"
+        android:gravity="center"
+        android:paddingStart="@dimen/vs_12"
+        android:paddingTop="@dimen/vs_6"
+        android:paddingEnd="@dimen/vs_12"
+        android:paddingBottom="@dimen/vs_6"
+        android:text="✕"
+        android:textColor="@color/dialog_text_primary"
+        android:textSize="@dimen/ts_28" />
 </FrameLayout>

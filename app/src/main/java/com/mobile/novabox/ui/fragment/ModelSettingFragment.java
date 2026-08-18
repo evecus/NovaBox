@@ -202,6 +202,8 @@ public class ModelSettingFragment extends BaseLazyFragment {
 
                 SelectDialog<String> dialog = new SelectDialog<>(mActivity);
                 dialog.setTip("请选择安全DNS");
+                dialog.setShowFooter(false); // 隐藏底部取消/确认,只用右上角 ✕ 关闭
+                dialog.setInstantApply(true); // 点选即生效
                 dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<String>() {
                     @Override
                     public void click(String value, int pos) {
@@ -280,6 +282,8 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 }
                 SelectDialog<Integer> dialog = new SelectDialog<>(mActivity);
                 dialog.setTip("请选择默认播放器");
+                dialog.setShowFooter(false);
+                dialog.setInstantApply(true);
                 dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<Integer>() {
                     @Override
                     public void click(Integer value, int pos) {
@@ -318,6 +322,8 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 renders.add(1);
                 SelectDialog<Integer> dialog = new SelectDialog<>(mActivity);
                 dialog.setTip("请选择默认渲染方式");
+                dialog.setShowFooter(false);
+                dialog.setInstantApply(true);
                 dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<Integer>() {
                     @Override
                     public void click(Integer value, int pos) {
@@ -355,6 +361,8 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 types.add(2);
                 SelectDialog<Integer> dialog = new SelectDialog<>(mActivity);
                 dialog.setTip("请选择首页列表数据");
+                dialog.setShowFooter(false);
+                dialog.setInstantApply(true);
                 dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<Integer>() {
                     @Override
                     public void click(Integer value, int pos) {
@@ -426,6 +434,8 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 modes.add(com.mobile.novabox.util.OrientationHelper.MODE_SENSOR);
                 SelectDialog<Integer> dialog = new SelectDialog<>(mActivity);
                 dialog.setTip("请选择全屏播放方向");
+                dialog.setShowFooter(false);
+                dialog.setInstantApply(true);
                 dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<Integer>() {
                     @Override
                     public void click(Integer value, int pos) {

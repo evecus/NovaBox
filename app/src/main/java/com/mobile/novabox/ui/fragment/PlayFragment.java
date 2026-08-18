@@ -531,6 +531,8 @@ public class PlayFragment extends BaseLazyFragment {
         if (bean.size() < 1) return;
         SelectDialog<TrackInfoBean> dialog = new SelectDialog<>(getActivity());
         dialog.setTip("切换音轨");
+        dialog.setShowFooter(false); // 隐藏底部取消/确认,只用右上角 ✕ 关闭
+        dialog.setInstantApply(true); // 点选即生效(click 内已 dismiss)
         dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<TrackInfoBean>() {
             @Override
             public void click(TrackInfoBean value, int pos) {
@@ -588,6 +590,8 @@ public class PlayFragment extends BaseLazyFragment {
         if (bean.size() < 1) return;
         SelectDialog<TrackInfoBean> dialog = new SelectDialog<>(getActivity());
         dialog.setTip("切换内置字幕");
+        dialog.setShowFooter(false);
+        dialog.setInstantApply(true);
         dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<TrackInfoBean>() {
             @Override
             public void click(TrackInfoBean value, int pos) {

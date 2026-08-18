@@ -70,6 +70,8 @@ public class SearchRemoteTvDialog extends BaseDialog{
         RemoteTVBox.setAvalible(ModelSettingFragment.remoteTvHostList.get(0));
         SelectDialog<String> dialog = new SelectDialog<>(getContext());
         dialog.setTip("附近TVBox");
+        dialog.setShowFooter(false); // 隐藏底部取消/确认,只用右上角 ✕ 关闭
+        dialog.setInstantApply(true); // 点选即生效:选中即设置并自动关闭
         int defaultPos = 0;
         dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<String>() {
             @Override

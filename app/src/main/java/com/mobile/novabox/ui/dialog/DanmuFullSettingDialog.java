@@ -107,10 +107,6 @@ public class DanmuFullSettingDialog extends BaseDialog {
         TextView btnClose = findViewById(R.id.btnDanmuClose);
         if (btnClose != null) btnClose.setOnClickListener(v -> dismiss());
 
-        // 底部"关闭"按钮
-        TextView btnCloseBottom = findViewById(R.id.btnDanmuCloseBottom);
-        if (btnCloseBottom != null) btnCloseBottom.setOnClickListener(v -> dismiss());
-
         initItemList();
         initApiPanel();
         initOnOffPanel();
