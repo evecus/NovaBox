@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 剧集 grid item:多选/单选共用,使用 bg_download_episode selector + text_download_episode selector -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/vs_60"
+    android:layout_margin="@dimen/vs_4"
+    android:background="@drawable/bg_download_episode"
+    android:clickable="true"
+    android:focusable="true"
+    android:checkable="true">
+
+    <TextView
+        android:id="@+id/tvEpisodeName"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:duplicateParentState="true"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:paddingStart="@dimen/vs_6"
+        android:paddingEnd="@dimen/vs_6"
+        android:textColor="@color/text_download_episode"
+        android:textSize="14sp" />
+</FrameLayout>

@@ -7,25 +7,20 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.mobile.novabox.R;
-import com.mobile.novabox.api.ApiConfig;
 import com.mobile.novabox.bean.VodInfo;
-import com.mobile.novabox.cache.DownloadEntity;
 import com.mobile.novabox.download.DownloadManager;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 详情页"下载"弹窗:
@@ -60,7 +55,15 @@ public class DownloadSelectDialog extends Dialog {
 
         Window window = getWindow();
         if (window != null) {
-            window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+            // 自适应宽度:屏幕窄端×0.85 上限 600dp,避免小屏撑满 / 大屏过宽出现大片空白
+            android.util.DisplayMetrics dm = activity.getResources().getDisplayMetrics();
+            int minScreenSidePx = Math.min(dm.widthPixels, dm.heightPixels);
+            int widthPx = (int) (minScreenSidePx * 0.85f);
+            int maxWidthPx = (int) (dm.density * 600);
+            if (widthPx > maxWidthPx) widthPx = maxWidthPx;
+            // 高度限制屏幕 80%,避免横屏时撑满全屏
+            int maxHeightPx = (int) (dm.heightPixels * 0.8f);
+            window.setLayout(widthPx, maxHeightPx);
             window.setGravity(Gravity.CENTER);
             window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         }
@@ -86,7 +89,8 @@ public class DownloadSelectDialog extends Dialog {
         findViewById(R.id.tvDownloadCancel).setOnClickListener(v -> dismiss());
 
         rvEpisodes = findViewById(R.id.rvEpisodes);
-        rvEpisodes.setLayoutManager(new LinearLayoutManager(activity));
+        // grid 布局:按屏幕宽度区间自适应列数(手机 4 列 / 大屏手机 5 / 平板 6-7 列)
+        rvEpisodes.setLayoutManager(new GridLayoutManager(activity, calcSpanCount(activity)));
         adapter = new EpisodeAdapter();
         rvEpisodes.setAdapter(adapter);
 
@@ -167,6 +171,19 @@ public class DownloadSelectDialog extends Dialog {
         return c;
     }
 
+    /**
+     * 按屏幕宽度(dp)选 grid 列数,平衡手机 4 列 / 平板 6-7 列,
+     * 避免一行只显示一个剧集(老逻辑的痛点)。
+     */
+    private static int calcSpanCount(Activity activity) {
+        android.util.DisplayMetrics dm = activity.getResources().getDisplayMetrics();
+        int widthDp = (int) (dm.widthPixels / dm.density);
+        if (widthDp >= 1024) return 7; // 大屏平板
+        if (widthDp >= 720) return 6;  // 平板 / 横屏大手机
+        if (widthDp >= 480) return 5;  // 大屏手机 / 小平板
+        return 4;                       // 普通手机
+    }
+
     private String refererOf(String url) {
         try {
             java.net.URI uri = new java.net.URI(url);
@@ -190,32 +207,26 @@ public class DownloadSelectDialog extends Dialog {
         parsePool.shutdownNow();
     }
 
-    // ─── 剧集列表 adapter(多选) ───
+    // ─── 剧集列表 adapter(多选 grid,每项自带 state_checked 切换背景/文字色) ───
 
     class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.VH> {
 
         @Override
         public VH onCreateViewHolder(ViewGroup parent, int viewType) {
-            TextView tv = new TextView(parent.getContext());
-            tv.setPadding(24, 24, 24, 24);
-            tv.setTextSize(15);
-            tv.setGravity(Gravity.CENTER_VERTICAL);
-            tv.setSingleLine(true);
-            tv.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            tv.setLayoutParams(new RecyclerView.LayoutParams(
-                    RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.WRAP_CONTENT));
-            return new VH(tv);
+            View item = android.view.LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_download_episode, parent, false);
+            return new VH(item);
         }
 
         @Override
         public void onBindViewHolder(VH holder, int position) {
             VodInfo.VodSeries series = episodes.get(position);
             String name = series != null && series.name != null ? series.name : ("第" + (position + 1) + "集");
-            holder.tv.setText((selected[position] ? "☑ " : "☐ ") + name);
-            holder.tv.setTextColor(selected[position] ? 0xFF1890FF : 0xFF333333);
-            holder.tv.setOnClickListener(v -> {
+            holder.tvName.setText(name);
+            holder.itemView.setSelected(selected[position]);
+            holder.itemView.setOnClickListener(v -> {
                 selected[position] = !selected[position];
-                notifyItemChanged(position);
+                holder.itemView.setSelected(selected[position]);
                 refreshConfirmText();
             });
         }
@@ -226,11 +237,11 @@ public class DownloadSelectDialog extends Dialog {
         }
 
         class VH extends RecyclerView.ViewHolder {
-            TextView tv;
+            final TextView tvName;
 
-            VH(TextView v) {
-                super(v);
-                tv = v;
+            VH(View itemView) {
+                super(itemView);
+                tvName = itemView.findViewById(R.id.tvEpisodeName);
             }
         }
     }

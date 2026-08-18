@@ -12,7 +12,7 @@ import android.view.WindowManager;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.mobile.novabox.R;
@@ -55,32 +55,39 @@ public class EpisodeSelectDialog extends Dialog {
 
         RecyclerView rv = findViewById(R.id.rv_episode_list);
         if (rv != null) {
-            rv.setLayoutManager(new LinearLayoutManager(activity));
+            // grid 布局:按屏幕宽度区间选列数(手机 4 / 大屏手机 5 / 平板 6-7),
+            // 解决之前 LinearLayoutManager 一行只显示一个剧集导致弹窗又高又空的问题
+            rv.setLayoutManager(new GridLayoutManager(activity, calcSpanCount(activity)));
             rv.setAdapter(new EpisodeAdapter());
         }
+    }
+
+    /** 按弹窗所在屏幕宽度自适应列数 */
+    private static int calcSpanCount(Activity activity) {
+        android.util.DisplayMetrics dm = activity.getResources().getDisplayMetrics();
+        int widthDp = (int) (dm.widthPixels / dm.density);
+        if (widthDp >= 1024) return 7;
+        if (widthDp >= 720) return 6;
+        if (widthDp >= 480) return 5;
+        return 4;
     }
 
     class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.VH> {
 
         @Override
         public VH onCreateViewHolder(ViewGroup parent, int viewType) {
-            TextView tv = new TextView(parent.getContext());
-            tv.setPadding(48, 28, 48, 28);
-            tv.setTextSize(16);
-            tv.setGravity(Gravity.CENTER_VERTICAL);
-            tv.setLayoutParams(new RecyclerView.LayoutParams(
-                    RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.WRAP_CONTENT));
-            return new VH(tv);
+            View item = android.view.LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_download_episode, parent, false);
+            return new VH(item);
         }
 
         @Override
         public void onBindViewHolder(VH holder, int position) {
-            holder.tv.setText(items.get(position));
+            holder.tvName.setText(items.get(position));
             boolean selected = position == currentIndex;
-            holder.tv.setTextColor(selected ? 0xFF0CADE2 : 0xFF333333);
-            holder.tv.setTextSize(selected ? 18 : 16);
-            holder.tv.setBackgroundColor(selected ? 0x110CADE2 : Color.TRANSPARENT);
-            holder.tv.setOnClickListener(v -> {
+            holder.itemView.setSelected(selected);
+            holder.tvName.setTextSize(selected ? 16 : 14);
+            holder.itemView.setOnClickListener(v -> {
                 if (listener != null) listener.onSelected(position);
                 dismiss();
             });
@@ -92,10 +99,11 @@ public class EpisodeSelectDialog extends Dialog {
         }
 
         class VH extends RecyclerView.ViewHolder {
-            TextView tv;
-            VH(TextView v) {
+            final TextView tvName;
+
+            VH(View v) {
                 super(v);
-                tv = v;
+                tvName = v.findViewById(R.id.tvEpisodeName);
             }
         }
     }
