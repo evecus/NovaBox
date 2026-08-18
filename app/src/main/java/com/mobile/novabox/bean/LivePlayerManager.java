@@ -5,10 +5,13 @@ import androidx.annotation.NonNull;
 import com.mobile.novabox.util.HawkConfig;
 import com.mobile.novabox.util.LOG;
 import com.mobile.novabox.util.PlayerHelper;
+import com.mobile.novabox.util.PlayerSwitchUtil;
 import com.orhanobut.hawk.Hawk;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.Set;
 
 import xyz.doikki.videoplayer.player.VideoView;
 
@@ -151,7 +154,15 @@ public class LivePlayerManager {
         currentPlayerConfig = playerConfig;
     }
 
-    public boolean switchLivePlayer(VideoView videoView, String channelName) {
+    /**
+     * 自动切换播放内核(直播播放失败时由上层调用)。
+     * 按固定顺序 0→1→2→3 尝试除当前外的其余内核,已尝试过的记录在 triedPlayerTypes 中。
+     *
+     * @param triedPlayerTypes 已尝试过的内核档位集合(内部会累加当前内核)
+     * @return true 表示已切换到下一个内核,调用方应使用当前源 URL 重新播放;
+     *         false 表示其余三个内核都已试过(或配置不支持),调用方应降级处理(如换源/换频道)
+     */
+    public boolean switchLivePlayer(VideoView videoView, String channelName, Set<Integer> triedPlayerTypes) {
         channelName = currentCfgKey(channelName);
         JSONObject playerConfig = currentPlayerConfig;
         if (playerConfig == null) {
@@ -160,21 +171,14 @@ public class LivePlayerManager {
         }
         try {
             int playerType = playerConfig.getInt("pl");
-            // 4 档内同内核切换:EXO硬解(0)<->EXO软解(1),IJK硬解(2)<->IJK软解(3)
-            int switchPlayerType;
-            switch (playerType) {
-                case 0: switchPlayerType = 1; break; // EXO硬解 -> EXO软解
-                case 1: switchPlayerType = 0; break; // EXO软解 -> EXO硬解
-                case 2: switchPlayerType = 3; break; // IJK硬解 -> IJK软解
-                case 3: switchPlayerType = 2; break; // IJK软解 -> IJK硬解
-                default: switchPlayerType = 0; break;
-            }
-            if (switchPlayerType == playerType) {
-                LOG.i("echo-liveSwitchPlayer: skip unsupported playerType=" + playerType);
+            int switchPlayerType = PlayerSwitchUtil.nextPlayerType(playerType, triedPlayerTypes);
+            if (switchPlayerType < 0) {
+                LOG.i("echo-liveSwitchPlayer: all player types tried, skip");
                 return false;
             }
             LOG.i("echo-liveSwitchPlayer: " + playerType + " -> " + switchPlayerType);
             playerConfig.put("pl", switchPlayerType);
+            playerConfig.put("ijk", PlayerSwitchUtil.ijkCodeFor(switchPlayerType));
         } catch (JSONException e) {
             LOG.i("echo-liveSwitchPlayer error: " + e.getMessage());
             return false;

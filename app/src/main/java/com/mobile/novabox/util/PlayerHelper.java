@@ -101,6 +101,29 @@ public class PlayerHelper {
     }
 
     /**
+     * 强制按指定内核档位重建播放器(0=EXO硬解,1=EXO软解,2=IJK硬解,3=IJK软解)。
+     * 供播放失败自动切内核重试使用;入参即 4 档新编码,不做老编码映射。
+     */
+    public static void updateCfg(VideoView videoView, int playerType) {
+        if (playerType < 0 || playerType > 3) playerType = PLAY_TYPE_IJK_HW;
+        IJKCode codec = ApiConfig.get().getIJKCodec(playerType == PLAY_TYPE_IJK_SW ? "软解码" : "硬解码");
+        PlayerFactory playerFactory = buildPlayerFactory(playerType, codec);
+        int renderType = Hawk.get(HawkConfig.PLAY_RENDER, 0);
+        RenderViewFactory renderViewFactory = null;
+        switch (renderType) {
+            case 0:
+            default:
+                renderViewFactory = TextureRenderViewFactory.create();
+                break;
+            case 1:
+                renderViewFactory = SurfaceRenderViewFactory.create();
+                break;
+        }
+        videoView.setPlayerFactory(playerFactory);
+        videoView.setRenderViewFactory(renderViewFactory);
+    }
+
+    /**
      * 音频播放专用:固定使用 EXO硬解,不受用户"设置"里全局 PLAY_TYPE(IJK等)影响。
      * 音频场景对硬解性能不敏感,EXO 在纯音频/网络流兼容性上更稳定,
      * 供 OpenList 音频播放、本地音频播放统一调用。

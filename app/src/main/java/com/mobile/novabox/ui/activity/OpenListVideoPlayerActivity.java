@@ -33,13 +33,19 @@ import com.mobile.novabox.ui.dialog.PlayerSelectDialog;
 import com.mobile.novabox.ui.dialog.SpeedSelectDialog;
 import com.mobile.novabox.util.OpenListApi;
 import com.mobile.novabox.util.PadUiHelper;
+import com.mobile.novabox.util.HawkConfig;
+import com.mobile.novabox.util.LOG;
 import com.mobile.novabox.util.PlayerHelper;
+import com.mobile.novabox.util.PlayerSwitchUtil;
+import com.orhanobut.hawk.Hawk;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import xyz.doikki.videoplayer.player.VideoView;
 
@@ -92,6 +98,15 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
     private boolean isPad = false;
     /** 标记：是否正在等待方向切回竖屏后还原小屏布局（避免退出全屏时的尺寸计算时序错乱） */
     private boolean pendingExitFullScreen = false;
+
+    // ── 播放失败自动切内核重试 ────────────────────────────────────────────────
+    /** 已尝试过的播放内核(0=EXO硬解 1=EXO软解 2=IJK硬解 3=IJK软解),失败时按序切换 */
+    private final Set<Integer> triedPlayerTypes = new HashSet<>();
+    /** 当前正在使用的内核档位,首次播放时按全局 PLAY_TYPE 初始化 */
+    private int currentPlayType = -1;
+    /** 当前播放 URL 与请求头,切内核重试时复用 */
+    private String currentPlayUrl;
+    private Map<String, String> currentPlayHeaders = new HashMap<>();
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable hideControlsRunnable = this::hideControls;
@@ -183,6 +198,8 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
                         pbLoading.setVisibility(View.GONE);
                         ivPlayPause.setImageResource(R.drawable.icon_pause);
                         handler.post(progressRunnable);
+                        // 播放成功:重置内核尝试状态,若中途再次失败可重新按序尝试其余内核
+                        triedPlayerTypes.clear();
                         break;
                     case VideoView.STATE_PAUSED:
                         pbLoading.setVisibility(View.GONE);
@@ -190,7 +207,11 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
                         break;
                     case VideoView.STATE_ERROR:
                         pbLoading.setVisibility(View.GONE);
-                        Toast.makeText(mContext, "播放出错", Toast.LENGTH_SHORT).show();
+                        handler.removeCallbacks(progressRunnable);
+                        // 播放失败:按顺序尝试其余三个内核,全部试完才提示
+                        if (!retryWithNextPlayer()) {
+                            Toast.makeText(mContext, "播放出错", Toast.LENGTH_SHORT).show();
+                        }
                         break;
                     case VideoView.STATE_PLAYBACK_COMPLETED:
                         pbLoading.setVisibility(View.GONE);
@@ -406,6 +427,11 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
                     Map<String, String> headers = new HashMap<>();
                     String token = OpenListApi.getToken();
                     if (!TextUtils.isEmpty(token)) headers.put("Authorization", token);
+                    // 新文件从头开始:重置内核尝试状态,用默认内核起播
+                    currentPlayUrl = data.rawUrl;
+                    currentPlayHeaders = headers;
+                    triedPlayerTypes.clear();
+                    currentPlayType = -1;
                     mVideoView.release();
                     mVideoView.setUrl(data.rawUrl, headers);
                     mVideoView.start();
@@ -420,6 +446,30 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
                 });
             }
         });
+    }
+
+    /**
+     * 播放失败时按固定顺序 0→1→2→3 尝试其余三个内核,切换到下一个并重播当前 URL。
+     *
+     * @return true 已切换内核并重新播放;false 其余三个内核都已试过,停止尝试
+     */
+    private boolean retryWithNextPlayer() {
+        if (mVideoView == null || currentPlayUrl == null) return false;
+        if (currentPlayType < 0) currentPlayType = PlayerSwitchUtil.normalizePlayType(Hawk.get(HawkConfig.PLAY_TYPE, 2));
+        int next = PlayerSwitchUtil.nextPlayerType(currentPlayType, triedPlayerTypes);
+        if (next < 0) {
+            // 全部内核都试过:重置,下次播放从头开始
+            triedPlayerTypes.clear();
+            currentPlayType = -1;
+            return false;
+        }
+        currentPlayType = next;
+        LOG.i("echo-openlistAutoRetry switch player: " + next);
+        PlayerHelper.updateCfg(mVideoView, next);
+        mVideoView.release();
+        mVideoView.setUrl(currentPlayUrl, currentPlayHeaders);
+        mVideoView.start();
+        return true;
     }
 
     // ── 全屏切换 ──────────────────────────────────────────────────────────────

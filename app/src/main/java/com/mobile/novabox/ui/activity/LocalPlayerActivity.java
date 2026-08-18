@@ -30,16 +30,22 @@ import com.mobile.novabox.R;
 import com.mobile.novabox.base.BaseActivity;
 import com.mobile.novabox.player.MyVideoView;
 import com.mobile.novabox.ui.adapter.LocalPlaylistAdapter;
+import com.mobile.novabox.util.HawkConfig;
+import com.mobile.novabox.util.LOG;
 import com.mobile.novabox.util.PadUiHelper;
 import com.mobile.novabox.ui.dialog.EpisodeSelectDialog;
 import com.mobile.novabox.ui.dialog.PlayerSelectDialog;
 import com.mobile.novabox.ui.dialog.SpeedSelectDialog;
 import com.mobile.novabox.util.PlayerHelper;
+import com.mobile.novabox.util.PlayerSwitchUtil;
+import com.orhanobut.hawk.Hawk;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -82,6 +88,14 @@ public class LocalPlayerActivity extends BaseActivity {
     private boolean controlsVisible = false;
     private boolean isFullScreen = false;
     private boolean isLoaded = false;
+
+    // ── 播放失败自动切内核重试 ────────────────────────────────────────────────
+    /** 已尝试过的播放内核(0=EXO硬解 1=EXO软解 2=IJK硬解 3=IJK软解),失败时按序切换 */
+    private final Set<Integer> triedPlayerTypes = new HashSet<>();
+    /** 当前正在使用的内核档位,首次播放时按全局 PLAY_TYPE 初始化 */
+    private int currentPlayType = -1;
+    /** 当前播放路径(文件路径或 URL),切内核重试时复用 */
+    private String currentPlayPath;
 
     // 标记：是否正在等待方向切回竖屏后还原小屏布局
     private boolean pendingExitFullScreen = false;
@@ -195,6 +209,8 @@ public class LocalPlayerActivity extends BaseActivity {
                         if (pbLoading != null) pbLoading.setVisibility(View.GONE);
                         updatePlayPauseIcon(true);
                         handler.post(progressRunnable);
+                        // 播放成功:重置内核尝试状态,若中途再次失败可重新按序尝试其余内核
+                        triedPlayerTypes.clear();
                         break;
                     case VideoView.STATE_PAUSED:
                         updatePlayPauseIcon(false);
@@ -213,7 +229,11 @@ public class LocalPlayerActivity extends BaseActivity {
                         break;
                     case VideoView.STATE_ERROR:
                         if (pbLoading != null) pbLoading.setVisibility(View.GONE);
-                        Toast.makeText(LocalPlayerActivity.this, "播放失败", Toast.LENGTH_SHORT).show();
+                        handler.removeCallbacks(progressRunnable);
+                        // 播放失败:按顺序尝试其余三个内核,全部试完才提示
+                        if (!retryWithNextPlayer()) {
+                            Toast.makeText(LocalPlayerActivity.this, "播放失败", Toast.LENGTH_SHORT).show();
+                        }
                         break;
                 }
             }
@@ -412,6 +432,10 @@ public class LocalPlayerActivity extends BaseActivity {
 
     private void startPlay(String path) {
         if (mVideoView == null || path == null || path.isEmpty()) return;
+        currentPlayPath = path;
+        // 新文件从头开始:重置内核尝试状态,用默认内核起播
+        triedPlayerTypes.clear();
+        currentPlayType = -1;
         mVideoView.release();
         if (path.startsWith("http://") || path.startsWith("https://")
                 || path.startsWith("rtmp://") || path.startsWith("rtsp://")) {
@@ -420,6 +444,35 @@ public class LocalPlayerActivity extends BaseActivity {
             mVideoView.setUrl(Uri.fromFile(new File(path)).toString());
         }
         mVideoView.start();
+    }
+
+    /**
+     * 播放失败时按固定顺序 0→1→2→3 尝试其余三个内核,切换到下一个并重播当前视频。
+     *
+     * @return true 已切换内核并重新播放;false 其余三个内核都已试过,停止尝试
+     */
+    private boolean retryWithNextPlayer() {
+        if (mVideoView == null || currentPlayPath == null) return false;
+        if (currentPlayType < 0) currentPlayType = PlayerSwitchUtil.normalizePlayType(Hawk.get(HawkConfig.PLAY_TYPE, 2));
+        int next = PlayerSwitchUtil.nextPlayerType(currentPlayType, triedPlayerTypes);
+        if (next < 0) {
+            // 全部内核都试过:重置,下次播放从头开始
+            triedPlayerTypes.clear();
+            currentPlayType = -1;
+            return false;
+        }
+        currentPlayType = next;
+        LOG.i("echo-localAutoRetry switch player: " + next);
+        PlayerHelper.updateCfg(mVideoView, next);
+        mVideoView.release();
+        if (currentPlayPath.startsWith("http://") || currentPlayPath.startsWith("https://")
+                || currentPlayPath.startsWith("rtmp://") || currentPlayPath.startsWith("rtsp://")) {
+            mVideoView.setUrl(currentPlayPath);
+        } else {
+            mVideoView.setUrl(Uri.fromFile(new File(currentPlayPath)).toString());
+        }
+        mVideoView.start();
+        return true;
     }
 
     private void playNext() {

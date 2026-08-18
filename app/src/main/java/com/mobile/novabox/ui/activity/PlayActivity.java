@@ -1072,15 +1072,17 @@ public class PlayActivity extends BaseActivity {
     private long lastRetryTime = 0;  // 记录上次调用时间（毫秒）
     private boolean allowSwitchPlayer = true;
     private java.util.Set<String> triedLineFlags = new java.util.HashSet<>();  // 记录已尝试过的线路
+    private java.util.Set<Integer> triedPlayerTypes = new java.util.HashSet<>();  // 记录已尝试过的播放内核(0=EXO硬解 1=EXO软解 2=IJK硬解 3=IJK软解)
 
     boolean autoRetry() {
         long currentTime = System.currentTimeMillis();
-        // 如果距离上次重试超过 10 秒（10000 毫秒），重置重试次数
+        // 如果距离上次重试超过 60 秒，重置重试次数
         if (currentTime - lastRetryTime > 60_000) {
             LOG.i("echo-reset-autoRetryCount");
             autoRetryCount = 0;
             allowSwitchPlayer = true;
             triedLineFlags.clear();
+            triedPlayerTypes.clear();
         }
         lastRetryTime = currentTime;  // 更新上次调用时间
         if (loadFoundVideoUrls != null && !loadFoundVideoUrls.isEmpty()) {
@@ -1088,40 +1090,34 @@ public class PlayActivity extends BaseActivity {
             return true;
         }
 
-        if (autoRetryCount < 2) {
-            if(autoRetryCount==1){
-                //第二次重试时重新调用接口
-                play(false);
-                autoRetryCount++;
-            }else {
-                //第一次重试直接带着原地址继续播放
-                if(webPlayUrl!=null){
-                    if(allowSwitchPlayer){
-                        //切换播放器不占用重试次数
-                        LOG.i("echo-autoRetry switch player and replay current url");
-                        if(mController.switchPlayer())autoRetryCount++;
-                        allowSwitchPlayer=false;
-                    }else {
-                        autoRetryCount++;
-                        allowSwitchPlayer=true;
-                    }
+        if (webPlayUrl != null) {
+            if (allowSwitchPlayer) {
+                // 按固定顺序 0→1→2→3 逐个尝试其余内核,每次失败切换到下一个并重播当前 URL
+                LOG.i("echo-autoRetry switch player and replay current url");
+                boolean switchSkipped = mController.switchPlayer(triedPlayerTypes);
+                if (!switchSkipped) {
                     stopParse();
                     initParseLoadFound();
                     if(mVideoView!=null) mVideoView.release();
                     playUrl(webPlayUrl, webHeaderMap);
-                }else {
-                    play(false);
-                    autoRetryCount++;
+                    return true;
                 }
+                LOG.i("echo-autoRetry all player types tried for current url");
+                allowSwitchPlayer = false;
+            } else {
+                LOG.i("echo-autoRetry player switching disabled");
             }
-            return true;
-        } else {
-            // 当前线路重试耗尽，尝试切换下一条线路
-            LOG.i("echo-autoRetry line switching disabled in PlayActivity");
-            autoRetryCount = 0;
-            allowSwitchPlayer = true;
-            return false;
         }
+        // 当前 URL 所有内核都试完:重新解析播放一次,仍失败则报错
+        autoRetryCount++;
+        if (autoRetryCount <= 1) {
+            play(false);
+            return true;
+        }
+        autoRetryCount = 0;
+        allowSwitchPlayer = true;
+        triedPlayerTypes.clear();
+        return false;
     }
 
     boolean tryNextLine() {
@@ -1166,6 +1162,7 @@ public class PlayActivity extends BaseActivity {
         mVodInfo.playIndex = nextIndex;
         autoRetryCount = 0;
         allowSwitchPlayer = true;
+        triedPlayerTypes.clear();
         play(false);
         return true;
     }
@@ -1263,6 +1260,7 @@ public class PlayActivity extends BaseActivity {
         stopParse();
         initParseLoadFound();
         allowSwitchPlayer = true;
+        triedPlayerTypes.clear();
         mController.stopOther();
         resetDanmuState();
         if(mVideoView!=null) mVideoView.release();

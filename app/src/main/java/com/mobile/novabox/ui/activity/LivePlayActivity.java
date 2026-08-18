@@ -98,11 +98,13 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -175,7 +177,8 @@ public class LivePlayActivity extends BaseActivity {
     private int currentLiveChannelIndex = -1;
     private int currentLiveLookBackIndex = -1;
     private int currentLiveChangeSourceTimes = 0;
-    private boolean allowLiveSwitchPlayer = true;
+    /** 本轮已尝试过的播放内核(0=EXO硬解 1=EXO软解 2=IJK硬解 3=IJK软解),失败时按序切换;播放成功/换源/换频道时清空 */
+    private final Set<Integer> triedLivePlayerTypes = new HashSet<>();
     private LiveChannelItem currentLiveChannelItem = null;
     private String pendingLiveRefreshChannelName = null;
     private int pendingLiveRefreshSourceIndex = -1;
@@ -1877,7 +1880,7 @@ public class LivePlayActivity extends BaseActivity {
             return true;
         }
         boolean showPreviousFrame = currentLiveChannelItem != null && mVideoView != null && mVideoView.isPlaying();
-        allowLiveSwitchPlayer = true;
+        triedLivePlayerTypes.clear();
         if (!changeSource) {
             currentChannelGroupIndex = channelGroupIndex;
             currentLiveChannelIndex = liveChannelIndex;
@@ -2301,7 +2304,7 @@ public class LivePlayActivity extends BaseActivity {
                             mHandler.post(mUpdateResolutionInfoRun);
                         }
                         currentLiveChangeSourceTimes = 0;
-                        allowLiveSwitchPlayer = true;
+                        triedLivePlayerTypes.clear();
                         break;
                     case VideoView.STATE_ERROR:
                     case VideoView.STATE_PLAYBACK_COMPLETED:
@@ -2342,17 +2345,18 @@ public class LivePlayActivity extends BaseActivity {
     }
 
     private boolean switchLivePlayerAndReplay() {
-        if (!allowLiveSwitchPlayer || currentLiveChannelItem == null || mVideoView == null) {
+        if (currentLiveChannelItem == null || mVideoView == null) {
             return false;
         }
         mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
         mVideoView.release();
-        if (!livePlayerManager.switchLivePlayer(mVideoView, currentLiveChannelItem.getChannelName())) {
-            allowLiveSwitchPlayer = false;
+        // 按固定顺序 0→1→2→3 逐个尝试其余内核,每次失败切换下一个并重播当前源
+        if (!livePlayerManager.switchLivePlayer(mVideoView, currentLiveChannelItem.getChannelName(), triedLivePlayerTypes)) {
+            LOG.i("echo-liveAutoRetry all player types tried, change source");
+            triedLivePlayerTypes.clear();
             return false;
         }
         LOG.i("echo-liveAutoRetry switch player and replay current url");
-        allowLiveSwitchPlayer = false;
         mVideoView.setUrl(currentLiveChannelItem.getUrl(), liveChannelHeader());
         mVideoView.start();
         return true;
@@ -3005,7 +3009,7 @@ public class LivePlayActivity extends BaseActivity {
         pendingLiveRefreshSourceIndex = sourceIndex;
         currentLiveLookBackIndex = -1;
         currentLiveChangeSourceTimes = 0;
-        allowLiveSwitchPlayer = true;
+        triedLivePlayerTypes.clear();
         channelGroupPasswordConfirmed.clear();
         mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
         mHandler.removeCallbacks(mLoadEpgRun);

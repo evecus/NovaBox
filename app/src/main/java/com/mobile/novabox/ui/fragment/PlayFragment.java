@@ -307,8 +307,8 @@ public class PlayFragment extends BaseLazyFragment {
             @Override
             public void changeParse(ParseBean pb) {
                 autoRetryCount = 0;
-                hasAutoSwitchedPlayer = false;
                 triedLineFlags.clear();
+                triedPlayerTypes.clear();
                 doParse(pb);
             }
 
@@ -321,8 +321,8 @@ public class PlayFragment extends BaseLazyFragment {
             @Override
             public void replay(boolean replay) {
                 autoRetryCount = 0;
-                hasAutoSwitchedPlayer = false;
                 triedLineFlags.clear();
+                triedPlayerTypes.clear();
                 if(replay){
                     play(true);
                 }else {
@@ -1135,6 +1135,7 @@ public class PlayFragment extends BaseLazyFragment {
 
     private void playNext(boolean isProgress) {
         triedLineFlags.clear();
+        triedPlayerTypes.clear();
         boolean hasNext;
         if (mVodInfo == null || mVodInfo.seriesMap.get(mVodInfo.playFlag) == null) {
             hasNext = false;
@@ -1152,6 +1153,7 @@ public class PlayFragment extends BaseLazyFragment {
 
     private void playPrevious() {
         triedLineFlags.clear();
+        triedPlayerTypes.clear();
         boolean hasPre = true;
         if (mVodInfo == null || mVodInfo.seriesMap.get(mVodInfo.playFlag) == null) {
             hasPre = false;
@@ -1170,19 +1172,19 @@ public class PlayFragment extends BaseLazyFragment {
     private long lastRetryTime = 0;  // 记录上次调用时间（毫秒）
 
     private boolean allowSwitchPlayer = true;
-    private boolean hasAutoSwitchedPlayer = false;
     private boolean allowAutoSwitchLine = true;
     private boolean playbackStarted = false;
     private long playTimeoutBasePosition = 0;
     private java.util.Set<String> triedLineFlags = new java.util.HashSet<>();  // 记录已尝试过的线路
+    private java.util.Set<Integer> triedPlayerTypes = new java.util.HashSet<>();  // 记录已尝试过的播放内核(0=EXO硬解 1=EXO软解 2=IJK硬解 3=IJK软解)
     boolean autoRetry() {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastRetryTime > 60_000){
             LOG.i("echo-reset-autoRetryCount");
             autoRetryCount = 0;
             allowSwitchPlayer = true;
-            hasAutoSwitchedPlayer = false;
             triedLineFlags.clear();
+            triedPlayerTypes.clear();
         }
 
         lastRetryTime = currentTime;  // 更新上次调用时间
@@ -1191,11 +1193,10 @@ public class PlayFragment extends BaseLazyFragment {
             return true;
         }
         if (webPlayUrl != null) {
-            if (allowSwitchPlayer && !hasAutoSwitchedPlayer) {
+            if (allowSwitchPlayer) {
+                // 按固定顺序 0→1→2→3 逐个尝试其余内核,每次失败切换到下一个并重播当前 URL
                 LOG.i("echo-autoRetry switch player and replay current url");
-                boolean switchSkipped = mController.switchPlayer();
-                hasAutoSwitchedPlayer = true;
-                allowSwitchPlayer = false;
+                boolean switchSkipped = mController.switchPlayer(triedPlayerTypes);
                 if (!switchSkipped) {
                     stopParse();
                     initParseLoadFound();
@@ -1203,8 +1204,11 @@ public class PlayFragment extends BaseLazyFragment {
                     playUrl(webPlayUrl, webHeaderMap);
                     return true;
                 }
+                LOG.i("echo-autoRetry all player types tried for current url, try next line");
+                allowSwitchPlayer = false;
+                return tryNextLineIfEnabled();
             }
-            LOG.i("echo-autoRetry current url failed after player switch, try next line");
+            LOG.i("echo-autoRetry player switching disabled, try next line");
             return tryNextLineIfEnabled();
         }
         return tryNextLineIfEnabled();
@@ -1215,8 +1219,8 @@ public class PlayFragment extends BaseLazyFragment {
         LOG.i("echo-autoRetry line switching disabled");
         autoRetryCount = 0;
         allowSwitchPlayer = true;
-        hasAutoSwitchedPlayer = false;
         triedLineFlags.clear();
+        triedPlayerTypes.clear();
         return false;
     }
 
@@ -1274,7 +1278,7 @@ public class PlayFragment extends BaseLazyFragment {
         mVodInfo.playIndex = nextIndex;
         autoRetryCount = 0;
         allowSwitchPlayer = true;
-        hasAutoSwitchedPlayer = false;
+        triedPlayerTypes.clear();
         inheritProgressKey = preProgressKey;
         inheritProgress = preProgress;
         play(false);
@@ -1424,7 +1428,6 @@ public class PlayFragment extends BaseLazyFragment {
         webHeaderMap = null;
         initParseLoadFound();
         allowSwitchPlayer=true;
-        hasAutoSwitchedPlayer=false;
         mController.stopOther();
         resetDanmuState();
         if(mVideoView!=null) mVideoView.release();
@@ -1714,12 +1717,9 @@ public class PlayFragment extends BaseLazyFragment {
             hideTipOnUiThread();
             return;
         }
-        LOG.i("echo-switchLinePlay timeout, try next line");
+        LOG.i("echo-switchLinePlay timeout, try next player/line");
         stopParse();
-        if (hasAutoSwitchedPlayer) {
-            if (!tryNextLineIfEnabled()) setTip("播放超时", false, true);
-            return;
-        }
+        // autoRetry 内部会先按顺序尝试其余播放内核(由 triedPlayerTypes 控制),全部试完才切线路
         if (!autoRetry()) setTip("播放超时", false, true);
     }
 

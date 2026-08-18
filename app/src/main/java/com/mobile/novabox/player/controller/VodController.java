@@ -36,6 +36,7 @@ import com.mobile.novabox.util.HawkConfig;
 import com.mobile.novabox.util.LOG;
 import com.mobile.novabox.util.M3u8;
 import com.mobile.novabox.util.PlayerHelper;
+import com.mobile.novabox.util.PlayerSwitchUtil;
 import com.mobile.novabox.util.SubtitleHelper;
 import com.mobile.novabox.util.VideoParseRuler;
 import com.mobile.novabox.util.thunder.Jianpian;
@@ -1002,28 +1003,27 @@ public class VodController extends BaseController {
         }
     }
 
-    public boolean switchPlayer(){
+    /**
+     * 自动切换播放内核(播放失败时由上层调用)。
+     * 按固定顺序 0→1→2→3 尝试除当前外的其余内核,已尝试过的记录在 triedPlayerTypes 中。
+     *
+     * @param triedPlayerTypes 已尝试过的内核档位集合(切内核失败后重试时传入,内部会累加)
+     * @return false 表示已切换到下一个内核,调用方应使用当前 URL 重新播放;
+     *         true  表示其余三个内核都已试过(或配置不支持),调用方应降级处理(如切换线路)
+     */
+    public boolean switchPlayer(java.util.Set<Integer> triedPlayerTypes) {
         try {
-            int playerType= mPlayerConfig.getInt("pl");
-            // 4 档编码:0=EXO硬解,1=EXO软解,2=IJK硬解,3=IJK软解
-            // 自动切换内核:EXO 系列 <-> IJK 系列(保持同解码方式)
-            int p_type;
-            switch (playerType) {
-                case 0: p_type = 2; break; // EXO硬解 -> IJK硬解
-                case 1: p_type = 3; break; // EXO软解 -> IJK软解
-                case 2: p_type = 0; break; // IJK硬解 -> EXO硬解
-                case 3: p_type = 1; break; // IJK软解 -> EXO软解
-                default: p_type = playerType; break;
-            }
-            if (p_type != playerType) {
-                LOG.i("echo-switchPlayer: " + playerType + " -> " + p_type);
-                mPlayerConfig.put("pl", p_type);
-                updatePlayerCfgView();
-                listener.updatePlayerCfg();
-            }else {
-                LOG.i("echo-switchPlayer: skip unsupported playerType=" + playerType);
+            int playerType = mPlayerConfig.getInt("pl");
+            int p_type = PlayerSwitchUtil.nextPlayerType(playerType, triedPlayerTypes);
+            if (p_type < 0) {
+                LOG.i("echo-switchPlayer: all player types tried, skip");
                 return true;
             }
+            LOG.i("echo-switchPlayer: " + playerType + " -> " + p_type);
+            mPlayerConfig.put("pl", p_type);
+            mPlayerConfig.put("ijk", PlayerSwitchUtil.ijkCodeFor(p_type));
+            updatePlayerCfgView();
+            listener.updatePlayerCfg();
         }catch (Exception e){
             LOG.i("echo-switchPlayer error: " + e.getMessage());
             return true;
