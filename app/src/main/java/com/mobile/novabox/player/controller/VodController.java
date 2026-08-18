@@ -36,7 +36,6 @@ import com.mobile.novabox.util.HawkConfig;
 import com.mobile.novabox.util.LOG;
 import com.mobile.novabox.util.M3u8;
 import com.mobile.novabox.util.PlayerHelper;
-import com.mobile.novabox.util.ScreenUtils;
 import com.mobile.novabox.util.SubtitleHelper;
 import com.mobile.novabox.util.VideoParseRuler;
 import com.mobile.novabox.util.thunder.Jianpian;
@@ -89,7 +88,8 @@ public class VodController extends BaseController {
                         if (mBottomRoot != null) mBottomRoot.setVisibility(VISIBLE);
                         mTopRoot1.setVisibility(VISIBLE);
                         // 顶部剧集信息等(mPlayTitle 已删)
-                        backBtn.setVisibility(ScreenUtils.isTv(context) ? INVISIBLE : VISIBLE);
+                        // 本 app 无 TV 版,返回图标在手机/平板全屏时都显示
+                        backBtn.setVisibility(VISIBLE);
                         showLockView();
                         // 全屏时:点屏幕显示完整 UI
                         syncUiByFullscreen();
@@ -200,7 +200,8 @@ public class VodController extends BaseController {
     };
     
     private void showLockView() {
-        mLockView.setVisibility(ScreenUtils.isTv(getContext()) ? INVISIBLE : VISIBLE);
+        // 本 app 无 TV 版,锁图标在手机/平板全屏时都显示
+        mLockView.setVisibility(VISIBLE);
         mHandler.removeCallbacks(lockRunnable);
         mHandler.postDelayed(lockRunnable, 3000);
     }
