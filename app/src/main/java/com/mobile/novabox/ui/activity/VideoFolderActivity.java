@@ -11,6 +11,7 @@ import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -46,6 +47,12 @@ public class VideoFolderActivity extends BaseActivity {
     private int sortMode;
     private List<File> allVideos = new ArrayList<>();
 
+    // 当前页面内搜索关键词，仅在该页面已加载的视频里过滤，不涉及更深层子目录
+    private String currentKeyword = "";
+
+    // 顶栏“搜索”文字按钮，有搜索结果时变为“清除”
+    private TextView tvSearch;
+
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -61,8 +68,27 @@ public class VideoFolderActivity extends BaseActivity {
         TextView tvTitle = findViewById(R.id.tvFolderTitle);
         if (tvTitle != null) tvTitle.setText(folderName != null ? folderName : "视频列表");
 
-        findViewById(R.id.ivBack).setOnClickListener(v -> onBackPressed());
-        findViewById(R.id.tvSort).setOnClickListener(v -> showSortDialog());
+        findViewById(R.id.ivBack).setOnClickListener(v -> {
+            // 退出页面时清除搜索结果
+            clearSearch();
+            onBackPressed();
+        });
+
+        tvSearch = findViewById(R.id.tvSearch);
+        // “搜索”文字按钮：无搜索时弹搜索框；有搜索结果时点击即清除
+        tvSearch.setOnClickListener(v -> {
+            if (hasSearchActive()) {
+                clearSearch();
+            } else {
+                showSearchDialog();
+            }
+        });
+
+        // 点击排序等其它按钮时也一并清除搜索结果
+        findViewById(R.id.tvSort).setOnClickListener(v -> {
+            clearSearch();
+            showSortDialog();
+        });
 
         rvVideos = findViewById(R.id.rvVideos);
         videoAdapter = new LocalVideoFileAdapter();
@@ -79,6 +105,7 @@ public class VideoFolderActivity extends BaseActivity {
             bundle.putString("folderPath", folderPath);
             bundle.putInt("startIndex", position);
             bundle.putBoolean("isUrl", false);
+            clearSearch();
             jumpActivity(LocalPlayerActivity.class, bundle);
         });
 
@@ -100,8 +127,59 @@ public class VideoFolderActivity extends BaseActivity {
 
     private void refreshList() {
         List<File> sorted = new ArrayList<>(allVideos);
+        if (currentKeyword != null && !currentKeyword.isEmpty()) {
+            sorted = filterByKeyword(sorted, currentKeyword);
+        }
         sortFiles(sorted, sortMode);
         videoAdapter.setNewData(sorted);
+    }
+
+    /** 当前是否处于搜索过滤状态。 */
+    private boolean hasSearchActive() {
+        return currentKeyword != null && !currentKeyword.isEmpty();
+    }
+
+    /** 清除当前页面搜索结果，顶栏按钮恢复为“搜索”，并刷新列表。 */
+    private void clearSearch() {
+        currentKeyword = "";
+        if (tvSearch != null) tvSearch.setText("搜索");
+        refreshList();
+    }
+
+    /** 按视频文件名（不含路径）包含关系过滤，忽略大小写；仅作用于本文件夹页面。 */
+    private List<File> filterByKeyword(List<File> list, String keyword) {
+        String kw = keyword.toLowerCase();
+        List<File> result = new ArrayList<>();
+        for (File f : list) {
+            if (f.getName().toLowerCase().contains(kw)) result.add(f);
+        }
+        return result;
+    }
+
+    /** 页面内搜索：仅对当前文件夹下已加载的视频名做关键词过滤，不涉及子目录里的内容。 */
+    private void showSearchDialog() {
+        Dialog dialog = new Dialog(this, R.style.CustomDialogStyle);
+        dialog.setContentView(R.layout.dialog_search_local);
+        dialog.setCanceledOnTouchOutside(true);
+        android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        int w = (int) (Math.min(dm.widthPixels, dm.heightPixels) * 0.88f);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setLayout(w, WindowManager.LayoutParams.WRAP_CONTENT);
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+        EditText etKeyword = dialog.findViewById(R.id.etSearchKeyword);
+        etKeyword.setText(currentKeyword);
+        if (currentKeyword != null && !currentKeyword.isEmpty()) etKeyword.setSelection(currentKeyword.length());
+        dialog.findViewById(R.id.tvCancel).setOnClickListener(v -> dialog.dismiss());
+        dialog.findViewById(R.id.tvConfirm).setOnClickListener(v -> {
+            currentKeyword = etKeyword.getText().toString().trim();
+            dialog.dismiss();
+            // 有搜索结果时，顶栏按钮切换为“清除”
+            tvSearch.setText(hasSearchActive() ? "清除" : "搜索");
+            refreshList();
+        });
+        dialog.show();
     }
 
     private void sortFiles(List<File> list, int sort) {

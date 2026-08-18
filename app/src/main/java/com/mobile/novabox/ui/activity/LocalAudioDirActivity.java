@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -32,6 +33,12 @@ public class LocalAudioDirActivity extends BaseActivity {
     private RecyclerView rvSongs;
     private int sortMode = LocalAudioActivity.SORT_SONG_TITLE_ASC;
 
+    // 当前页面内搜索关键词，仅在该页面已加载的歌曲里过滤，不涉及其他子目录
+    private String currentKeyword = "";
+
+    // 顶栏“搜索”文字按钮，有搜索结果时变为“清除”
+    private TextView tvSearch;
+
     // 音乐封面：内存态、分批增量加载，不落盘（见 AudioCoverMemoryCache 类注释）。
     // 这里是"某个文件夹/分组下的歌曲子列表"，规模通常远小于全量歌曲库，但复用同一套
     // 策略保持行为一致，实现和维护成本也更低。
@@ -48,8 +55,27 @@ public class LocalAudioDirActivity extends BaseActivity {
         String[] paths = bundle != null ? bundle.getStringArray("songPaths") : null;
 
         ((TextView) findViewById(R.id.tvDirTitle)).setText(title);
-        findViewById(R.id.ivBack).setOnClickListener(v -> finish());
-        findViewById(R.id.tvSort).setOnClickListener(v -> showSortDialog());
+        findViewById(R.id.ivBack).setOnClickListener(v -> {
+            // 退出页面时清除搜索结果
+            clearSearch();
+            finish();
+        });
+
+        tvSearch = findViewById(R.id.tvSearch);
+        // “搜索”文字按钮：无搜索时弹搜索框；有搜索结果时点击即清除
+        tvSearch.setOnClickListener(v -> {
+            if (hasSearchActive()) {
+                clearSearch();
+            } else {
+                showSearchDialog();
+            }
+        });
+
+        // 点击排序等其它按钮时也一并清除搜索结果
+        findViewById(R.id.tvSort).setOnClickListener(v -> {
+            clearSearch();
+            showSortDialog();
+        });
 
         // 重建 LocalAudioFile 列表（路径数组传递）
         if (paths != null) {
@@ -89,17 +115,77 @@ public class LocalAudioDirActivity extends BaseActivity {
         coverCache.dispose();
     }
 
-    /** 当前排序方式下的歌曲列表快照，供封面内存缓存按可见位置增量加载使用。 */
+    /** 当前排序方式（含搜索过滤）下的歌曲列表快照，供封面内存缓存按可见位置增量加载使用。 */
     private List<LocalAudioFile> sortedSongsSnapshot() {
         List<LocalAudioFile> sorted = new ArrayList<>(songs);
+        if (currentKeyword != null && !currentKeyword.isEmpty()) {
+            sorted = filterSongsByKeyword(sorted, currentKeyword);
+        }
         sortSongs(sorted, sortMode);
         return sorted;
     }
 
     private void refreshList() {
         List<LocalAudioFile> sorted = new ArrayList<>(songs);
+        if (currentKeyword != null && !currentKeyword.isEmpty()) {
+            sorted = filterSongsByKeyword(sorted, currentKeyword);
+        }
         sortSongs(sorted, sortMode);
         rvSongs.setAdapter(new SongAdapter(sorted));
+    }
+
+    /** 当前是否处于搜索过滤状态。 */
+    private boolean hasSearchActive() {
+        return currentKeyword != null && !currentKeyword.isEmpty();
+    }
+
+    /** 清除当前页面搜索结果，顶栏按钮恢复为“搜索”，并刷新列表。 */
+    private void clearSearch() {
+        currentKeyword = "";
+        if (tvSearch != null) tvSearch.setText("搜索");
+        refreshList();
+    }
+
+    /** 按歌曲标题包含关系过滤，忽略大小写；仅作用于当前文件夹/分组下的歌曲。 */
+    private List<LocalAudioFile> filterSongsByKeyword(List<LocalAudioFile> list, String keyword) {
+        String kw = keyword.toLowerCase();
+        List<LocalAudioFile> result = new ArrayList<>();
+        for (LocalAudioFile f : list) {
+            String title = f.title != null ? f.title : "";
+            if (title.toLowerCase().contains(kw)) result.add(f);
+        }
+        return result;
+    }
+
+    /** 页面内搜索：仅对当前文件夹/分组下已加载的歌曲名做关键词过滤，不涉及其他子目录。 */
+    private void showSearchDialog() {
+        Dialog dialog = new Dialog(this, R.style.CustomDialogStyle);
+        dialog.setContentView(R.layout.dialog_search_local);
+        dialog.setCanceledOnTouchOutside(true);
+        android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        int w = (int) (Math.min(dm.widthPixels, dm.heightPixels) * 0.88f);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setLayout(w, WindowManager.LayoutParams.WRAP_CONTENT);
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+        EditText etKeyword = dialog.findViewById(R.id.etSearchKeyword);
+        etKeyword.setText(currentKeyword);
+        if (currentKeyword != null && !currentKeyword.isEmpty()) etKeyword.setSelection(currentKeyword.length());
+        dialog.findViewById(R.id.tvCancel).setOnClickListener(v -> dialog.dismiss());
+        dialog.findViewById(R.id.tvConfirm).setOnClickListener(v -> {
+            currentKeyword = etKeyword.getText().toString().trim();
+            dialog.dismiss();
+            // 有搜索结果时，顶栏按钮切换为“清除”
+            tvSearch.setText(hasSearchActive() ? "清除" : "搜索");
+            coverCache.reset();
+            refreshList();
+            coverCache.ensureFirstBatch(sortedSongsSnapshot(), () -> {
+                RecyclerView.Adapter<?> adapter = rvSongs.getAdapter();
+                if (adapter != null) adapter.notifyDataSetChanged();
+            });
+        });
+        dialog.show();
     }
 
     private void sortSongs(List<LocalAudioFile> list, int sort) {
@@ -234,6 +320,8 @@ public class LocalAudioDirActivity extends BaseActivity {
     }
 
     private void playSong(List<LocalAudioFile> playlist, int index) {
+        // 进入播放页前清除当前搜索结果
+        clearSearch();
         LocalAudioFile song = playlist.get(index);
         Bundle b = new Bundle();
         b.putString("path", song.path);
