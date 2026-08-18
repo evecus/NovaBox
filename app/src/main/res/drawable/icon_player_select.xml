@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+    <!-- 播放器切换:六边形 + 内三角 -->
+    <path
+        android:pathData="M512,64 L880,272 L880,752 L512,960 L144,752 L144,272 Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.2"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="40"/>
+    <path
+        android:pathData="M400,360 L680,512 L400,664 Z"
+        android:fillColor="#FFFFFF"/>
+</vector>

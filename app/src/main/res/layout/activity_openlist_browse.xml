@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- 顶部导航栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:background="@android:color/transparent">
+
+        <!-- 返回按钮 -->
+        <ImageView
+            android:id="@+id/ivOpenListBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:src="@drawable/icon_back"
+            android:tint="@android:color/black"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <!-- 云图标 -->
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_marginLeft="4dp"
+            android:src="@drawable/icon_openlist_cloud"
+            android:tint="@android:color/black" />
+
+        <!-- 标题 -->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginLeft="8dp"
+            android:text="OpenList 网盘"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:ellipsize="end" />
+
+        <!-- 回到首页 -->
+        <TextView
+            android:id="@+id/tvOpenListGoHome"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_marginRight="8dp"
+            android:background="@drawable/shape_source_btn_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:text="回到首页"
+            android:textColor="@android:color/black"
+            android:textSize="12sp" />
+
+        <!-- 退出登录 -->
+        <TextView
+            android:id="@+id/tvOpenListLogout"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:background="@drawable/shape_source_btn_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:text="退出登录"
+            android:textColor="@android:color/black"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- 当前路径 -->
+    <TextView
+        android:id="@+id/tvOpenListPath"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:text="/"
+        android:textColor="#88000000"
+        android:textSize="12sp"
+        android:singleLine="true"
+        android:ellipsize="middle"
+        android:background="@android:color/transparent" />
+
+    <!-- 加载中 -->
+    <ProgressBar
+        android:id="@+id/pbOpenListLoading"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:indeterminate="true"
+        android:visibility="gone"
+        style="?android:attr/progressBarStyleHorizontal" />
+
+    <!-- 文件列表 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvOpenListFiles"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingTop="4dp"
+        android:paddingBottom="8dp"
+        android:scrollbars="none" />
+
+    <!-- 空目录提示 -->
+    <TextView
+        android:id="@+id/tvOpenListEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="32dp"
+        android:text="当前目录为空"
+        android:textColor="#88000000"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+</LinearLayout>

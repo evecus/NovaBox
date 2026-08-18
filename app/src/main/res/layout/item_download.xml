@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_margin="4dp"
+    android:background="@drawable/bg_grid_item"
+    android:padding="6dp">
+
+    <!-- 海报区域(留位,方便以后加图) -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="90dp"
+        android:background="@drawable/bg_thumb_placeholder">
+
+        <!-- 状态角标 -->
+        <TextView
+            android:id="@+id/tvDownloadStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_margin="4dp"
+            android:background="@drawable/bg_status_chip"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="排队中"
+            android:textColor="@android:color/white"
+            android:textSize="11sp" />
+    </FrameLayout>
+
+    <!-- 标题 -->
+    <TextView
+        android:id="@+id/tvDownloadName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@android:color/black"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <!-- 集数 -->
+    <TextView
+        android:id="@+id/tvDownloadEpisode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="#80000000"
+        android:textSize="11sp" />
+
+    <!-- 进度条 -->
+    <ProgressBar
+        android:id="@+id/pbDownload"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_marginTop="4dp"
+        android:max="100"
+        android:progress="0" />
+
+    <!-- 进度/大小文字 -->
+    <TextView
+        android:id="@+id/tvDownloadProgress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="#80000000"
+        android:textSize="11sp" />
+</LinearLayout>

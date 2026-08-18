@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+    <!-- 选集:三横线 -->
+    <path
+        android:pathData="M160,280 L880,280 L880,360 L160,360 Z"
+        android:fillColor="#FFFFFF"/>
+    <path
+        android:pathData="M160,480 L880,480 L880,560 L160,560 Z"
+        android:fillColor="#FFFFFF"/>
+    <path
+        android:pathData="M160,680 L880,680 L880,760 L160,760 Z"
+        android:fillColor="#FFFFFF"/>
+</vector>
