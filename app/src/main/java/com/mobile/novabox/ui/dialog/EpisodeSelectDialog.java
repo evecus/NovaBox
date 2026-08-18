@@ -87,6 +87,8 @@ public class EpisodeSelectDialog extends Dialog {
             boolean selected = position == currentIndex;
             holder.itemView.setSelected(selected);
             holder.tvName.setTextSize(selected ? 16 : 14);
+            // 右上角 ✓ 角标联动选中态
+            holder.tvCheck.setVisibility(selected ? View.VISIBLE : View.GONE);
             holder.itemView.setOnClickListener(v -> {
                 if (listener != null) listener.onSelected(position);
                 dismiss();
@@ -100,10 +102,12 @@ public class EpisodeSelectDialog extends Dialog {
 
         class VH extends RecyclerView.ViewHolder {
             final TextView tvName;
+            final TextView tvCheck;
 
             VH(View v) {
                 super(v);
                 tvName = v.findViewById(R.id.tvEpisodeName);
+                tvCheck = v.findViewById(R.id.tvEpisodeCheck);
             }
         }
     }

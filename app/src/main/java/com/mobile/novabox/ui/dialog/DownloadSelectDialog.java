@@ -61,9 +61,9 @@ public class DownloadSelectDialog extends Dialog {
             int widthPx = (int) (minScreenSidePx * 0.85f);
             int maxWidthPx = (int) (dm.density * 600);
             if (widthPx > maxWidthPx) widthPx = maxWidthPx;
-            // 高度限制屏幕 80%,避免横屏时撑满全屏
-            int maxHeightPx = (int) (dm.heightPixels * 0.8f);
-            window.setLayout(widthPx, maxHeightPx);
+            // 高度限制屏幕 85%,LinearLayout 内容可小于窗口(自然居中)、可大于窗口(NestedScrollView 滚动)
+            int heightPx = (int) (dm.heightPixels * 0.85f);
+            window.setLayout(widthPx, heightPx);
             window.setGravity(Gravity.CENTER);
             window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         }
@@ -223,10 +223,15 @@ public class DownloadSelectDialog extends Dialog {
             VodInfo.VodSeries series = episodes.get(position);
             String name = series != null && series.name != null ? series.name : ("第" + (position + 1) + "集");
             holder.tvName.setText(name);
-            holder.itemView.setSelected(selected[position]);
+            boolean sel = selected[position];
+            holder.itemView.setSelected(sel);
+            // 右上角 ✓ 角标只在选中态显示(visibility 不能用 selector 自动切,需手动)
+            holder.tvCheck.setVisibility(sel ? View.VISIBLE : View.GONE);
             holder.itemView.setOnClickListener(v -> {
                 selected[position] = !selected[position];
-                holder.itemView.setSelected(selected[position]);
+                boolean newSel = selected[position];
+                holder.itemView.setSelected(newSel);
+                holder.tvCheck.setVisibility(newSel ? View.VISIBLE : View.GONE);
                 refreshConfirmText();
             });
         }
@@ -238,10 +243,12 @@ public class DownloadSelectDialog extends Dialog {
 
         class VH extends RecyclerView.ViewHolder {
             final TextView tvName;
+            final TextView tvCheck;
 
             VH(View itemView) {
                 super(itemView);
                 tvName = itemView.findViewById(R.id.tvEpisodeName);
+                tvCheck = itemView.findViewById(R.id.tvEpisodeCheck);
             }
         }
     }
