@@ -87,6 +87,9 @@ public class LocalAudioActivity extends BaseActivity {
     // 当前页面内搜索关键词，仅在该页面内容里过滤，不涉及子目录页面（LocalAudioDirActivity）
     private String currentKeyword = "";
 
+    // 顶栏“搜索”文字按钮，有搜索结果时变为“清除”
+    private TextView tvSearch;
+
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -103,7 +106,11 @@ public class LocalAudioActivity extends BaseActivity {
         currentSortSong  = LocalMediaPrefs.loadAudioSortSong(this, SORT_SONG_TITLE_ASC);
         currentSortGroup = LocalMediaPrefs.loadAudioSortGroup(this, SORT_GROUP_NAME_ASC);
 
-        findViewById(R.id.ivBack).setOnClickListener(v -> finish());
+        findViewById(R.id.ivBack).setOnClickListener(v -> {
+            // 退出页面时清除搜索结果
+            clearSearch();
+            finish();
+        });
 
         rvList = findViewById(R.id.rvList);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
@@ -123,12 +130,28 @@ public class LocalAudioActivity extends BaseActivity {
         });
 
         findViewById(R.id.tvRefresh).setOnClickListener(v -> {
+            clearSearch();
             Toast.makeText(this, "正在扫描本地音乐...", Toast.LENGTH_SHORT).show();
             scanAudio();
         });
-        findViewById(R.id.tvCategory).setOnClickListener(v -> showCategoryDialog());
-        findViewById(R.id.tvSort).setOnClickListener(v -> showSortDialog());
-        findViewById(R.id.ivSearch).setOnClickListener(v -> showSearchDialog());
+        findViewById(R.id.tvCategory).setOnClickListener(v -> {
+            clearSearch();
+            showCategoryDialog();
+        });
+        findViewById(R.id.tvSort).setOnClickListener(v -> {
+            clearSearch();
+            showSortDialog();
+        });
+
+        tvSearch = findViewById(R.id.tvSearch);
+        // “搜索”文字按钮：无搜索时弹搜索框；有搜索结果时点击即清除
+        tvSearch.setOnClickListener(v -> {
+            if (hasSearchActive()) {
+                clearSearch();
+            } else {
+                showSearchDialog();
+            }
+        });
 
         checkPermissionAndScan();
     }
@@ -566,6 +589,18 @@ public class LocalAudioActivity extends BaseActivity {
 
     // ─── 搜索 ──────────────────────────────────────────────────────────────────
 
+    /** 当前是否处于搜索过滤状态。 */
+    private boolean hasSearchActive() {
+        return currentKeyword != null && !currentKeyword.isEmpty();
+    }
+
+    /** 清除当前页面搜索结果，顶栏按钮恢复为“搜索”，并刷新列表。 */
+    private void clearSearch() {
+        currentKeyword = "";
+        if (tvSearch != null) tvSearch.setText("搜索");
+        refreshList();
+    }
+
     /**
      * 页面内搜索：仅对当前页面已加载的内容（歌曲/专辑/艺术家/文件夹名）做关键词
      * 过滤，不涉及子目录页面（LocalAudioDirActivity）里的内容。
@@ -588,6 +623,8 @@ public class LocalAudioActivity extends BaseActivity {
         dialog.findViewById(R.id.tvConfirm).setOnClickListener(v -> {
             currentKeyword = etKeyword.getText().toString().trim();
             dialog.dismiss();
+            // 有搜索结果时，顶栏按钮切换为“清除”
+            tvSearch.setText(hasSearchActive() ? "清除" : "搜索");
             if (currentCategory == CAT_SONG) {
                 coverCache.reset();
                 refreshList();
@@ -714,6 +751,8 @@ public class LocalAudioActivity extends BaseActivity {
                 String[] paths = new String[songs.size()];
                 for (int i = 0; i < songs.size(); i++) paths[i] = songs.get(i).path;
                 bundle.putStringArray("songPaths", paths);
+                // 进入文件夹/分组页面前清除搜索结果
+                clearSearch();
                 jumpActivity(LocalAudioDirActivity.class, bundle);
             });
         }
@@ -723,6 +762,8 @@ public class LocalAudioActivity extends BaseActivity {
     // ─── 播放 ──────────────────────────────────────────────────────────────────
 
     void playSong(List<LocalAudioFile> playlist, int index) {
+        // 进入播放页前清除当前搜索结果
+        clearSearch();
         LocalAudioFile song = playlist.get(index);
         Bundle b = new Bundle();
         b.putString("path", song.path);

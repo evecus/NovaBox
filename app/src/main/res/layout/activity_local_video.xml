@@ -47,14 +47,14 @@
             android:gravity="center_vertical"
             android:layout_alignParentEnd="true">
 
-            <ImageView
-                android:id="@+id/ivSearch"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:padding="7dp"
-                android:src="@drawable/icon_search"
-                android:tint="@android:color/black"
-                android:scaleType="fitCenter"
+            <TextView
+                android:id="@+id/tvSearch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="搜索"
+                android:textColor="@android:color/black"
+                android:textSize="14sp"
+                android:padding="8dp"
                 android:clickable="true"
                 android:focusable="true"/>
 

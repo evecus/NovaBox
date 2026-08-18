@@ -83,6 +83,9 @@ public class LocalVideoActivity extends BaseActivity {
     // 当前页面内搜索关键词，仅在该页面内容里过滤（视频名 / 文件夹名），不涉及子文件夹页面
     private String currentKeyword = "";
 
+    // 顶栏“搜索”文字按钮，有搜索结果时变为“清除”
+    private TextView tvSearch;
+
     private List<File>                              allVideoFiles = new ArrayList<>();
     private List<Map.Entry<String, List<File>>>     folderEntries = new ArrayList<>();
 
@@ -96,15 +99,38 @@ public class LocalVideoActivity extends BaseActivity {
         currentSortVideo  = LocalMediaPrefs.loadVideoSortVideo(this, SORT_NAME_ASC);
         currentSortFolder = LocalMediaPrefs.loadVideoSortFolder(this, SORT_FOLDER_NAME_ASC);
 
-        findViewById(R.id.ivBack).setOnClickListener(v -> onBackPressed());
-        findViewById(R.id.ivLinkPlay).setOnClickListener(v -> showLinkDialog());
+        findViewById(R.id.ivBack).setOnClickListener(v -> {
+            // 退出页面时清除搜索结果
+            clearSearch();
+            onBackPressed();
+        });
+        findViewById(R.id.ivLinkPlay).setOnClickListener(v -> {
+            clearSearch();
+            showLinkDialog();
+        });
         findViewById(R.id.tvRefresh).setOnClickListener(v -> {
+            clearSearch();
             Toast.makeText(this, "正在扫描本地视频...", Toast.LENGTH_SHORT).show();
             scanVideos();
         });
-        findViewById(R.id.tvCategory).setOnClickListener(v -> showCategoryDialog());
-        findViewById(R.id.tvSort).setOnClickListener(v -> showSortDialog());
-        findViewById(R.id.ivSearch).setOnClickListener(v -> showSearchDialog());
+        findViewById(R.id.tvCategory).setOnClickListener(v -> {
+            clearSearch();
+            showCategoryDialog();
+        });
+        findViewById(R.id.tvSort).setOnClickListener(v -> {
+            clearSearch();
+            showSortDialog();
+        });
+
+        tvSearch = findViewById(R.id.tvSearch);
+        // “搜索”文字按钮：无搜索时弹搜索框；有搜索结果时点击即清除
+        tvSearch.setOnClickListener(v -> {
+            if (hasSearchActive()) {
+                clearSearch();
+            } else {
+                showSearchDialog();
+            }
+        });
 
         rvFolders = findViewById(R.id.rvFolders);
 
@@ -112,23 +138,25 @@ public class LocalVideoActivity extends BaseActivity {
         videoAdapter  = new LocalVideoFileAdapter();
         folderAdapter = new VideoFolderAdapter();
 
-        // 视频 adapter 点击：直接播放
+        // 视频 adapter 点击：直接播放（进入播放前清除搜索结果）
         videoAdapter.setOnItemClickListener((adapter, view, position) -> {
             File file = videoAdapter.getData().get(position);
             Bundle b = new Bundle();
             b.putString("videoPath",  file.getAbsolutePath());
             b.putString("videoTitle", file.getName());
             b.putBoolean("isUrl", false);
+            clearSearch();
             jumpActivity(LocalPlayerActivity.class, b);
         });
 
-        // 文件夹 adapter 点击：进入子目录
+        // 文件夹 adapter 点击：进入子目录（进入前清除搜索结果）
         folderAdapter.setOnItemClickListener((adapter, view, position) -> {
             VideoFolderAdapter.FolderInfo info = folderAdapter.getData().get(position);
             Bundle b = new Bundle();
             b.putString("folderPath", info.path);
             b.putString("folderName", info.name);
             b.putInt("sortVideo", currentSortVideo);
+            clearSearch();
             jumpActivity(VideoFolderActivity.class, b);
         });
 
@@ -478,6 +506,18 @@ public class LocalVideoActivity extends BaseActivity {
 
     // ─── 搜索 ──────────────────────────────────────────────────────────────────
 
+    /** 当前是否处于搜索过滤状态。 */
+    private boolean hasSearchActive() {
+        return currentKeyword != null && !currentKeyword.isEmpty();
+    }
+
+    /** 清除当前页面搜索结果，顶栏按钮恢复为“搜索”，并刷新列表。 */
+    private void clearSearch() {
+        currentKeyword = "";
+        if (tvSearch != null) tvSearch.setText("搜索");
+        refreshList();
+    }
+
     /**
      * 页面内搜索：仅对当前页面已加载的内容（视频名 / 文件夹名）做关键词过滤，
      * 不涉及子文件夹页面（VideoFolderActivity）里的内容。
@@ -500,6 +540,8 @@ public class LocalVideoActivity extends BaseActivity {
         dialog.findViewById(R.id.tvConfirm).setOnClickListener(v -> {
             currentKeyword = etKeyword.getText().toString().trim();
             dialog.dismiss();
+            // 有搜索结果时，顶栏按钮切换为“清除”
+            tvSearch.setText(hasSearchActive() ? "清除" : "搜索");
             refreshList();
         });
         dialog.show();
