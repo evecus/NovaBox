@@ -52,47 +52,47 @@
             android:id="@+id/tvOpenListGoHome"
             android:layout_width="wrap_content"
             android:layout_height="34dp"
-            android:layout_marginRight="8dp"
-            android:background="@drawable/shape_source_btn_bg"
+            android:layout_marginRight="12dp"
+            android:background="@android:color/transparent"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
-            android:paddingLeft="12dp"
-            android:paddingRight="12dp"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
             android:text="回到首页"
             android:textColor="@android:color/black"
-            android:textSize="12sp" />
+            android:textSize="13sp" />
 
         <!-- 退出登录 -->
         <TextView
             android:id="@+id/tvOpenListLogout"
             android:layout_width="wrap_content"
             android:layout_height="34dp"
-            android:background="@drawable/shape_source_btn_bg"
+            android:background="@android:color/transparent"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
-            android:paddingLeft="12dp"
-            android:paddingRight="12dp"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
             android:text="退出登录"
             android:textColor="@android:color/black"
-            android:textSize="12sp" />
+            android:textSize="13sp" />
     </LinearLayout>
 
-    <!-- 当前路径 -->
+    <!-- 当前路径（面包屑：首页 / 123云盘 / 手机 / ...，每段名字可点击跳到对应目录） -->
     <TextView
         android:id="@+id/tvOpenListPath"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
         android:text="/"
         android:textColor="#88000000"
-        android:textSize="12sp"
+        android:textSize="15sp"
         android:singleLine="true"
-        android:ellipsize="middle"
+        android:ellipsize="end"
         android:background="@android:color/transparent" />
 
     <!-- 加载中 -->

@@ -1,8 +1,14 @@
 package com.mobile.novabox.ui.activity;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.TextPaint;
 import android.text.TextUtils;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -62,17 +68,13 @@ public class OpenListBrowseActivity extends BaseActivity {
         tvGoHome = findViewById(R.id.tvOpenListGoHome);
         pbLoading = findViewById(R.id.pbOpenListLoading);
         fileList = findViewById(R.id.rvOpenListFiles);
+        // 启用点击响应：让面包屑中的各段 ClickableSpan 可以被点击跳转
+        tvPath.setMovementMethod(LinkMovementMethod.getInstance());
 
-        // 返回按钮
+        // 返回按钮：直接关闭当前页，不再回上一级目录
         ImageView ivBack = findViewById(R.id.ivOpenListBack);
         if (ivBack != null) {
-            ivBack.setOnClickListener(v -> {
-                if (!isRoot(currentPath)) {
-                    loadDir(parentOf(currentPath));
-                } else {
-                    finish();
-                }
-            });
+            ivBack.setOnClickListener(v -> finish());
         }
 
         adapter = new OpenListFileAdapter();
@@ -159,6 +161,60 @@ public class OpenListBrowseActivity extends BaseActivity {
         return p.substring(0, idx);
     }
 
+    /**
+     * 把当前路径渲染成可点击的面包屑：
+     *   根目录:                  "/ 首页"
+     *   "/123云盘":              "/ 首页 / 123云盘"
+     *   "/123云盘/手机":        "/ 首页 / 123云盘 / 手机"
+     * 点 "首页" 回到根目录、点 "123云盘" 跳到 /123云盘，依此类推。
+     * 分隔符 " / " 不响应点击。
+     */
+    private Spanned buildBreadcrumb(String path) {
+        SpannableStringBuilder sb = new SpannableStringBuilder();
+        // 段一：永远存在的 "首页"，点它回到根
+        appendClickableSegment(sb, "/ 首页", "/");
+        if (isRoot(path)) {
+            return sb;
+        }
+        String trimmed = path.startsWith("/") ? path.substring(1) : path;
+        if (trimmed.endsWith("/")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        if (trimmed.isEmpty()) {
+            return sb;
+        }
+        String[] parts = trimmed.split("/");
+        StringBuilder acc = new StringBuilder("/");
+        for (String part : parts) {
+            if (part.isEmpty()) continue;
+            if (acc.length() > 1) acc.append('/');
+            acc.append(part);
+            final String targetPath = acc.toString();
+            appendClickableSegment(sb, " / " + part, targetPath);
+        }
+        return sb;
+    }
+
+    private void appendClickableSegment(SpannableStringBuilder sb, String text, final String targetPath) {
+        int start = sb.length();
+        sb.append(text);
+        int end = sb.length();
+        sb.setSpan(new ClickableSpan() {
+            @Override
+            public void onClick(View widget) {
+                loadDir(targetPath);
+            }
+
+            @Override
+            public void updateDrawState(TextPaint ds) {
+                super.updateDrawState(ds);
+                // 与 TextView 默认前景色一致，关闭下划线
+                ds.setColor(Color.parseColor("#88000000"));
+                ds.setUnderlineText(false);
+            }
+        }, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    }
+
     private void loadDir(final String path) {
         if (requesting) return;
         requesting = true;
@@ -173,7 +229,7 @@ public class OpenListBrowseActivity extends BaseActivity {
                     requesting = false;
                     if (isActivityUnavailable()) return;
                     currentPath = path;
-                    tvPath.setText(currentPath);
+                    tvPath.setText(buildBreadcrumb(currentPath));
                     pbLoading.setVisibility(View.GONE);
 
                     List<OpenListFile> files = new ArrayList<>();
@@ -307,11 +363,8 @@ public class OpenListBrowseActivity extends BaseActivity {
 
     @Override
     public void onBackPressed() {
-        if (!isRoot(currentPath)) {
-            loadDir(parentOf(currentPath));
-        } else {
-            super.onBackPressed();
-        }
+        // 与左上角返回图标行为一致：直接关闭当前页，不回上级目录
+        finish();
     }
 
     private boolean isActivityUnavailable() {
