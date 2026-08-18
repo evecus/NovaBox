@@ -273,13 +273,16 @@ public class LocalAudioActivity extends BaseActivity {
         return sorted;
     }
 
-    /** 按歌曲标题包含关系过滤，忽略大小写。 */
+    /** 按歌曲名 / 歌手名包含关系过滤，忽略大小写；任一字段命中即可。 */
     private List<LocalAudioFile> filterSongsByKeyword(List<LocalAudioFile> list, String keyword) {
         String kw = keyword.toLowerCase();
         List<LocalAudioFile> result = new ArrayList<>();
         for (LocalAudioFile f : list) {
-            String title = f.title != null ? f.title : "";
-            if (title.toLowerCase().contains(kw)) result.add(f);
+            String title  = f.title  != null ? f.title  : "";
+            String artist = f.artist != null ? f.artist : "";
+            if (title.toLowerCase().contains(kw) || artist.toLowerCase().contains(kw)) {
+                result.add(f);
+            }
         }
         return result;
     }
