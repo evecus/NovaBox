@@ -1350,9 +1350,9 @@ public class DetailActivity extends BaseActivity {
             if (playFragment.onBackPressed())
                 return;
             toggleFullPreview();
-            List<VodInfo.VodSeries> list = vodInfo.seriesMap.get(vodInfo.playFlag);
-            assert list != null;
-            tvSeriesGroup.setVisibility(list.size()>1 ? View.VISIBLE : View.GONE);
+            // 分组行可见性统一由 toggleFullPreview() 内部控制(强制 GONE,"1-12""13-20" 分组分页已禁用)
+            // —— 之前这里独立按 list.size()>1 重新显示 tvSeriesGroup,会盖掉 toggleFullPreview 里的 GONE,
+            // 导致退出全屏后"1-12""13-16"这类分组行再次跳出来。
             mGridView.requestFocus();
             return;
         }
