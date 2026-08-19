@@ -120,6 +120,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import xyz.doikki.videoplayer.exo.ExoMediaSourceHelper;
+import xyz.doikki.videoplayer.player.AbstractPlayer;
 import xyz.doikki.videoplayer.player.VideoView;
 
 /**
@@ -2349,6 +2350,12 @@ public class LivePlayActivity extends BaseActivity {
             return false;
         }
         mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
+        // 网络原因访问不了播放地址(IO/超时/服务器不可达):切换播放内核无意义,直接换源/换频道
+        if (mVideoView.getLastErrorType() == AbstractPlayer.PlayerEventListener.ERROR_TYPE_NETWORK) {
+            LOG.i("echo-liveAutoRetry network error, skip player switch, change source");
+            triedLivePlayerTypes.clear();
+            return false;
+        }
         mVideoView.release();
         // 按固定顺序 0→1→2→3 逐个尝试其余内核,每次失败切换下一个并重播当前源
         if (!livePlayerManager.switchLivePlayer(mVideoView, currentLiveChannelItem.getChannelName(), triedLivePlayerTypes)) {

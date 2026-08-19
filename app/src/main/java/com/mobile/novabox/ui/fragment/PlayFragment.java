@@ -738,11 +738,11 @@ public class PlayFragment extends BaseLazyFragment {
                         hideTip();
                         playTimeoutBasePosition = getSavedProgress(progressKey);
                         if (url.startsWith("data:application/dash+xml;base64,")) {
-                            PlayerHelper.updateCfg(mVideoView, mVodPlayerCfg, 2);
+                            PlayerHelper.updateCfg(mVideoView, mVodPlayerCfg, 0);
                             App.getInstance().setDashData(url.split("base64,")[1]);
                             url = ControlManager.get().getAddress(true) + "dash/proxy.mpd";
                         } else if (url.contains(".mpd") || url.contains("type=mpd")) {
-                            PlayerHelper.updateCfg(mVideoView, mVodPlayerCfg, 2);
+                            PlayerHelper.updateCfg(mVideoView, mVodPlayerCfg, 0);
                         } else {
                             PlayerHelper.updateCfg(mVideoView, mVodPlayerCfg);
                         }
@@ -1193,6 +1193,11 @@ public class PlayFragment extends BaseLazyFragment {
             return true;
         }
         if (webPlayUrl != null) {
+            if (isNetworkError()) {
+                // 网络原因访问不了播放地址(IO/超时/服务器不可达):切换播放内核无意义,直接走降级
+                LOG.i("echo-autoRetry network error, skip player switch, try next line");
+                return tryNextLineIfEnabled();
+            }
             if (allowSwitchPlayer) {
                 // 按固定顺序 0→1→2→3 逐个尝试其余内核,每次失败切换到下一个并重播当前 URL
                 LOG.i("echo-autoRetry switch player and replay current url");
@@ -1222,6 +1227,12 @@ public class PlayFragment extends BaseLazyFragment {
         triedLineFlags.clear();
         triedPlayerTypes.clear();
         return false;
+    }
+
+    /** 最近一次播放失败是否为网络类错误(网络原因访问不了播放地址),是则不切换播放内核 */
+    private boolean isNetworkError() {
+        return mVideoView != null
+                && mVideoView.getLastErrorType() == AbstractPlayer.PlayerEventListener.ERROR_TYPE_NETWORK;
     }
 
     boolean tryNextLine() {

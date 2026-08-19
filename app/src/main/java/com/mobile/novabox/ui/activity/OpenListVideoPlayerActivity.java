@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import xyz.doikki.videoplayer.player.AbstractPlayer;
 import xyz.doikki.videoplayer.player.VideoView;
 
 /**
@@ -455,6 +456,11 @@ public class OpenListVideoPlayerActivity extends BaseActivity {
      */
     private boolean retryWithNextPlayer() {
         if (mVideoView == null || currentPlayUrl == null) return false;
+        // 网络原因访问不了播放地址(IO/超时/服务器不可达):切换播放内核无意义,直接停止尝试
+        if (mVideoView.getLastErrorType() == AbstractPlayer.PlayerEventListener.ERROR_TYPE_NETWORK) {
+            LOG.i("echo-openlistAutoRetry network error, skip player switch");
+            return false;
+        }
         if (currentPlayType < 0) currentPlayType = PlayerSwitchUtil.normalizePlayType(Hawk.get(HawkConfig.PLAY_TYPE, 2));
         int next = PlayerSwitchUtil.nextPlayerType(currentPlayType, triedPlayerTypes);
         if (next < 0) {

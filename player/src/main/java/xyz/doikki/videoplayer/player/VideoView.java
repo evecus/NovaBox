@@ -90,6 +90,9 @@ public class VideoView<P extends AbstractPlayer> extends FrameLayout
     public static final int STATE_BUFFERING = 6;
     public static final int STATE_BUFFERED = 7;
     public static final int STATE_START_ABORT = 8;//开始播放中止
+
+    /** 最近一次播放错误类型(见 AbstractPlayer.PlayerEventListener.ERROR_TYPE_*),仅错误回调时更新 */
+    protected int mLastErrorType = AbstractPlayer.PlayerEventListener.ERROR_TYPE_UNKNOWN;
     protected int mCurrentPlayState = STATE_IDLE;//当前播放器的状态
 
     public static final int PLAYER_NORMAL = 10;        // 普通播放器
@@ -606,9 +609,18 @@ public class VideoView<P extends AbstractPlayer> extends FrameLayout
      * 视频播放出错回调
      */
     @Override
-    public void onError() {
+    public void onError(int errorType) {
         mPlayerContainer.setKeepScreenOn(false);
+        mLastErrorType = errorType;
         setPlayState(STATE_ERROR);
+    }
+
+    /**
+     * 获取最近一次播放错误的类型(见 {@link PlayerEventListener#ERROR_TYPE_NETWORK} 等)。
+     * 供上层区分"网络原因访问不了播放地址"(不切换内核)与"播放内核不能播放"(切换内核重试)。
+     */
+    public int getLastErrorType() {
+        return mLastErrorType;
     }
 
     /**

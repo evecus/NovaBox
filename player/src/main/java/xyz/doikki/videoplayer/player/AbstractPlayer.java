@@ -159,7 +159,22 @@ public abstract class AbstractPlayer {
 
     public interface PlayerEventListener {
 
-        void onError();
+        /** 播放错误类型:未知/其他(默认按内核类错误处理,允许切换内核重试) */
+        int ERROR_TYPE_UNKNOWN = 0;
+        /** 网络类错误(IO/超时/服务器不可达等),切换播放内核无意义,上层应跳过切内核 */
+        int ERROR_TYPE_NETWORK = 1;
+        /** 解码/格式/渲染等内核相关错误,可通过切换播放内核重试 */
+        int ERROR_TYPE_CODEC = 2;
+
+        /**
+         * 播放出错回调(带错误类型)。
+         * 无法提供具体错误码的路径(如本地异常捕获)经此默认实现按 ERROR_TYPE_UNKNOWN 上报。
+         */
+        default void onError() {
+            onError(ERROR_TYPE_UNKNOWN);
+        }
+
+        void onError(int errorType);
 
         void onCompletion();
 

@@ -456,16 +456,7 @@ public class VodController extends BaseController {
     }
 
     void updatePlayerCfgView() {
-        // 播放器/解码/音轨等按钮已删除(play_btn_group 整组移除),此处仅同步播放器配置给调用方
-        try {
-            int playerType = mPlayerConfig.getInt("pl");
-            // 兼容历史 PLAY_TYPE(1=IJK,2=EXO)映射到 4 档新编码,0 保留为 EXO硬解
-            if (playerType == 1) playerType = 2;
-            else if (playerType == 2) playerType = 0;
-            mPlayerConfig.put("pl", playerType);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        // 播放器/解码/音轨等按钮已删除(play_btn_group 整组移除),无需再同步/归一化配置(统一 4 档新编码)
     }
 
     public void setTitle(String playTitleInfo) {

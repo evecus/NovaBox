@@ -216,8 +216,24 @@ public class IjkPlayer extends AbstractPlayer implements IMediaPlayer.OnErrorLis
 
     @Override
     public boolean onError(IMediaPlayer mp, int what, int extra) {
-        mPlayerEventListener.onError();
+        mPlayerEventListener.onError(toErrorType(what));
         return true;
+    }
+
+    /**
+     * 将 IJK 错误码(what)归类为播放错误类型。
+     * IO(-1004)/超时(-110)/服务器挂(100)为网络类错误,切换播放内核无意义;
+     * 其余(格式不支持、流损坏、未知等)归为内核类错误,可通过切换播放内核重试。
+     */
+    private int toErrorType(int what) {
+        switch (what) {
+            case IMediaPlayer.MEDIA_ERROR_IO:
+            case IMediaPlayer.MEDIA_ERROR_TIMED_OUT:
+            case IMediaPlayer.MEDIA_ERROR_SERVER_DIED:
+                return mPlayerEventListener.ERROR_TYPE_NETWORK;
+            default:
+                return mPlayerEventListener.ERROR_TYPE_CODEC;
+        }
     }
 
     @Override

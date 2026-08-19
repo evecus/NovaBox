@@ -24,11 +24,8 @@ public class LivePlayerManager {
         try {
             currentApi=Hawk.get(HawkConfig.LIVE_API_URL,"");
             // 4 档 PLAY_TYPE:0=EXO硬解,1=EXO软解,2=IJK硬解,3=IJK软解;默认 IJK硬解
-            // 兼容历史 PLAY_TYPE(老编码:1=IJK,2=EXO)。老 0(系统播放器)保留为 0=EXO硬解,
-            // 满足"所有播放不使用系统播放器";新 0=EXO硬解 不受影响。
+            // PLAY_TYPE 统一为 4 档新编码,直接使用,不再做历史 1=IJK/2=EXO 映射
             int playType = Hawk.get(HawkConfig.LIVE_PLAY_TYPE, Hawk.get(HawkConfig.PLAY_TYPE, 2));
-            if (playType == 1) playType = 2;        // 老 IJK -> IJK硬解
-            else if (playType == 2) playType = 0;    // 老 EXO -> EXO硬解
             if (playType < 0 || playType > 3) playType = 2;
             defaultPlayerConfig.put("pl", playType);
             defaultPlayerConfig.put("ijk", Hawk.get(HawkConfig.IJK_CODEC, "硬解码"));

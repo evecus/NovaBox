@@ -52,11 +52,8 @@ public class PlayerHelper {
             e.printStackTrace();
         }
         if(forcePlayerType>=0)playerType = forcePlayerType;
-        // 兼容历史 PLAY_TYPE(老编码:1=IJK,2=EXO;0=系统播放器)。
-        // 注意:新编码 0=EXO硬解 与老 0=系统播放器冲突。老 0 历史配置直接保留为 EXO硬解,
-        // 满足"所有播放不使用系统播放器";新 0(EXO硬解)也不受影响,故不再映射 0。
-        if (playerType == 1) playerType = PLAY_TYPE_IJK_HW;        // 老 IJK -> IJK硬解
-        else if (playerType == 2) playerType = PLAY_TYPE_EXO_HW;   // 老 EXO -> EXO硬解
+        // PLAY_TYPE 统一为 4 档新编码(0=EXO硬解,1=EXO软解,2=IJK硬解,3=IJK软解),
+        // 各入口(设置页/自动切换内核)写入的都是新编码,不再做历史 1=IJK/2=EXO 映射。
 
         IJKCode codec = ApiConfig.get().getIJKCodec(ijkCode);
         PlayerFactory playerFactory = buildPlayerFactory(playerType, codec);
@@ -79,9 +76,7 @@ public class PlayerHelper {
 
     public static void updateCfg(VideoView videoView) {
         int playType = Hawk.get(HawkConfig.PLAY_TYPE, PLAY_TYPE_IJK_HW);
-        // 兼容历史 PLAY_TYPE(1=IJK,2=EXO),0 保留为 EXO硬解
-        if (playType == 1) playType = PLAY_TYPE_IJK_HW;
-        else if (playType == 2) playType = PLAY_TYPE_EXO_HW;
+        // PLAY_TYPE 统一为 4 档新编码,直接使用,不做历史 1=IJK/2=EXO 映射。
 
         IJKCode codec = ApiConfig.get().getIJKCodec("硬解码");
         PlayerFactory playerFactory = buildPlayerFactory(playType, codec);

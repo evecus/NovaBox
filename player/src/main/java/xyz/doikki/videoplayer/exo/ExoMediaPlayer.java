@@ -300,8 +300,22 @@ public class ExoMediaPlayer extends AbstractPlayer implements Player.Listener {
             return;
         }
         if (mPlayerEventListener != null) {
-            mPlayerEventListener.onError();
+            mPlayerEventListener.onError(toErrorType(error.errorCode));
         }
+    }
+
+    /**
+     * 将 ExoPlayer 错误码归类为播放错误类型。
+     * ExoPlayer 错误码按段划分:2000-2999 为 IO(网络连接/文件读取)类,
+     * 属"网络原因访问不了播放地址",切换播放内核无意义;其余(解析/解码/渲染等)
+     * 归为内核类错误,可通过切换播放内核重试。
+     */
+    private int toErrorType(int errorCode) {
+        if (errorCode >= PlaybackException.ERROR_CODE_IO_UNSPECIFIED
+                && errorCode < PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED) {
+            return mPlayerEventListener.ERROR_TYPE_NETWORK;
+        }
+        return mPlayerEventListener.ERROR_TYPE_CODEC;
     }
 
     private boolean retryAsHls(PlaybackException error) {
