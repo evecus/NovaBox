@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 剧集 grid item:多选/单选共用,根据 state_checked 切换背景,
+     右上角 ✓ 角标由 adapter bind 时按 selected 切 visibility 显隐 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/vs_60"
+    android:layout_margin="@dimen/vs_4"
+    android:background="@drawable/bg_download_episode"
+    android:clickable="true"
+    android:focusable="true"
+    android:checkable="true">
+
+    <TextView
+        android:id="@+id/tvEpisodeName"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:duplicateParentState="true"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="2"
+        android:padding="@dimen/vs_6"
+        android:textColor="@color/text_download_episode"
+        android:textSize="14sp" />
+
+    <!-- ✓ 勾选角标:右上角(未选中由 adapter 设 GONE,选中 VISIBLE)。
+         paddingEnd 让角标和卡片边缘留一点呼吸空间 -->
+    <TextView
+        android:id="@+id/tvEpisodeCheck"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="3dp"
+        android:layout_marginEnd="3dp"
+        android:background="@drawable/bg_episode_check"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:text="✓"
+        android:textColor="#FFFFFFFF"
+        android:textSize="11sp"
+        android:visibility="gone" />
+</FrameLayout>
