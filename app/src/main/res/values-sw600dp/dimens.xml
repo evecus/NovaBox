@@ -108,4 +108,13 @@
     <dimen name="pad_live_channel_width">260dp</dimen>
     <!-- Pad 专属：详情页集数面板宽度 -->
     <dimen name="pad_detail_episode_width">320dp</dimen>
+
+    <!-- ── 快速搜索结果行（Pad 端放大，解决卡片过小过密问题） ── -->
+    <dimen name="fast_search_thumb_w">116dp</dimen>
+    <dimen name="fast_search_thumb_h">156dp</dimen>
+    <dimen name="fast_search_item_padding">14dp</dimen>
+    <dimen name="fast_search_item_spacing">14dp</dimen>
+    <dimen name="fast_search_name_size">18sp</dimen>
+    <dimen name="fast_search_site_size">13sp</dimen>
+    <dimen name="fast_search_note_size">14sp</dimen>
 </resources>

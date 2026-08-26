@@ -64,6 +64,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @description:
  */
 public class FastSearchActivity extends BaseActivity {
+
+    /**
+     * dp 转 px，用于 GridSpacingItemDecoration 的间距参数。
+     */
+    private int dp2px(int dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
+
     private static final int SEARCH_THREAD_COUNT = 6;
     private static final int SEARCH_MAX_THREAD_COUNT = Build.VERSION.SDK_INT >= 30 ? 18 : 12;
     private static final int SEARCH_PUMP_SECONDS = 2;
@@ -175,10 +184,15 @@ public class FastSearchActivity extends BaseActivity {
         // 右侧单列/多列列表（Pad 使用多列网格）
         mGridView.setHasFixedSize(true);
         if (com.mobile.novabox.util.PadUiHelper.isPad(this)) {
-            mGridView.setLayoutManager(new GridLayoutManager(this.mContext,
-                    com.mobile.novabox.util.PadUiHelper.getSearchResultSpanCount(this)));
+            int spanCount = com.mobile.novabox.util.PadUiHelper.getSearchResultSpanCount(this);
+            mGridView.setLayoutManager(new GridLayoutManager(this.mContext, spanCount));
+            int spacingPx = com.mobile.novabox.util.PadUiHelper.getSearchResultItemSpacingDp(this);
+            mGridView.addItemDecoration(new com.mobile.novabox.ui.widget.GridSpacingItemDecoration(
+                    spanCount, dp2px(spacingPx), true));
         } else {
             mGridView.setLayoutManager(new LinearLayoutManager(this.mContext, LinearLayoutManager.VERTICAL, false));
+            mGridView.addItemDecoration(new com.mobile.novabox.ui.widget.GridSpacingItemDecoration(
+                    1, dp2px(com.mobile.novabox.util.PadUiHelper.getSearchResultItemSpacingDp(this)), true));
         }
 
         searchAdapter = new FastSearchAdapter();
@@ -202,10 +216,15 @@ public class FastSearchActivity extends BaseActivity {
         });
 
         if (com.mobile.novabox.util.PadUiHelper.isPad(this)) {
-            mGridViewFilter.setLayoutManager(new GridLayoutManager(this.mContext,
-                    com.mobile.novabox.util.PadUiHelper.getSearchResultSpanCount(this)));
+            int spanCountFilter = com.mobile.novabox.util.PadUiHelper.getSearchResultSpanCount(this);
+            mGridViewFilter.setLayoutManager(new GridLayoutManager(this.mContext, spanCountFilter));
+            int spacingPxFilter = com.mobile.novabox.util.PadUiHelper.getSearchResultItemSpacingDp(this);
+            mGridViewFilter.addItemDecoration(new com.mobile.novabox.ui.widget.GridSpacingItemDecoration(
+                    spanCountFilter, dp2px(spacingPxFilter), true));
         } else {
             mGridViewFilter.setLayoutManager(new LinearLayoutManager(this.mContext, LinearLayoutManager.VERTICAL, false));
+            mGridViewFilter.addItemDecoration(new com.mobile.novabox.ui.widget.GridSpacingItemDecoration(
+                    1, dp2px(com.mobile.novabox.util.PadUiHelper.getSearchResultItemSpacingDp(this)), true));
         }
         searchAdapterFilter = new FastSearchAdapter();
         mGridViewFilter.setAdapter(searchAdapterFilter);

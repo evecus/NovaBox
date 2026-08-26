@@ -76,15 +76,28 @@ public final class PadUiHelper {
 
     /**
      * 搜索结果页推荐列数。
-     * 手机：3列；Pad（右栏约 75%）：4~6列。
+     * 手机：3列；Pad（右栏约 75%）：2~3列。
+     *
+     * 说明：之前每项按 220dp 估算，在 Pad 宽屏下会算出 4 列，
+     * 而 item_fast_search_row 内容（封面+片名+来源+备注）在窄列中被压缩，
+     * 导致卡片显得又小又密集。这里把单项估算宽度提高到 340dp，
+     * 并把列数上限收紧到 3，让每张卡片有足够宽度显示完整信息、间距也更舒展。
      */
     public static int getSearchResultSpanCount(Context context) {
         if (!isPad(context)) return 3;
         int widthDp = getScreenWidthDp(context);
-        // 右侧结果栏约 75% 宽度，每项至少 220dp 保证信息显示完整
+        // 右侧结果栏约 75% 宽度，每项至少 340dp 保证封面、标题、标签不拥挤
         int availableDp = (int) (widthDp * 0.75f);
-        int cols = availableDp / 220;
-        return Math.max(2, Math.min(cols, 4));
+        int cols = availableDp / 340;
+        return Math.max(2, Math.min(cols, 3));
+    }
+
+    /**
+     * 搜索结果网格的项间距（dp），配合 GridSpacingItemDecoration 使用。
+     * 手机：8dp；Pad：16dp，避免卡片贴在一起。
+     */
+    public static int getSearchResultItemSpacingDp(Context context) {
+        return isPad(context) ? 16 : 8;
     }
 
     /**
