@@ -99,10 +99,10 @@
         android:layout_height="match_parent"
         android:orientation="horizontal">
 
-        <!-- 左侧搜索源列表，更窄 -->
+        <!-- 左侧搜索源列表，比之前略宽，减少标签文字被截断的情况 -->
         <LinearLayout
             android:id="@+id/llWord"
-            android:layout_width="110dp"
+            android:layout_width="130dp"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:paddingLeft="4dp"
