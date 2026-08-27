@@ -115,13 +115,26 @@ public final class PadUiHelper {
 
     /**
      * 收藏 / 历史 页推荐列数。
-     * 手机：3列；Pad：5~7列。
+     * 手机：3列；Pad：4~6列。
+     *
+     * 说明：之前每列按 160dp 估算，在 Pad 宽屏下会算出 7~8 列，
+     * 导致卡片（复用首页的 item_grid 布局）被压得很小、很密集。
+     * 这里把单列估算宽度提高到 220dp，并把列数上限从 8 收紧到 6，
+     * 与首页 getVodGridSpanCount 保持一致的视觉密度。
      */
     public static int getCollectGridSpanCount(Context context) {
         if (!isPad(context)) return 3;
         int widthDp = getScreenWidthDp(context);
-        int cols = widthDp / 160;
-        return Math.max(4, Math.min(cols, 8));
+        int cols = widthDp / 220;
+        return Math.max(4, Math.min(cols, 6));
+    }
+
+    /**
+     * 收藏 / 历史页网格的项间距（dp），配合 GridSpacingItemDecoration 使用。
+     * 手机端保持原有零间距不变，仅 Pad 端加间距避免卡片贴在一起。
+     */
+    public static int getCollectGridItemSpacingDp(Context context) {
+        return isPad(context) ? 14 : 0;
     }
 
     /**

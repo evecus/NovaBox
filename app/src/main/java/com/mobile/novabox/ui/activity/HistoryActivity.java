@@ -37,6 +37,15 @@ import java.util.List;
  * @description:
  */
 public class HistoryActivity extends BaseActivity {
+
+    /**
+     * dp 转 px，用于 GridSpacingItemDecoration 的间距参数。
+     */
+    private int dp2px(int dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
+
     private ImageView tvDelete;
     private ImageView tvClear;
     private TextView tvDelTip;
@@ -69,7 +78,11 @@ public class HistoryActivity extends BaseActivity {
         tvDelTip = findViewById(R.id.tvDelTip);
         mGridView = findViewById(R.id.mGridView);
         mGridView.setHasFixedSize(true);
-        mGridView.setLayoutManager(new GridLayoutManager(this.mContext, com.mobile.novabox.util.PadUiHelper.getCollectGridSpanCount(this)));
+        int spanCount = com.mobile.novabox.util.PadUiHelper.getCollectGridSpanCount(this);
+        mGridView.setLayoutManager(new GridLayoutManager(this.mContext, spanCount));
+        // Pad 端加网格间距，避免卡片贴在一起显得拥挤；手机端间距为 0，保持原样。
+        int spacingPx = dp2px(com.mobile.novabox.util.PadUiHelper.getCollectGridItemSpacingDp(this));
+        mGridView.addItemDecoration(new com.mobile.novabox.ui.widget.GridSpacingItemDecoration(spanCount, spacingPx, true));
         historyAdapter = new HistoryAdapter();
         mGridView.setAdapter(historyAdapter);
         // 返回键
