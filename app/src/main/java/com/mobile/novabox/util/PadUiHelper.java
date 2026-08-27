@@ -63,15 +63,28 @@ public final class PadUiHelper {
 
     /**
      * 首页影片网格推荐列数。
-     * 手机竖屏：3列；Pad 横屏：5~7列（依宽度自适应）。
+     * 手机竖屏：3列；Pad 横屏：4~6列（依宽度自适应）。
+     *
+     * 说明：之前每列按 160dp 估算，在 Pad 横屏宽屏下会算出 7~8 列，
+     * 导致每张海报卡片只有 160dp 宽、标题/评分文字被压得很密集。
+     * 这里把单列估算宽度提高到 220dp，并把列数上限从 8 收紧到 6，
+     * 让每张卡片有更大的展示面积，视觉上更疏朗、与手机端 3 列的密度更接近。
      */
     public static int getVodGridSpanCount(Context context) {
         if (!isPad(context)) return 3;           // 手机保持原逻辑
         int widthDp = getScreenWidthDp(context);
-        // 去掉左侧导航栏（~72dp）后的可用宽度，每列约 160dp
+        // 去掉左侧导航栏（~72dp）后的可用宽度，每列约 220dp
         int availableDp = widthDp - 72;
-        int cols = availableDp / 160;
-        return Math.max(4, Math.min(cols, 8));   // 限制在 4~8 列
+        int cols = availableDp / 220;
+        return Math.max(4, Math.min(cols, 6));   // 限制在 4~6 列
+    }
+
+    /**
+     * 首页影片网格的项间距（dp），配合 GridSpacingItemDecoration 使用。
+     * 手机端保持原有零间距不变，仅 Pad 端加间距避免卡片贴在一起。
+     */
+    public static int getVodGridItemSpacingDp(Context context) {
+        return isPad(context) ? 14 : 0;
     }
 
     /**

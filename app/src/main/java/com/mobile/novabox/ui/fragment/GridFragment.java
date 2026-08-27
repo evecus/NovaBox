@@ -57,6 +57,15 @@ import org.json.JSONObject;
  * @description:
  */
 public class GridFragment extends BaseLazyFragment {
+
+    /**
+     * dp 转 px，用于 GridSpacingItemDecoration 的间距参数。
+     */
+    private int dp2px(int dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
+
     private MovieSort.SortData sortData = null;
     private RecyclerView mGridView;
     private SourceViewModel sourceViewModel;
@@ -203,6 +212,12 @@ public class GridFragment extends BaseLazyFragment {
             } else {
                 mGridView.setLayoutManager(new GridLayoutManager(mContext, spanCount));
             }
+            // 网格卡片之间加统一间距，避免 Pad 宽屏下多列卡片贴在一起显得拥挤。
+            // mGridView 在 createView() 中每次都会是新的 RecyclerView 实例（或首次的原始实例），
+            // 不会出现同一个 RecyclerView 被反复添加 decoration 而越叠越宽的问题。
+            int spacingPx = dp2px(com.mobile.novabox.util.PadUiHelper.getVodGridItemSpacingDp(mContext));
+            mGridView.addItemDecoration(new com.mobile.novabox.ui.widget.GridSpacingItemDecoration(
+                    Math.max(spanCount, 1), spacingPx, true));
         }
         mGridView.setAdapter(gridAdapter);
 
