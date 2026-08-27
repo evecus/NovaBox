@@ -22,87 +22,87 @@
         android:orientation="horizontal">
 
         <!-- ══════════════════════════════
-             左侧：竖向导航栏（72dp宽），与首页一致
+             左侧：竖向导航栏（96dp宽），与首页/我的页保持一致的放大尺寸
              ══════════════════════════════ -->
         <LinearLayout
             android:id="@+id/live_bottom_nav"
-            android:layout_width="72dp"
+            android:layout_width="96dp"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:gravity="center_horizontal"
-            android:paddingTop="16dp"
-            android:paddingBottom="16dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="20dp"
             android:background="@drawable/shape_side_nav_bg">
 
             <!-- 首页 -->
             <LinearLayout
                 android:id="@+id/liveNavHome"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:layout_marginBottom="4dp"
+                android:layout_width="84dp"
+                android:layout_height="84dp"
+                android:layout_marginBottom="8dp"
                 android:gravity="center"
                 android:orientation="vertical"
                 android:background="@drawable/selector_nav_item_bg">
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:src="@drawable/icon_video"
                     android:alpha="0.5"
                     android:tint="@android:color/black"/>
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="6dp"
                     android:text="首页"
                     android:textColor="#80000000"
-                    android:textSize="11sp"/>
+                    android:textSize="14sp"/>
             </LinearLayout>
 
             <!-- 直播（当前选中） -->
             <LinearLayout
                 android:id="@+id/liveNavLive"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:layout_marginBottom="4dp"
+                android:layout_width="84dp"
+                android:layout_height="84dp"
+                android:layout_marginBottom="8dp"
                 android:gravity="center"
                 android:orientation="vertical"
                 android:background="@drawable/selector_nav_item_bg">
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:src="@drawable/icon_live"
                     android:alpha="1.0"
                     android:tint="#0CADE2"/>
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="6dp"
                     android:text="直播"
                     android:textColor="#0CADE2"
-                    android:textSize="11sp"/>
+                    android:textSize="14sp"/>
             </LinearLayout>
 
             <!-- 我的 -->
             <LinearLayout
                 android:id="@+id/liveNavSetting"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
+                android:layout_width="84dp"
+                android:layout_height="84dp"
                 android:gravity="center"
                 android:orientation="vertical"
                 android:background="@drawable/selector_nav_item_bg">
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:src="@drawable/icon_my"
                     android:alpha="0.5"
                     android:tint="@android:color/black"/>
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="6dp"
                     android:text="我的"
                     android:textColor="#80000000"
-                    android:textSize="11sp"/>
+                    android:textSize="14sp"/>
             </LinearLayout>
 
         </LinearLayout>
