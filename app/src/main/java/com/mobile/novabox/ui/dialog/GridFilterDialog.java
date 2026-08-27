@@ -26,6 +26,8 @@ import java.util.ArrayList;
 
 public class GridFilterDialog extends BaseDialog {
     public LinearLayout filterRoot;
+    // 居中显示的白色卡片容器，用于"点击卡片外部关闭弹窗"的区域判定
+    private View filterCard;
 
     public GridFilterDialog(@NonNull @NotNull Context context) {
         super(context);
@@ -33,6 +35,12 @@ public class GridFilterDialog extends BaseDialog {
         setCancelable(true);
         setContentView(R.layout.dialog_grid_filter);
         filterRoot = findViewById(R.id.filterRoot);
+        filterCard = findViewById(R.id.filterCard);
+
+        View closeBtn = findViewById(R.id.btnFilterClose);
+        if (closeBtn != null) {
+            closeBtn.setOnClickListener(v -> dismiss());
+        }
 
         bindOutsideTouchDismiss();
     }
@@ -102,11 +110,13 @@ public class GridFilterDialog extends BaseDialog {
     public void show() {
         selectChange = false;
         super.show();
+        // 弹窗整体改为屏幕居中显示：Window 本身仍铺满全屏（用于承接"点击卡片外部区域关闭"），
+        // 真正可见的白色卡片由 dialog_grid_filter.xml 中的 filterCard 负责居中定位。
         WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
-        layoutParams.gravity = Gravity.BOTTOM;
+        layoutParams.gravity = Gravity.CENTER;
         layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
         layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
-        layoutParams.dimAmount = 0f;
+        layoutParams.dimAmount = 0.4f;
         getWindow().getDecorView().setPadding(0, 0, 0, 0);
         getWindow().setAttributes(layoutParams);
 //        requestFirstFilterFocus();
@@ -132,10 +142,14 @@ public class GridFilterDialog extends BaseDialog {
     }
 
     private boolean isTouchInsideFilter(MotionEvent event) {
-        return event.getX() >= filterRoot.getLeft()
-                && event.getX() <= filterRoot.getRight()
-                && event.getY() >= filterRoot.getTop()
-                && event.getY() <= filterRoot.getBottom();
+        // 弹窗改为居中卡片样式后，"点击外部关闭"应判定触摸点是否落在
+        // 白色卡片（filterCard）范围内，而不是内部的 filterRoot（筛选行容器）。
+        // filterCard 是 root 的直接子 view，getLeft()/getTop() 与触摸事件坐标处于同一坐标系。
+        View target = filterCard != null ? filterCard : filterRoot;
+        return event.getX() >= target.getLeft()
+                && event.getX() <= target.getRight()
+                && event.getY() >= target.getTop()
+                && event.getY() <= target.getBottom();
     }
 
     private void requestFirstFilterFocus() {

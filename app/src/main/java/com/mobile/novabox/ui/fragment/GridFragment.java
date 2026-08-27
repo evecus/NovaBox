@@ -364,27 +364,27 @@ public class GridFragment extends BaseLazyFragment {
     }
 
     public void showFilter() {
-        if (!sortData.filters.isEmpty() && gridFilterDialog == null) {
+        if (sortData == null || sortData.filters == null || sortData.filters.isEmpty()) return;
+        if (gridFilterDialog == null) {
             gridFilterDialog = new GridFilterDialog(mContext);
-//            gridFilterDialog.setData(sortData);
-//            gridFilterDialog.setOnDismiss(new GridFilterDialog.Callback() {
-//                @Override
-//                public void change() {
-//                    page = 1;
-//                    initData();
-//                }
-//            });
+            gridFilterDialog.setOnDismiss(new GridFilterDialog.Callback() {
+                @Override
+                public void change() {
+                    page = 1;
+                    initData();
+                }
+            });
             setFilterDialogData();
         }
-        if (gridFilterDialog != null)
-            gridFilterDialog.show();
+        gridFilterDialog.show();
     }
 
     public void setFilterDialogData() {
         Context context = getContext();
         LayoutInflater inflater = LayoutInflater.from(context);
         assert context != null;
-        final int defaultColor = ContextCompat.getColor(context, R.color.color_FFFFFF);
+        // 弹窗背景改为纯白后，未选中文字需要用黑色才能看清；选中态保持高亮色。
+        final int defaultColor = ContextCompat.getColor(context, R.color.color_000000);
         final int selectedColor = ContextCompat.getColor(context, R.color.color_02F8E1);
         // 遍历过滤条件数据
         for (MovieSort.SortFilter filter : sortData.filters) {

@@ -153,6 +153,20 @@ public class HomeActivity extends BaseActivity {
             }
         });
 
+        // 分类 tab 长按弹出筛选框（排序/地区等）。
+        // 只有长按"当前正在显示的那个 tab"才生效——例如正在浏览"主页"时长按"主页"会弹出筛选，
+        // 但长按"热播电影"等其它未选中的 tab 不会有任何反应，避免在切换前误触发别的页面筛选。
+        sortAdapter.setOnItemLongClickListener((adapter, view, position) -> {
+            if (position < 0 || position >= fragments.size()) return false;
+            if (position != currentSelected) return false;
+            BaseLazyFragment baseLazyFragment = fragments.get(position);
+            if (baseLazyFragment instanceof GridFragment) {
+                ((GridFragment) baseLazyFragment).showFilter();
+                return true;
+            }
+            return false;
+        });
+
         // 站源切换按钮
         findViewById(R.id.btnSiteSwitch).setOnClickListener(v -> {
             FastClickCheckUtil.check(v);
