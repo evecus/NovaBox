@@ -19,6 +19,8 @@ android {
 
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
+        // cling-core/cling-support 2.1.2 都带 beans.xml(Jandex 描述),对齐 tvbox 排除
+        exclude 'META-INF/beans.xml'
     }
 
     flavorDimensions "mode"
