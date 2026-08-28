@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    筛选弹窗（手机端）
+    改动：
+      - 由原来贴底部弹出改为屏幕居中显示的白色圆角卡片
+      - 背景改为不透明白色，文字统一改黑色（各行内容在 GridFragment#setFilterDialogData 中设置颜色）
+      - 顶部新增标题栏，右上角提供 X 关闭按钮
+      - root 仍占满全屏，用于承接"点击弹窗外部关闭"的触摸事件；真正的卡片是内部的 filterCard
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- 居中显示的白色卡片：手机屏幕较窄，左右各留出边距，卡片宽度自适应屏幕 -->
+    <LinearLayout
+        android:id="@+id/filterCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginLeft="@dimen/vs_24"
+        android:layout_marginRight="@dimen/vs_24"
+        android:background="@drawable/shape_dialog_filter_bg"
+        android:orientation="vertical">
+
+        <!-- 标题栏：标题 + 右上角关闭按钮 -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="@dimen/vs_20"
+            android:paddingRight="@dimen/vs_15"
+            android:paddingTop="@dimen/vs_15"
+            android:paddingBottom="@dimen/vs_10">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="筛选"
+                android:textColor="@color/color_000000"
+                android:textStyle="bold"
+                android:textSize="@dimen/ts_26" />
+
+            <ImageView
+                android:id="@+id/btnFilterClose"
+                android:layout_width="@dimen/vs_35"
+                android:layout_height="@dimen/vs_35"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:padding="@dimen/vs_8"
+                android:focusable="true"
+                android:scaleType="fitCenter"
+                android:src="@drawable/icon_close" />
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#1A000000" />
+
+        <!-- 筛选行容器：排序、地区等每一行由 GridFragment 动态 addView -->
+        <LinearLayout
+            android:id="@+id/filterRoot"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="@dimen/vs_20"
+            android:paddingRight="@dimen/vs_20"
+            android:paddingTop="@dimen/vs_10"
+            android:paddingBottom="@dimen/vs_20" />
+
+    </LinearLayout>
+</FrameLayout>
