@@ -264,7 +264,7 @@ public class LiveFragment extends BaseLazyFragment {
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             );
         }
-        if (mVideoView != null) {
+        if (mVideoView != null && currentLiveChannelItem != null) {
             mVideoView.resume();
         }
     }
@@ -1554,7 +1554,8 @@ public class LiveFragment extends BaseLazyFragment {
 
         liveChannelGroupAdapter.setNewData(liveChannelGroupList);
         currentLiveChannelIndex = -1;
-        selectChannelGroup(lastChannelGroupIndex, false, lastLiveChannelIndex);
+        // 只加载分组列表，高亮上次分组/频道，但不自动播放
+        loadChannelGroupDataOnly(lastChannelGroupIndex, lastLiveChannelIndex);
 
         // 初次进入直接显示三列列表，高亮当前分组/频道/源
         mHandler.postDelayed(new Runnable() {
@@ -1563,6 +1564,32 @@ public class LiveFragment extends BaseLazyFragment {
                 refreshAndShowChannelListWithHighlight();
             }
         }, 120);
+    }
+
+    /**
+     * 只加载分组和频道列表并高亮，不触发播放。用于初次进入页面时。
+     */
+    private void loadChannelGroupDataOnly(int groupIndex, int channelIndex) {
+        if (groupIndex < 0 || groupIndex >= liveChannelGroupList.size()) {
+            groupIndex = 0;
+        }
+        // 若分组有密码且未确认，跳过自动选中
+        if (isNeedInputPassword(groupIndex)) {
+            liveChannelGroupAdapter.setSelectedGroupIndex(groupIndex);
+            return;
+        }
+        currentChannelGroupIndex = groupIndex;
+        liveChannelGroupAdapter.setSelectedGroupIndex(groupIndex);
+        // 加载该分组的频道列表，高亮上次频道但不播放
+        List<LiveChannelItem> channels = getLiveChannels(groupIndex);
+        liveChannelItemAdapter.setNewData(channels);
+        int highlightChannel = (channelIndex >= 0 && channelIndex < channels.size()) ? channelIndex : -1;
+        liveChannelItemAdapter.setSelectedChannelIndex(highlightChannel);
+        // 记录上次频道索引（仅用于高亮，currentLiveChannelItem 保持 null 表示未播放）
+        currentLiveChannelIndex = highlightChannel;
+        currentLiveChannelItem = null;
+        // 更新手机端频道名为提示文字
+        updateMobileChannelName("请选择频道");
     }
 
     /**
@@ -1579,11 +1606,10 @@ public class LiveFragment extends BaseLazyFragment {
         // 高亮频道
         liveChannelItemAdapter.setSelectedChannelIndex(currentLiveChannelIndex);
         liveChannelItemAdapter.setFocusedChannelIndex(-1);
-        // 刷新源列表
-        loadCurrentSourceList();
-        updateMobileSourceList();
-        // 高亮源
+        // 刷新源列表（仅在已有播放频道时）
         if (currentLiveChannelItem != null) {
+            loadCurrentSourceList();
+            updateMobileSourceList();
             int srcIdx = currentLiveChannelItem.getSourceIndex();
             if (srcIdx >= 0 && liveSourceAdapter != null && srcIdx < liveSourceAdapter.getData().size()) {
                 liveSourceAdapter.selectItem(srcIdx, true, false);
