@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 手机端：上方播放器 中间标题 下方目录播放列表 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- 播放器区域 (16:9，高度在 Activity 动态设置) -->
+    <FrameLayout
+        android:id="@+id/flOpenListPlayerContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0"
+        android:background="#FF000000">
+
+        <com.mobile.novabox.player.MyVideoView
+            android:id="@+id/mOpenListVideoView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- 控制层 -->
+        <FrameLayout
+            android:id="@+id/flOpenListControlOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#44000000">
+
+            <!-- 返回按钮 -->
+            <ImageView
+                android:id="@+id/ivOpenListVideoBack"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_gravity="top|start"
+                android:layout_margin="8dp"
+                android:padding="8dp"
+                android:src="@drawable/icon_back"
+                android:tint="@android:color/white"
+                android:scaleType="fitCenter"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- 中央播放/暂停 已移到下方按钮行 -->
+
+            <!-- 缓冲转圈 -->
+            <ProgressBar
+                android:id="@+id/pbOpenListVideoLoading"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:visibility="gone" />
+
+            <!-- 底部:时间 + 进度条 + 按钮行(播放/暂停+下一集+播放器+倍速+选集+全屏入口) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:orientation="vertical"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="8dp">
+
+                <!-- 时间行:全屏时显示 "00:00 / 00:00",小屏隐藏 -->
+                <TextView
+                    android:id="@+id/fs_time_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="00:00 / 00:00"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp"
+                    android:visibility="gone"/>
+
+                <!-- 进度条行(小屏:含时间+全屏图标;全屏:仅进度条) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/fs_curr_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="36dp"
+                        android:text="00:00"
+                        android:textColor="@android:color/white"
+                        android:textSize="13sp"
+                        android:gravity="center"
+                        android:includeFontPadding="false"/>
+
+                    <SeekBar
+                        android:id="@+id/seekBarOpenListVideo"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:max="1000"
+                        android:progressTint="@android:color/white"
+                        android:progressBackgroundTint="#B3FFFFFF"
+                        android:progressBackgroundTintMode="src_atop"
+                        android:thumbTint="@android:color/white"/>
+
+                    <TextView
+                        android:id="@+id/fs_total_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="36dp"
+                        android:text="00:00"
+                        android:textColor="@android:color/white"
+                        android:textSize="13sp"
+                        android:gravity="center"
+                        android:includeFontPadding="false"/>
+
+                    <ImageView
+                        android:id="@+id/ivOpenListFullscreen"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="4dp"
+                        android:padding="4dp"
+                        android:src="@drawable/icon_fullscreen"
+                        android:tint="@android:color/white"
+                        android:scaleType="fitCenter"
+                        android:clickable="true"
+                        android:focusable="true"/>
+                </LinearLayout>
+
+                <!-- 按钮行(全屏时显示):播放/暂停 + 下一集 + 播放器(文字) + 倍速(文字) + 选集(文字) + 退出全屏 -->
+                <LinearLayout
+                    android:id="@+id/fs_function_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingBottom="4dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/ivOpenListPlayPause"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:padding="6dp"
+                        android:src="@drawable/icon_pause"
+                        android:tint="@android:color/white"
+                        android:scaleType="fitCenter"
+                        android:clickable="true"
+                        android:focusable="true"/>
+
+                    <ImageView
+                        android:id="@+id/fs_btn_next"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:padding="6dp"
+                        android:src="@drawable/ic_skip_next"
+                        android:tint="@android:color/white"
+                        android:scaleType="fitCenter"
+                        android:clickable="true"
+                        android:focusable="true"/>
+
+                    <!-- 播放器:文字图标 -->
+                    <TextView
+                        android:id="@+id/fs_btn_player_select"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="播放器"
+                        android:textColor="@android:color/white"
+                        android:textSize="14sp"
+                        android:clickable="true"
+                        android:focusable="true"/>
+
+                    <!-- 倍速:文字图标 -->
+                    <TextView
+                        android:id="@+id/fs_btn_speed"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="倍速"
+                        android:textColor="@android:color/white"
+                        android:textSize="14sp"
+                        android:clickable="true"
+                        android:focusable="true"/>
+
+                    <!-- 选集:文字图标 -->
+                    <TextView
+                        android:id="@+id/fs_btn_episode"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="选集"
+                        android:textColor="@android:color/white"
+                        android:textSize="14sp"
+                        android:clickable="true"
+                        android:focusable="true"/>
+
+                    <!-- 退出全屏 -->
+                    <ImageView
+                        android:id="@+id/fs_btn_exit_fullscreen"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:padding="6dp"
+                        android:src="@drawable/icon_exit_fullscreen"
+                        android:tint="@android:color/white"
+                        android:scaleType="fitCenter"
+                        android:clickable="true"
+                        android:focusable="true"/>
+                </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
+    </FrameLayout>
+
+    <!-- 视频名称 + 投屏按钮 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tvOpenListVideoTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="12dp"
+            android:textColor="@android:color/black"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:ellipsize="end" />
+
+        <!-- 投屏按钮:小屏标题行最右侧,样式与点播详情页投屏按钮一致 -->
+        <TextView
+            android:id="@+id/tvOpenListCast"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:layout_marginEnd="12dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:background="@drawable/button_detail_cast"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="投屏"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:clickable="true" />
+    </LinearLayout>
+
+    <!-- 分隔线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#20000000"
+        android:layout_marginLeft="12dp"
+        android:layout_marginRight="12dp" />
+
+    <!-- 当前目录视频播放列表 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvOpenListPlaylist"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="8dp" />
+
+</LinearLayout>

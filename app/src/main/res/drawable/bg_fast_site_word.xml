@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 选中态：带圆角边框 -->
+    <item android:state_selected="true">
+        <shape>
+            <corners android:radius="8dp" />
+            <stroke android:width="2dp" android:color="#80000000" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    <!-- 未选中态：无边框 -->
+    <item>
+        <shape>
+            <corners android:radius="8dp" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+</selector>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 原 player_live_control_view 相关布局曾以 @+id/loading 定义该 id;
+         清理 TV 残留布局后 LiveController 仍引用 R.id.loading(实际取值为 null,
+         真正的加载指示器通过 tag "vod_control_loading" 查找),故在此保留定义。 -->
+    <item type="id" name="loading" />
+</resources>

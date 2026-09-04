@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    主容器(手机版):内容 Fragment 容器 + 底部导航栏。
+    导航栏常驻容器层,切换 Tab 时只有内容区做动画,导航栏纹丝不动。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <com.mobile.novabox.ui.widget.MainNavBar
+        android:id="@+id/bottomNavLayout"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        app:navSelected="home"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+</LinearLayout>

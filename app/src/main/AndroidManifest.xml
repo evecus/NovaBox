@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.mobile.novabox">
+
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="true" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+    <application
+        android:name=".base.App"
+        android:allowBackup="true"
+        android:configChanges="orientation|keyboardHidden|screenSize"
+        android:hardwareAccelerated="true"
+        android:icon="@drawable/app_icon"
+        android:requestLegacyExternalStorage="true"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme.NoActionBar"
+        android:usesCleartextTraffic="true">
+
+        <!--
+            screenOrientation 全部改为 unspecified，由 BaseActivity.onCreate()
+            在运行时根据设备类型动态决定：
+              · 平板 (sw >= 600dp)  → sensorLandscape
+              · 手机               → portrait
+            configChanges 保留:直播 Fragment 全屏旋转时不重建容器。
+        -->
+
+        <activity
+            android:name=".ui.activity.MainActivity"
+            android:exported="true"
+            android:screenOrientation="unspecified"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.activity.DetailActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.PlayActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name=".ui.activity.SearchActivity"
+            android:windowSoftInputMode="stateVisible|adjustResize"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.FastSearchActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.SettingActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.HistoryActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.CollectActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.DownloadActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.LocalFileActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.LocalVideoActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.VideoFolderActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.LocalPlayerActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.ConfigManagerActivity"
+            android:screenOrientation="unspecified"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+
+        <activity
+            android:name=".ui.activity.LiveSourceActivity"
+            android:screenOrientation="unspecified"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+
+        <!-- OpenList 网盘相关页面 -->
+        <activity
+            android:name=".ui.activity.OpenListLoginActivity"
+            android:screenOrientation="unspecified"
+            android:windowSoftInputMode="stateVisible|adjustResize" />
+
+        <activity
+            android:name=".ui.activity.OpenListBrowseActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.OpenListVideoPlayerActivity"
+            android:screenOrientation="unspecified"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout" />
+
+        <activity
+            android:name=".ui.activity.OpenListAudioPlayerActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.LocalAudioActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.LocalAudioDirActivity"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".ui.activity.LocalAudioPlayerActivity"
+            android:screenOrientation="unspecified" />
+
+        <!-- DLNA 投屏:cling UPnP 服务(设备发现 + AVTransport 控制) -->
+        <service
+            android:name=".dlna.DLNACastService"
+            android:exported="false" />
+
+        <!--
+            投屏代理保活服务:当投屏地址依赖本机代理(127.0.0.1:9978)时启动,
+            用前台通知保持存活,防止 App 切后台/被系统回收后投屏中断。
+            类型声明为 mediaPlayback,与"持续向其他设备提供媒体流"的场景一致。
+        -->
+        <service
+            android:name=".cast.CastProxyService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <receiver
+            android:name=".receiver.SearchReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.content.movie.search.Action" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".receiver.CustomWebReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.content.movie.custom.web.Action" />
+            </intent-filter>
+        </receiver>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <meta-data
+            android:name="design_width_in_dp"
+            android:value="360" />
+        <meta-data
+            android:name="design_height_in_dp"
+            android:value="780" />
+
+        <meta-data
+            android:name="xwalk_enable_download_mode"
+            android:value="enable" />
+        <meta-data
+            android:name="xwalk_verify"
+            android:value="disable" />
+    </application>
+
+</manifest>

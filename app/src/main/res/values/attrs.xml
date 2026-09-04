@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="fontPath" format="string" />
+    <attr name="textFieldStyle" format="reference" />
+
+    <!-- 主导航栏(MainNavBar)当前选中项 -->
+    <declare-styleable name="MainNavBar">
+        <attr name="navSelected" format="enum">
+            <enum name="home" value="0" />
+            <enum name="live" value="1" />
+            <enum name="my" value="2" />
+        </attr>
+    </declare-styleable>
+</resources>
