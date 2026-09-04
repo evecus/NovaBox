@@ -249,7 +249,11 @@ public class LiveFragment extends BaseLazyFragment {
         return false;
     }
 
-    /** Fragment 真正 Resume(容器 Tab 切回/应用回前台):恢复播放,横屏全屏时重申沉浸式 */
+    /**
+     * Fragment 真正 Resume(容器 Tab 切回/应用回前台)。
+     * 注意:这里不再自动恢复播放——切到本页面后必须由用户手动点击频道名/源名/播放按钮才会播放,
+     * 避免"点过一次播放后,再次切回该页面就自动续播"的问题。频道/播放列表等状态仍然保留,不会重新加载。
+     */
     @Override
     protected void onFragmentResume() {
         // 横屏全屏时重新应用沉浸式UI（pad非全屏不应用）
@@ -264,8 +268,10 @@ public class LiveFragment extends BaseLazyFragment {
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             );
         }
-        if (mVideoView != null && currentLiveChannelItem != null) {
-            mVideoView.resume();
+        // 保持画面停在暂停状态,不主动 resume()。同步一下中间播放/暂停按钮的图标为"播放"，
+        // 提示用户需要点击才能继续播放。
+        if (ivPlayPauseCenter != null) {
+            ivPlayPauseCenter.setImageResource(R.drawable.icon_play);
         }
     }
 
@@ -526,6 +532,15 @@ public class LiveFragment extends BaseLazyFragment {
         // 原先直接调用 currentLiveChannelItem.getSourceNum() 会抛 NullPointerException，这里先判空。
         if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
                 || (changeSource && currentLiveChannelItem != null && currentLiveChannelItem.getSourceNum() == 1)) {
+            // 点击的是当前已选中的频道/唯一线路:不需要重新加载源,但如果播放器此时处于暂停状态
+            // (例如刚从别的Tab切回来、还未手动点击播放),这里补一次 start() 让点击真正生效播放,
+            // 而不是被短路掉导致"点了没反应"。
+            if (mVideoView != null && !mVideoView.isPlaying()) {
+                mVideoView.start();
+                if (ivPlayPauseCenter != null) {
+                    ivPlayPauseCenter.setImageResource(R.drawable.icon_pause);
+                }
+            }
             return true;
         }
         if (changeSource && currentLiveChannelItem == null) {
