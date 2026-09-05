@@ -114,6 +114,13 @@ public class LiveFragment extends BaseLazyFragment {
     /** 本轮已尝试过的播放内核(0=EXO硬解 1=EXO软解 2=IJK硬解 3=IJK软解),失败时按序切换;播放成功/换源/换频道时清空 */
     private final Set<Integer> triedLivePlayerTypes = new HashSet<>();
     private LiveChannelItem currentLiveChannelItem = null;
+    /**
+     * 是否需要用户手动点击(频道名/源名/播放按钮)才能播放。
+     * 切走该Tab(onFragmentPause)时置为 true 并彻底停掉播放器(release,而不只是 pause),
+     * 这样即使当时还在加载/缓冲中,也不会在后台继续加载并自动播放。
+     * 用户手动触发播放动作后置为 false。
+     */
+    private boolean needManualPlay = false;
     private String pendingLiveRefreshChannelName = null;
     private int pendingLiveRefreshSourceIndex = -1;
     private boolean refreshingLiveChannelList = false;
@@ -275,11 +282,19 @@ public class LiveFragment extends BaseLazyFragment {
         }
     }
 
-    /** Fragment 真正 Pause(容器 Tab 切走/应用退后台):暂停播放 */
+    /**
+     * Fragment 真正 Pause(容器 Tab 切走/应用退后台)。
+     * 用 release() 而不是 pause():如果此时播放器还在"准备中/缓冲中"(STATE_PREPARING/STATE_BUFFERING),
+     * pause() 对这些状态不生效,加载完成后会自动开始播放——这正是"切走再切回不用手动点击也会播放"的根因之一。
+     * release() 无论当前处于什么状态都会立刻、彻底停止播放内核,不会在后台继续加载。
+     * 频道/线路选择等业务状态不受影响,不会重新加载列表,用户点击后会用 playChannel 里的逻辑重新拉流。
+     */
     @Override
     protected void onFragmentPause() {
+        mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
+        needManualPlay = true;
         if (mVideoView != null) {
-            mVideoView.pause();
+            mVideoView.release();
         }
     }
 
@@ -528,13 +543,18 @@ public class LiveFragment extends BaseLazyFragment {
     }
 
     private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
+        // 切走该Tab时播放器已被 release(见 onFragmentPause),此时即使点的是"同一个"频道/唯一线路,
+        // 也必须走完整流程重新 setUrl+start,不能只走下面的短路分支(短路分支不会重新加载源)。
+        boolean forceReloadAfterManualPlay = needManualPlay
+                && channelGroupIndex == currentChannelGroupIndex
+                && liveChannelIndex == currentLiveChannelIndex;
         // 换源(changeSource=true)时若 currentLiveChannelItem 为空(如频道列表被清空后异常时序下触发换源)，
         // 原先直接调用 currentLiveChannelItem.getSourceNum() 会抛 NullPointerException，这里先判空。
-        if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
-                || (changeSource && currentLiveChannelItem != null && currentLiveChannelItem.getSourceNum() == 1)) {
-            // 点击的是当前已选中的频道/唯一线路:不需要重新加载源,但如果播放器此时处于暂停状态
-            // (例如刚从别的Tab切回来、还未手动点击播放),这里补一次 start() 让点击真正生效播放,
-            // 而不是被短路掉导致"点了没反应"。
+        if (!forceReloadAfterManualPlay
+                && ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
+                || (changeSource && currentLiveChannelItem != null && currentLiveChannelItem.getSourceNum() == 1))) {
+            // 点击的是当前已选中的频道/唯一线路,且播放器并未被 release 过:不需要重新加载源,
+            // 但如果播放器此时处于暂停状态,这里补一次 start() 让点击真正生效播放。
             if (mVideoView != null && !mVideoView.isPlaying()) {
                 mVideoView.start();
                 if (ivPlayPauseCenter != null) {
@@ -547,7 +567,8 @@ public class LiveFragment extends BaseLazyFragment {
             // 换源但当前没有有效频道，直接返回，避免后续访问 currentLiveChannelItem 造成崩溃
             return false;
         }
-        boolean showPreviousFrame = currentLiveChannelItem != null && mVideoView != null && mVideoView.isPlaying();
+        needManualPlay = false;
+        boolean showPreviousFrame = !forceReloadAfterManualPlay && currentLiveChannelItem != null && mVideoView != null && mVideoView.isPlaying();
         triedLivePlayerTypes.clear();
         if (!changeSource) {
             currentChannelGroupIndex = channelGroupIndex;
@@ -989,7 +1010,13 @@ public class LiveFragment extends BaseLazyFragment {
         ivPlayPauseCenter.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mVideoView.isPlaying()) {
+                if (needManualPlay) {
+                    // 切走过Tab、播放器已被 release:必须重新 setUrl+start 才能真正播放,
+                    // 直接调用 mVideoView.start() 对一个已释放的播放内核无效。
+                    if (isCurrentLiveChannelValid()) {
+                        playChannel(currentChannelGroupIndex, currentLiveChannelIndex, false);
+                    }
+                } else if (mVideoView.isPlaying()) {
                     mVideoView.pause();
                     ivPlayPauseCenter.setImageResource(R.drawable.icon_play);
                 } else {
