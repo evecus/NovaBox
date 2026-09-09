@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+<!--  筛选弹窗背景：居中卡片样式，四角统一圆角，纯白不透明  -->
+    <corners android:radius="@dimen/vs_10" />
+    <solid android:color="@color/color_FFFFFF" />
+</shape>

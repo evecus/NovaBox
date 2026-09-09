@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 剧集 grid item:多选/单选共用,根据 state_selected 切换背景
+     (adapter 用 itemView.setSelected 切选中态,FrameLayout 非 Checkable,
+      state_checked 永远不会命中,必须用 state_selected) -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true">
+        <shape>
+            <corners android:radius="@dimen/vs_6" />
+            <solid android:color="#FF1890FF" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape>
+            <corners android:radius="@dimen/vs_6" />
+            <solid android:color="#1A1890FF" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <corners android:radius="@dimen/vs_6" />
+            <solid android:color="@color/dialog_control_bg" />
+            <stroke
+                android:width="@dimen/vs_1"
+                android:color="@color/dialog_control_stroke" />
+        </shape>
+    </item>
+</selector>

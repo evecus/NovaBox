@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="32dp"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:background="@drawable/shape_dialog_white_bg">
+
+        <!-- 标题 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="播放"
+            android:textColor="@android:color/black"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- 输入框 -->
+        <EditText
+            android:id="@+id/etVideoUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="请输入地址..."
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            android:padding="12dp"
+            android:background="@drawable/shape_link_input_bg"
+            android:inputType="textUri"
+            android:singleLine="true"
+            android:imeOptions="actionDone"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- 按钮行 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <TextView
+                android:id="@+id/tvCancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="取消"
+                android:textColor="#FF1ABC9C"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:padding="8dp"
+                android:layout_marginRight="24dp"/>
+
+            <TextView
+                android:id="@+id/tvConfirm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="确定"
+                android:textColor="#FF1ABC9C"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:padding="8dp"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

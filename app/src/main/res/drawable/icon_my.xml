@@ -1,0 +1,29 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+
+  <!-- 外圆环 -->
+  <path
+      android:pathData="M512,512 m-512,0 a512,512 0 1,0 1024,0 a512,512 0 1,0 -1024,0"
+      android:fillColor="#00000000"
+      android:strokeColor="#ffffff"
+      android:strokeWidth="76"/>
+
+  <!-- 头部小圆（偏上，与弧线不接触） -->
+  <path
+      android:pathData="M512,354 m-125,0 a125,125 0 1,0 250,0 a125,125 0 1,0 -250,0"
+      android:fillColor="#00000000"
+      android:strokeColor="#ffffff"
+      android:strokeWidth="76"/>
+
+  <!-- 身体弧线（两端落在圆环上） -->
+  <path
+      android:pathData="M120,844 Q200,616 512,594 Q824,616 904,844"
+      android:fillColor="#00000000"
+      android:strokeColor="#ffffff"
+      android:strokeWidth="76"
+      android:strokeLineCap="round"/>
+
+</vector>

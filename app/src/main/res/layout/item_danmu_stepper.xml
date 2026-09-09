@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <TextView
+        android:id="@+id/tvStepperMinus"
+        android:layout_width="@dimen/vs_48"
+        android:layout_height="@dimen/vs_48"
+        android:background="@drawable/button_danmu_stepper"
+        android:focusable="true"
+        android:gravity="center"
+        android:text="－"
+        android:textColor="@color/dialog_text_primary"
+        android:textSize="@dimen/ts_22"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvStepperValue"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="--"
+        android:textColor="@color/dialog_text_primary"
+        android:textSize="@dimen/ts_20" />
+
+    <TextView
+        android:id="@+id/tvStepperPlus"
+        android:layout_width="@dimen/vs_48"
+        android:layout_height="@dimen/vs_48"
+        android:background="@drawable/button_danmu_stepper"
+        android:focusable="true"
+        android:gravity="center"
+        android:text="＋"
+        android:textColor="@color/dialog_text_primary"
+        android:textSize="@dimen/ts_22"
+        android:textStyle="bold" />
+
+</LinearLayout>

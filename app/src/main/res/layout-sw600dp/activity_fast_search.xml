@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pad 端快速搜索页布局（sw600dp）
+    改动：顶部搜索栏高度加大，下方双栏布局（左：分词建议，右：结果）
+    注意：控件 id 必须和 FastSearchActivity.java 中 findViewById 用到的 id 完全一致，
+          否则会在 Pad 上 NullPointerException 崩溃。
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/llLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- 顶部搜索栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingLeft="8dp"
+        android:paddingRight="12dp">
+
+        <ImageView
+            android:id="@+id/ivBackFast"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:padding="10dp"
+            android:src="@drawable/icon_back"
+            android:tint="@android:color/black"
+            android:scaleType="fitCenter"/>
+
+        <!-- 圆角搜索框容器 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="@drawable/shape_search_bar_bg"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp">
+            <EditText
+                android:id="@+id/etSearchFast"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:inputType="text"
+                android:imeOptions="actionSearch"
+                android:maxLines="1"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:textColor="@android:color/black"
+                android:textColorHint="#99000000"
+                android:textSize="16sp"/>
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/ivSearchFast"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:padding="10dp"
+            android:src="@drawable/icon_search"
+            android:tint="@android:color/black"
+            android:scaleType="fitCenter"/>
+    </LinearLayout>
+
+    <!-- 搜索状态栏（原 mSearchTitle + 分词横排，对应 mGridViewWordFenci） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingLeft="14dp"
+        android:paddingRight="14dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/mSearchTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#AA000000"
+            android:textSize="13sp"
+            android:visibility="gone"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/mGridViewWordFenci"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginLeft="8dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"/>
+    </LinearLayout>
+
+    <!-- 双栏内容区 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <!-- 左栏：搜索建议（对应 mGridViewWord） -->
+        <LinearLayout
+            android:id="@+id/llWord"
+            android:layout_width="260dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:background="@android:color/transparent">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingLeft="16dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="6dp"
+                android:text="搜索建议"
+                android:textColor="#88000000"
+                android:textSize="12sp"
+                android:visibility="gone"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/mGridViewWord"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:focusable="true"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="#22FFFFFF"/>
+
+        <!-- 右栏：搜索结果，mGridView 与 mGridViewFilter 叠放（用 visibility 互斥切换） -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:paddingTop="8dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/mGridView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:visibility="invisible"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/mGridViewFilter"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:visibility="invisible"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

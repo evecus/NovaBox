@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    分类 Tab 条目（Pad 端，sw600dp）
+    改动：字号从 14sp 提到 18sp，行高从 40dp 提到 52dp，左右内边距和图标也相应放大，
+    与左侧竖排导航栏的放大幅度保持一致。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="52dp"
+    android:background="@drawable/button_home_sort_focus"
+    android:orientation="horizontal"
+    android:paddingLeft="18dp"
+    android:paddingRight="18dp">
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:focusable="false"
+        android:gravity="center"
+        android:textColor="#CC000000"
+        android:textSize="18sp" />
+
+    <ImageView
+        android:id="@+id/tvFilter"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_gravity="center"
+        android:layout_marginStart="4dp"
+        android:layout_marginLeft="4dp"
+        android:src="@drawable/icon_filter"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/tvFilterColor"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_gravity="center"
+        android:layout_marginStart="4dp"
+        android:layout_marginLeft="4dp"
+        android:src="@drawable/icon_filter_color"
+        android:visibility="gone" />
+</LinearLayout>

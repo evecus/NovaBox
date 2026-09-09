@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- 返回按钮:移到左上角,标题/分辨率信息紧随其右侧 -->
+        <ImageView
+            android:id="@+id/tv_back"
+            android:layout_width="@dimen/vs_80"
+            android:layout_height="@dimen/vs_80"
+            android:clickable="true"
+            android:focusable="true"
+            android:paddingHorizontal="@dimen/vs_20"
+            android:src="@drawable/icon_back"
+            android:visibility="invisible" />
+
+        <LinearLayout
+            android:id="@+id/tv_top_l_container"
+            android:layout_width="0dp"
+            android:layout_weight="3"
+            android:layout_height="wrap_content"
+            android:tag="tv_top_container"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:layout_marginTop="@dimen/vs_5"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_info_name1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:paddingTop="@dimen/vs_5"
+                android:paddingLeft="@dimen/vs_10"
+                android:text="@string/http"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/ts_20"
+                android:paddingStart="@dimen/vs_10"
+                tools:ignore="RtlHardcoded,RtlSymmetry" />
+
+            <TextView
+                android:id="@+id/tv_videosize"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:paddingLeft="@dimen/vs_10"
+                android:tag="vod_video_size"
+                android:text="@string/_1024_x_768"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/ts_20"
+                android:paddingStart="@dimen/vs_10"
+                tools:ignore="RtlHardcoded,RtlSymmetry" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <com.mobile.novabox.subtitle.widget.SimpleSubtitleView
+        android:id="@+id/subtitle_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:gravity="center"
+        android:paddingLeft="@dimen/vs_20"
+        android:paddingTop="@dimen/vs_15"
+        android:paddingRight="@dimen/vs_20"
+        android:paddingBottom="@dimen/vs_15"
+        android:text=""
+        android:textColor="#ffffff"
+        android:textSize="16sp"
+        android:textStyle="bold"/>
+
+    <LinearLayout
+        android:id="@+id/bottom_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@android:color/transparent"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:paddingLeft="@dimen/vs_20"
+        android:paddingTop="@dimen/vs_20"
+        android:paddingRight="@dimen/vs_20"
+        android:paddingBottom="@dimen/vs_10">
+        tools:visibility="visible">
+
+
+
+        <LinearLayout
+            android:id="@+id/parse_root"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/vs_10"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginEnd="@dimen/vs_5"
+                android:layout_marginRight="@dimen/vs_5"
+                android:paddingRight="@dimen/vs_10"
+                android:text="解析"
+                android:textColor="@color/color_FFFFFF"
+                android:textSize="@dimen/ts_20" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/mGridParseView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:clipToPadding="false" />
+        </LinearLayout>
+
+
+        <!-- 顶部时间行:全屏时显示 "00:00 / 00:00";小屏隐藏 -->
+        <TextView
+            android:id="@+id/fs_time_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/vs_5"
+            android:text="00:00 / 00:00"
+            android:textColor="@color/color_FFFFFF"
+            android:textSize="@dimen/ts_20"
+            android:includeFontPadding="false"
+            android:visibility="gone" />
+
+        <!-- 进度条行(小屏:时间+进度+总时长+全屏图标;全屏:仅进度条满宽) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:baselineAligned="false">
+
+            <!-- 小屏左侧时间(全屏隐藏) -->
+            <TextView
+                android:id="@+id/fs_curr_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="40dp"
+                android:text="00:00"
+                android:textColor="@color/color_FFFFFF"
+                android:textSize="@dimen/ts_20"
+                android:gravity="center"
+                android:includeFontPadding="false" />
+
+            <!-- 进度条:满宽(weight=1) -->
+            <SeekBar
+                android:id="@+id/seekBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:max="1000"
+                android:progressDrawable="@drawable/shape_player_control_vod_seek"
+                android:thumb="@drawable/shape_player_control_vod_seek_thumb"
+                android:background="@null"
+                android:maxHeight="@dimen/vs_6"
+                android:minHeight="@dimen/vs_6"
+                android:paddingVertical="@dimen/vs_2"
+                android:focusable="false"
+                android:focusableInTouchMode="false" />
+
+            <!-- 小屏右侧总时长(全屏隐藏) -->
+            <TextView
+                android:id="@+id/fs_total_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="40dp"
+                android:text="00:00"
+                android:textColor="@color/color_FFFFFF"
+                android:textSize="@dimen/ts_20"
+                android:gravity="center"
+                android:includeFontPadding="false" />
+
+            <!-- 小屏末尾"进入全屏"图标(全屏隐藏) -->
+            <ImageView
+                android:id="@+id/fs_enter_fullscreen"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:padding="6dp"
+                android:src="@drawable/icon_fullscreen"
+                android:clickable="true"
+                android:focusable="true"
+                android:scaleType="fitCenter" />
+        </LinearLayout>
+
+        <!-- 按钮行(全屏时显示):播放/暂停 + 下一集 + 弹幕 + 播放器 + 倍速 + 选集 + 退出全屏 -->
+        <LinearLayout
+            android:id="@+id/fs_function_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/vs_8"
+            android:layout_marginBottom="@dimen/vs_20"
+            android:orientation="horizontal"
+            android:baselineAligned="false"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/btn_play_pause"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:padding="6dp"
+                android:src="@drawable/icon_pause"
+                android:clickable="true"
+                android:focusable="true"
+                android:scaleType="fitCenter" />
+
+            <ImageView
+                android:id="@+id/btn_next_episode"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:padding="6dp"
+                android:src="@drawable/ic_skip_next"
+                android:tint="@color/color_FFFFFF"
+                android:clickable="true"
+                android:focusable="true"
+                android:scaleType="fitCenter" />
+
+            <!-- 弹幕:文字图标 -->
+            <TextView
+                android:id="@+id/btn_danmu_setting"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="弹幕"
+                android:textColor="@color/color_FFFFFF"
+                android:textSize="@dimen/ts_20"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- 播放器:文字图标 -->
+            <TextView
+                android:id="@+id/btn_player_select"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="播放器"
+                android:textColor="@color/color_FFFFFF"
+                android:textSize="@dimen/ts_20"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- 倍速:文字图标 -->
+            <TextView
+                android:id="@+id/btn_speed_select"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="倍速"
+                android:textColor="@color/color_FFFFFF"
+                android:textSize="@dimen/ts_20"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- 选集:文字图标 -->
+            <TextView
+                android:id="@+id/btn_episode_select"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="选集"
+                android:textColor="@color/color_FFFFFF"
+                android:textSize="@dimen/ts_20"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- 退出全屏 -->
+            <ImageView
+                android:id="@+id/fs_exit_fullscreen"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:padding="6dp"
+                android:src="@drawable/icon_exit_fullscreen"
+                android:clickable="true"
+                android:focusable="true"
+                android:scaleType="fitCenter" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- tv_pause_container/tv_slide_progress_text/tv_progress_container 中央浮层已删除(用户不要全屏下中央播放按钮,免得拦截 btn_play_pause 点击) -->
+
+    <ProgressBar
+        android:layout_width="@dimen/vs_50"
+        android:layout_height="@dimen/vs_50"
+        android:layout_gravity="center"
+        android:indeterminateBehavior="repeat"
+        android:indeterminateDrawable="@drawable/anim_loading"
+        android:indeterminateOnly="true"
+        android:tag="vod_control_loading"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/tv_lock"
+        android:layout_width="@dimen/vs_80"
+        android:layout_height="@dimen/vs_80"
+        android:layout_gravity="right|center"
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingHorizontal="@dimen/vs_20"
+        android:src="@drawable/icon_unlock"
+        android:visibility="invisible" />
+
+    <FrameLayout
+        android:id="@+id/play_speed_3_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="@drawable/bg_speed_indicator"
+        android:visibility="gone"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/tv_speed_3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3.0 X"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </FrameLayout>
+
+</FrameLayout>

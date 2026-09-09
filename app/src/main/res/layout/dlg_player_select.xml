@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="320dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/shape_danmu_setting_bg"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="8dp"
+        android:text="选择播放器"
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/dialog_panel_stroke"
+        android:layout_marginVertical="8dp" />
+
+    <LinearLayout
+        android:id="@+id/ll_player_exo_hard"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:orientation="horizontal"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="EXO 硬解"
+            android:textColor="@android:color/black"
+            android:textSize="15sp" />
+
+        <ImageView
+            android:id="@+id/iv_player_exo_hard"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_player_check"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_player_exo_soft"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="4dp"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:orientation="horizontal"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="EXO 软解"
+            android:textColor="@android:color/black"
+            android:textSize="15sp" />
+
+        <ImageView
+            android:id="@+id/iv_player_exo_soft"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_player_check"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_player_ijk_hard"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="4dp"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:orientation="horizontal"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="IJK 硬解"
+            android:textColor="@android:color/black"
+            android:textSize="15sp" />
+
+        <ImageView
+            android:id="@+id/iv_player_ijk_hard"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_player_check"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_player_ijk_soft"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="4dp"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:orientation="horizontal"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="IJK 软解"
+            android:textColor="@android:color/black"
+            android:textSize="15sp" />
+
+        <ImageView
+            android:id="@+id/iv_player_ijk_soft"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_player_check"
+            android:visibility="gone" />
+    </LinearLayout>
+
+</LinearLayout>

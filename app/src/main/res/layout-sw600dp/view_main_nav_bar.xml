@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    主导航栏(平板 sw600dp 版:左侧竖栏 96dp)。
+    由 com.mobile.novabox.ui.widget.MainNavBar inflate(作为其唯一子 View 撑满);
+    手机版使用 layout/view_main_nav_bar.xml 的底部横条版本。
+    选中态由组件按 app:navSelected 动态设置,这里统一写未选中样式。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:paddingTop="20dp"
+    android:paddingBottom="20dp"
+    android:background="@drawable/shape_side_nav_bg">
+
+    <!-- 首页 -->
+    <LinearLayout
+        android:id="@+id/navHome"
+        android:layout_width="84dp"
+        android:layout_height="84dp"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:background="@drawable/selector_nav_item_bg">
+        <ImageView
+            android:id="@+id/navHomeIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/icon_video"
+            android:alpha="0.5" android:tint="@android:color/black"/>
+        <TextView
+            android:id="@+id/navHomeText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="首页"
+            android:textColor="#80000000"
+            android:textSize="14sp"/>
+    </LinearLayout>
+
+    <!-- 直播 -->
+    <LinearLayout
+        android:id="@+id/navLive"
+        android:layout_width="84dp"
+        android:layout_height="84dp"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:background="@drawable/selector_nav_item_bg">
+        <ImageView
+            android:id="@+id/navLiveIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/icon_live"
+            android:alpha="0.5" android:tint="@android:color/black"/>
+        <TextView
+            android:id="@+id/navLiveText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="直播"
+            android:textColor="#80000000"
+            android:textSize="14sp"/>
+    </LinearLayout>
+
+    <!-- 我的 -->
+    <LinearLayout
+        android:id="@+id/navSetting"
+        android:layout_width="84dp"
+        android:layout_height="84dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:background="@drawable/selector_nav_item_bg">
+        <ImageView
+            android:id="@+id/navSettingIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/icon_my"
+            android:alpha="0.5" android:tint="@android:color/black"/>
+        <TextView
+            android:id="@+id/navSettingText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="我的"
+            android:textColor="#80000000"
+            android:textSize="14sp"/>
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 剧集 grid item 文字色:选中态蓝底白字(黑→白),未选中态黑字
+     (选中态由 setSelected 触发 state_selected,见 bg_download_episode 注释) -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true" android:color="#FFFFFFFF" />
+    <item android:state_pressed="true" android:color="#FF1890FF" />
+    <item android:color="@color/dialog_text_primary" />
+</selector>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    快速搜索结果条目
+    改动说明：尺寸/字号改为引用 fast_search_* dimen，
+    Pad（sw600dp）下会自动读取 values-sw600dp/dimens.xml 中放大后的数值，
+    从而在平板宽屏网格下避免卡片过小、内容过密的问题。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="@drawable/shape_search_word_bg"
+    android:focusable="true"
+    android:padding="@dimen/fast_search_item_padding"
+    android:gravity="center_vertical">
+
+    <!-- 封面缩略图 -->
+    <ImageView
+        android:id="@+id/ivThumb"
+        android:layout_width="@dimen/fast_search_thumb_w"
+        android:layout_height="@dimen/fast_search_thumb_h"
+        android:scaleType="fitXY"/>
+
+    <!-- 右侧信息 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginLeft="@dimen/fast_search_item_padding">
+
+        <TextView
+            android:id="@+id/tvName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/fast_search_name_size"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/tvSite"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/shape_thumb_year"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
+            android:singleLine="true"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/fast_search_site_size"/>
+
+        <TextView
+            android:id="@+id/tvNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:textColor="#CC000000"
+            android:textSize="@dimen/fast_search_note_size"
+            android:visibility="gone"/>
+    </LinearLayout>
+</LinearLayout>
