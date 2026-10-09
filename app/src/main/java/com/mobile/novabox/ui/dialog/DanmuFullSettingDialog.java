@@ -136,6 +136,8 @@ public class DanmuFullSettingDialog extends BaseDialog {
     }
 
     private void openSearchOnlineDialog() {
+        // 打开弹幕搜索弹窗前先关闭设置弹窗，避免两个弹窗同时显示
+        dismiss();
         SearchDanmuDialog searchDanmuDialog = new SearchDanmuDialog(getContext());
         searchDanmuDialog.setDanmuLoader(danmu -> {
             if (searchOnlineListener != null) searchOnlineListener.loadDanmu(danmu);
